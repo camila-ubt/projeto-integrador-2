@@ -1,0 +1,47 @@
+.main-header {
+  background-color: var(--fundo);
+  border-bottom: 1px solid var(--borda);
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.navbar {
+  min-height: var(--navbar-altura);
+  padding: 0.5rem 0;
+}
+
+.navbar-brand {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.navbar-brand .logo-img {
+  max-height: 100px;
+  width: auto;
+  object-fit: contain;
+  margin-top: -12px;
+  margin-bottom: -12px;
+}
+
+.navbar-nav .nav-link {
+  color: var(--texto-principal);
+  font-family: var(--texto-principal);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.12rem;
+  padding: 0.5rem 0.8rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.navbar-toggler {
+  border-color: var(--borda);
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-small);
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(183, 110, 121, 0.25);
+}

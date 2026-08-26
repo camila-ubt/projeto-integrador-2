@@ -2,51 +2,77 @@
 
 /* Reset CSS */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 /* Base */
 body {
-    font-family: var(--fonte-corpo);
-    font-weight: 300;
-    color: var(--texto-principal);
-    background: var(--fundo);
-    overflow-x: hidden;
+  font-family: var(--fonte-corpo);
+  font-weight: 300;
+  color: var(--texto-principal);
+  background: var(--fundo);
+  overflow-x: hidden;
 }
 
-img{
-    max-width: 100%;
-    display: block;
+img {
+  max-width: 100%;
+  display: block;
 }
 
 a {
-    text-decoration: none;
-    color: inherit;
-    transition: color 0.2s;
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s;
 }
 
 /* Tipografia Base */
-h1, h2, h3, h4, h5, h6 {
-    font-family: var(--fonte-titulo);
-    font-weight: 600;
-    color: var(--texto-principal);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--fonte-titulo);
+  font-weight: 600;
+  color: var(--texto-principal);
 }
 
 p {
-    font-family: var(--fonte-corpo);
-    font-weight: 300;
-    line-height: 1.6;
+  font-family: var(--fonte-corpo);
+  font-weight: 300;
+  line-height: 1.6;
 }
 
 /* Botões Globais */
 .btn-primario {
-    display: inline-block;
-    background-color: var(--primaria);
-    color: var(--superficie);
-    border: none;
-    border-radius: var(--radius-sm);
-    
-
+  display: inline-block;
+  background-color: var(--primaria);
+  color: var(--superficie);
+  font-family: var(--fonte-corpo);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  padding: 0.6rem 1.6rem;
+  border-radius: var(--radius-small);
+  border: 1px solid transparent;
+  transition: all 0.2s ease-in-out;
 }
+
+.btn-primario:hover,
+.btn-primario:focus {
+  background-color: var(--primaria-escura);
+  color: var(--superficie);
+}
+
+/* Acessibilidade - navegação por teclado */
+a:focus-visible,
+button:focus-visible,
+.btn-primario:focus-visible {
+  outline: 2px solid var(--primaria-escura);
+  outline-offset: 4px;
+  border-radius: var(--radius-small);
+  box-shadow: 0 0 0 1px var(--primaria-clara);
+}
+

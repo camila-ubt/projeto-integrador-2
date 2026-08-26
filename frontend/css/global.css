@@ -1,0 +1,52 @@
+/* Estilos globais: Reset, tipografia, layout */
+
+/* Reset CSS */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Base */
+body {
+    font-family: var(--fonte-corpo);
+    font-weight: 300;
+    color: var(--texto-principal);
+    background: var(--fundo);
+    overflow-x: hidden;
+}
+
+img{
+    max-width: 100%;
+    display: block;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s;
+}
+
+/* Tipografia Base */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--fonte-titulo);
+    font-weight: 600;
+    color: var(--texto-principal);
+}
+
+p {
+    font-family: var(--fonte-corpo);
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+/* Botões Globais */
+.btn-primario {
+    display: inline-block;
+    background-color: var(--primaria);
+    color: var(--superficie);
+    border: none;
+    border-radius: var(--radius-sm);
+    
+
+}

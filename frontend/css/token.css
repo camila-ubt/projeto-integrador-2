@@ -1,0 +1,36 @@
+/* Variáveis globais de design: cores, tipografia, layout */
+
+:root {
+
+    /* Cores principais */
+    --primaria: #B76E79;
+    --primaria-clara: #F9F1EB;
+    --primaria-escura: #8C6A5A;
+
+    /* Cores secundárias, backgrounds */
+    --fundo: #F9F1EB;
+    --superficie: #FFFFFF;
+    --destaque: #B76E79;
+
+    /* Texto */
+    --texto-principal: #2D1A14;
+    --texto-claro: #4B3F35;
+    --texto-secundario: #8C6A5A;
+
+     /* Tipografia */
+    --fonte-titulo: 'Cormorant Garamond', sans-serif;
+    --fonte-corpo: 'Jost', sans-serif;
+
+    /* Bordas e sombras */
+    --borda:  rgba(45, 26, 20, 0.12);
+    --borda-escura: rgba(45, 26, 20, 0.22);
+    --acento-dourado: #D4AF37;
+
+    /* Layout */
+    --navbar-altura: 68px;
+    --radius-small: 2px;
+    --radius-medium: 6px;
+    --radius-large: 12px;
+   
+
+}

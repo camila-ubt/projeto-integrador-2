@@ -2,14 +2,17 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
+    "create-admin": "node --env-file=.env.local scripts/crate-admin.js"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.3",
+    "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.8",
     "next": "16.3.3",
     "next-auth": "^5.0.0-beta.32",

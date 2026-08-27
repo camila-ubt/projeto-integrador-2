@@ -1,5 +1,3 @@
-// lib/db.js
-// Conexão única (pool) com o Postgres/Neon, reutilizada por todas as rotas da API.
 import { Pool } from "pg";
 
 let pool;

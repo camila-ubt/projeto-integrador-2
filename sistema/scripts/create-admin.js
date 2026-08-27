@@ -1,6 +1,5 @@
 // Cria (ou atualiza a senha de) o usuário admin no banco, direto pela linha de comando. Não existe endpoint público de cadastro de propósito, já que o sistema é de uso interno (perfil único: admin).
 //
-// Uso (Node 20+, usa o carregador nativo de .env):
 
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";

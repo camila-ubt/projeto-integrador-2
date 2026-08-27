@@ -1,7 +1,10 @@
 import { Cormorant_Garamond, Jost } from "next/font/google";
+import Navbar from "./components/Navbar";
+import 'bootstrap/dist/css/bootstrap.min.css'
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/style.css";
+import BootstrapClient from "./components/BootstrapClient";
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
@@ -27,7 +30,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className={`${cormorantGaramond.variable} ${jost.variable}`}>
-      <body>{children}</body>
+      <body>
+        <BootstrapClient />
+        <Navbar />
+        {children}
+        </body>
     </html>
   );
 }

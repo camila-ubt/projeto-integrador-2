@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "create-admin": "node --env-file=.env.local scripts/crate-admin.js"
+    "create-admin": "node --env-file=.env.local scripts/create-admin.js"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.3",

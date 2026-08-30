@@ -17,6 +17,11 @@
     --texto-claro: #4B3F35;
     --texto-secundario: #8C6A5A;
 
+    /* Erro/Alerta */
+    --erro-fundo: #FDECEA;
+    --erro-texto: #922B21;
+    --erro-borda: #F5B7B1;
+
      /* Tipografia */
     --fonte-titulo: 'Cormorant Garamond', sans-serif;
     --fonte-corpo: 'Jost', sans-serif;

@@ -7,12 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-<<<<<<< HEAD
     "lint": "eslint",
     "create-admin": "node --env-file=.env.local scripts/create-admin.js"
-=======
-    "lint": "eslint"
->>>>>>> b9fa84d (Fix lint script entry in package.json)
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.3",

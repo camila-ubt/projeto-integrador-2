@@ -1,5 +1,4 @@
 /* ── Header ─────────────────────────────────────────────────────── */
-/* Bootstrap não tem sticky header com scroll effect — fica no module */
 .header {
   background-color: var(--fundo);
   border-bottom: 1px solid var(--borda);
@@ -21,7 +20,6 @@
 }
 
 /* ── Links desktop ──────────────────────────────────────────────── */
-/* Bootstrap tem .nav-link mas cores e tipografia são do projeto */
 .navLink {
   color: var(--texto-principal);
   font-family: var(--fonte-corpo);
@@ -37,6 +35,28 @@
 
 .navLink:hover {
   color: var(--primaria);
+}
+
+/* Botão Admin desktop */
+.navLinkAdmin { 
+  display: inline-block;
+  color: var(--primaria-escura);
+  font-family: var(--fonte-corpo);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-small);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.navLinkAdmin:hover {
+  background-color: var(--primaria-escura);
+  color: var(--superficie) !important;
 }
 
 /* Botão agendar desktop */
@@ -61,8 +81,9 @@
   color: var(--superficie) !important;
 }
 
-/* ── Hambúrguer ─────────────────────────────────────────────────── */
-/* Bootstrap tem .navbar-toggler mas o estilo é customizado */
+
+
+/* ── Menu Hambúrguer ─────────────────────────────────────────────────── */
 .toggler {
   display: flex;
   flex-direction: column;
@@ -170,4 +191,27 @@
 
 .drawerBtnAgendar:hover {
   background-color: var(--primaria-escura);
+}
+
+/* Drawer Admin - destaque dos links normais */
+.drawerItemAdmin {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--borda-escura);
+}
+
+.drawerLinkAdmin {
+  display: block;
+  color: var(--primaria-escura);
+  font-family: var(--fonte-corpo);
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 1rem 0;
+  transition: color 0.2s ease;
+}
+
+.drawerLinkAdmin:hover {
+  color: var(--primaria)
 }

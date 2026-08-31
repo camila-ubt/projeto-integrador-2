@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
-  const [carregando, setCarregando] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   //   Lógica do componente
   async function aoEnviar(e) {
@@ -40,17 +41,17 @@ export default function AdminLogin() {
       router.push("/admin/dashboard");
     }
   }
-  
+
   // Renderização do componente
   return (
     <div
-      className="d-flex align-items-center justify-content-center vg=100"
+      className="d-flex align-items-center justify-content-center vh-100"
       style={{ backgroundColor: "var(--fundo)" }}
     >
       <div className="col-11 col-sm-8 col-md-5 col-lg-4 col-xl-3">
         {/*card  */}
         <div
-          className="card border-0 rouded-4 shadow-sm p-4 p-md-5"
+          className="card border-0 rounded-4 shadow-sm p-4 p-md-5"
           style={{ backgroundColor: "var(--superficie)" }}
         >
           {/* Cabeçalho do card */}
@@ -106,7 +107,7 @@ export default function AdminLogin() {
                   border: "1px solid var(--borda-escura)",
                   borderRadius: "var(--radius-medium)",
                   color: "var(--texto-principal)",
-                  fontFamily: "(--fonte-corpo)",
+                  fontFamily: "var(--fonte-corpo)",
                   padding: "10px 14px",
                 }}
               />
@@ -182,11 +183,41 @@ export default function AdminLogin() {
             >
               {carregando ? "Entrando..." : "Entrar"}
             </button>
+
+            {/* Botão voltar */}
+            <Link
+              href="/"
+              className="btn w-100 fw-medium text-uppercase mt-2"
+              style={{
+                display: "block",
+                backgroundColor: "transparent",
+                color: "var(--texto-secundario)",
+                border: "1px solid var(--borda-escura)",
+                borderRadius: "var(--radius-medium)",
+                padding: "11px",
+                fontFamily: "var(--fonte-corpo)",
+                letterSpacing: "0.08em",
+                fontSize: "13px",
+                textDecoration: "none",
+                textAlign: "center",
+                transition: "background-color 0.2s ease, color 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--fundo)";
+                e.currentTarget.style.color = "var(--texto-principal)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent"
+                e.currentTarget.style.color = "var(--texto-secundario)"
+              }}
+            >
+              ← Voltar ao site
+            </Link>
           </form>
 
           {/* Rodapé */}
           <p
-            className="text-center mt-4 mb-o"
+            className="text-center mt-4 mb-0"
             style={{
               fontSize: "11px",
               color: "var(--borda-escura)",

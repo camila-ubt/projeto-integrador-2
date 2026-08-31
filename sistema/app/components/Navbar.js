@@ -20,6 +20,19 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Efeito de fechar menu ao redimensionar tela
+  useEffect(() => {
+    function aoRedimensionar() {
+      if(window.innerWidth >= 992) {
+        setMenuAberto(false)
+      }
+    }
+    window.addEventListener('resize', aoRedimensionar, {passive: true})
+
+    // Remove listener quando componente sai da tela (ngOnDestroy)
+    return () => window.removeEventListener('resize', aoRedimensionar)
+  }, [])
+
   // ── Efeito de scroll do body ─────────────────────
   useEffect(() => {
     // Trava o scroll da página quando o drawer estiver aberto
@@ -30,6 +43,8 @@ export default function Navbar() {
   }, [menuAberto]);
 
   const fecharMenu = () => setMenuAberto(false);
+
+
 
   // ── Renderização ────────────────────────────────
   return (

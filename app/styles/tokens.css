@@ -1,41 +1,47 @@
 /* Variáveis globais de design: cores, tipografia, layout */
 
 :root {
+  /* Cores principais */
+  --primaria: #b76e79;
+  --primaria-clara: #f9f1eb;
+  --primaria-escura: #8c6a5a;
 
-    /* Cores principais */
-    --primaria: #B76E79;
-    --primaria-clara: #F9F1EB;
-    --primaria-escura: #8C6A5A;
+  /* Cores secundárias, backgrounds */
+  --fundo: #f9f1eb;
+  --superficie: #ffffff;
+  --destaque: #b76e79;
 
-    /* Cores secundárias, backgrounds */
-    --fundo: #F9F1EB;
-    --superficie: #FFFFFF;
-    --destaque: #B76E79;
+  /* Texto */
+  --texto-principal: #2d1a14;
+  --texto-claro: #4b3f35;
+  --texto-secundario: #8c6a5a;
 
-    /* Texto */
-    --texto-principal: #2D1A14;
-    --texto-claro: #4B3F35;
-    --texto-secundario: #8C6A5A;
+  /* Feedbacks visuais */
+  --sucesso-fundo: #e8f5e9;
+  --sucesso-texto: #2e7d32;
 
-    /* Erro/Alerta */
-    --erro-fundo: #FDECEA;
-    --erro-texto: #922B21;
-    --erro-borda: #F5B7B1;
+  --alerta-fundo: #fff8e1;
+  --alerta-texto: #e65100;
 
-     /* Tipografia */
-    --fonte-titulo: 'Cormorant Garamond', sans-serif;
-    --fonte-corpo: 'Jost', sans-serif;
+  --info-fundo: #e3f2fd;
+  --info-texto: #1565c0;
 
-    /* Bordas e sombras */
-    --borda:  rgba(45, 26, 20, 0.12);
-    --borda-escura: rgba(45, 26, 20, 0.22);
-    --acento-dourado: #D4AF37;
+  --erro-fundo: #fdecea;
+  --erro-texto: #922b21;
+  --erro-borda: #f5b7b1;
 
-    /* Layout */
-    --navbar-altura: 58px;
-    --radius-small: 2px;
-    --radius-medium: 6px;
-    --radius-large: 12px;
-   
+  /* Tipografia */
+  --fonte-titulo: "Cormorant Garamond", sans-serif;
+  --fonte-corpo: "Jost", sans-serif;
 
+  /* Bordas e sombras */
+  --borda: rgba(45, 26, 20, 0.12);
+  --borda-escura: rgba(45, 26, 20, 0.22);
+  --acento-dourado: #d4af37;
+
+  /* Layout */
+  --navbar-altura: 58px;
+  --radius-small: 2px;
+  --radius-medium: 6px;
+  --radius-large: 12px;
 }

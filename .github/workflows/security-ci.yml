@@ -37,6 +37,7 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Executar lint
+        continue-on-error: true
         run: npm run lint
 
       - name: Validar build

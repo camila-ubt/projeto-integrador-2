@@ -31,7 +31,7 @@ jobs:
           cache: npm
 
       - name: Instalar dependências
-        run: npm ci
+        run: npm install
 
       - name: Auditar dependências
         run: npm audit --audit-level=high

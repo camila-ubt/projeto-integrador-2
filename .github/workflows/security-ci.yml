@@ -1,0 +1,43 @@
+name: Segurança e qualidade
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Lint, build e auditoria
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      AUTH_SECRET: segredo-apenas-para-ci
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Auditar dependências
+        run: npm audit --audit-level=high
+
+      - name: Executar lint
+        run: npm run lint
+
+      - name: Validar build
+        run: npm run build

@@ -1,3 +1,5 @@
+import { saudacao } from "@/lib/formatters";
+
 export default function HeaderDashboard({ nome, inicial, saudacao, aoSair }) {
   return (
     <header

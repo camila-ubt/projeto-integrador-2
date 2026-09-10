@@ -91,7 +91,7 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#agendar" className={styles.btnAgendar}>
+                <Link href="/agendar" className={styles.btnAgendar}>
                   Agendar
                 </Link>
               </li>
@@ -174,7 +174,7 @@ export default function Navbar() {
           </li>
           <li className="mt-4">
             <Link
-              href="#agendar"
+              href="/agendar"
               className={`${styles.drawerBtnAgendar} w-100 text-center`}
               onClick={fecharMenu}
             >

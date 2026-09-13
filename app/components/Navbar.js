@@ -86,7 +86,7 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="/admin/login" className={styles.navLinkAdmin}>
+                <Link href="/login" className={styles.navLinkAdmin}>
                   Admin
                 </Link>
               </li>
@@ -165,7 +165,7 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItemAdmin}>
             <Link
-              href="/admin/login"
+              href="/login"
               className={styles.drawerLinkAdmin}
               onClick={fecharMenu}
             >

@@ -61,7 +61,7 @@ export default function PaginaDashboard() {
 
   // Logout
   async function aoSair() {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ callbackUrl: "/" });
   }
 
   // Tela de carregando

@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
       lang="pt-BR"
       className={`${cormorantGaramond.variable} ${jost.variable}`}
     >
-      <body>
+      <body suppressHydrationWarning>
         <BootstrapClient />
 
         {children}

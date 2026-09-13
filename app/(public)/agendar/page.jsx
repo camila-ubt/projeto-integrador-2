@@ -6,6 +6,7 @@ import {
   formatarMoeda,
   formatarData,
   dataMinimaAgendamento,
+  formatarTelefone,
 } from "@/lib/formatters";
 
 const HORARIOS = [
@@ -448,7 +449,7 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
           id="data"
           type="date"
           value={data}
-          min={dataMinima()}
+          min={dataMinimaAgendamento()}
           onChange={(e) => {
             setData(e.target.value);
             setHora("");
@@ -475,7 +476,7 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
               textTransform: "capitalize",
             }}
           >
-            {formatarDataExibicao(data)}
+            {formatarData(data)}
           </p>
         )}
       </div>
@@ -574,13 +575,24 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
 function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
   const [nome, setNome] = useState(dadosSalvos?.nome || "");
   const [telefone, setTelefone] = useState(dadosSalvos?.telefone || "");
-  const [observacoes, setObservacoes] = useState(dadosSalvos?.observacoes || "");
+  const [observacoes, setObservacoes] = useState(
+    dadosSalvos?.observacoes || "",
+  );
   const [erros, setErros] = useState({});
 
   function validar() {
     const novosErros = {};
+
     if (!nome.trim()) novosErros.nome = "Informe seu nome completo.";
-    if (!telefone.trim()) novosErros.telefone = "Informe seu telefone ou WhatsApp.";
+
+    const apenasNumeros = telefone.replace(/\D/g, "");
+
+    if (!telefone.trim()) {
+      novosErros.telefone = "Informe seu telefone ou WhatsApp.";
+    } else if (apenasNumeros.length < 10) {
+      novosErros.telefone =
+        "Telefone incompleto. Digite o DDD e o número (ex: 11987654321).";
+    }
     return novosErros;
   }
 
@@ -590,7 +602,11 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       setErros(novosErros);
       return;
     }
-    aoAvancar({ nome: nome.trim(), telefone: telefone.trim(), observacoes: observacoes.trim() });
+    aoAvancar({
+      nome: nome.trim(),
+      telefone: telefone.trim(),
+      observacoes: observacoes.trim(),
+    });
   }
 
   const estiloLabel = {
@@ -648,13 +664,18 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       </p>
 
       <div style={{ marginBottom: "16px" }}>
-        <label htmlFor="nome" style={estiloLabel}>Nome completo</label>
+        <label htmlFor="nome" style={estiloLabel}>
+          Nome completo
+        </label>
         <input
           id="nome"
           type="text"
           placeholder="Maria Silva"
           value={nome}
-          onChange={(e) => { setNome(e.target.value); setErros((p) => ({ ...p, nome: "" })); }}
+          onChange={(e) => {
+            setNome(e.target.value);
+            setErros((p) => ({ ...p, nome: "" }));
+          }}
           style={estiloInput(erros.nome)}
           autoComplete="name"
         />
@@ -662,13 +683,20 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       </div>
 
       <div style={{ marginBottom: "16px" }}>
-        <label htmlFor="telefone" style={estiloLabel}>Telefone / WhatsApp</label>
+        <label htmlFor="telefone" style={estiloLabel}>
+          Telefone / WhatsApp
+        </label>
         <input
           id="telefone"
           type="tel"
           placeholder="(11) 99999-0000"
           value={telefone}
-          onChange={(e) => { setTelefone(e.target.value); setErros((p) => ({ ...p, telefone: "" })); }}
+          maxLength={15}
+          onChange={(e) => {
+            const valorFormatado = formatarTelefone(e.target.value);
+            setTelefone(valorFormatado);
+            setErros((p) => ({ ...p, telefone: "" }));
+          }}
           style={estiloInput(erros.telefone)}
           autoComplete="tel"
         />
@@ -678,7 +706,9 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       <div style={{ marginBottom: "24px" }}>
         <label htmlFor="obs" style={estiloLabel}>
           Observações{" "}
-          <span style={{ fontWeight: 400, color: "var(--borda-escura)" }}>(opcional)</span>
+          <span style={{ fontWeight: 400, color: "var(--borda-escura)" }}>
+            (opcional)
+          </span>
         </label>
         <textarea
           id="obs"
@@ -736,7 +766,15 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
   );
 }
 
-function EtapaConfirmacao({ servico, dataHora, dados, aoVoltar, aoConfirmar, enviando, erro }) {
+function EtapaConfirmacao({
+  servico,
+  dataHora,
+  dados,
+  aoVoltar,
+  aoConfirmar,
+  enviando,
+  erro,
+}) {
   const linhaResumo = {
     display: "flex",
     justifyContent: "space-between",
@@ -798,14 +836,21 @@ function EtapaConfirmacao({ servico, dataHora, dados, aoVoltar, aoConfirmar, env
       >
         <div style={linhaResumo}>
           <span style={estiloChave}>Serviço</span>
-          <span style={{ ...estiloValor, fontStyle: "italic", fontFamily: "var(--fonte-titulo)", fontSize: "16px" }}>
+          <span
+            style={{
+              ...estiloValor,
+              fontStyle: "italic",
+              fontFamily: "var(--fonte-titulo)",
+              fontSize: "16px",
+            }}
+          >
             {servico.nome}
           </span>
         </div>
         <div style={linhaResumo}>
           <span style={estiloChave}>Data</span>
           <span style={{ ...estiloValor, textTransform: "capitalize" }}>
-            {formatarDataExibicao(dataHora.data)}
+            {formatarData(dataHora.data)}
           </span>
         </div>
         <div style={linhaResumo}>
@@ -823,7 +868,9 @@ function EtapaConfirmacao({ servico, dataHora, dados, aoVoltar, aoConfirmar, env
         {dados.observacoes && (
           <div style={{ ...linhaResumo, borderBottom: "none", paddingTop: 0 }}>
             <span style={estiloChave}>Obs.</span>
-            <span style={{ ...estiloValor, fontWeight: 400, fontSize: "13px" }}>{dados.observacoes}</span>
+            <span style={{ ...estiloValor, fontWeight: 400, fontSize: "13px" }}>
+              {dados.observacoes}
+            </span>
           </div>
         )}
       </div>
@@ -890,7 +937,8 @@ function EtapaConfirmacao({ servico, dataHora, dados, aoVoltar, aoConfirmar, env
           lineHeight: 1.6,
         }}
       >
-        Ao confirmar, a Paola receberá seu pedido e entrará em contato pelo WhatsApp para finalizar.
+        Ao confirmar, a Paola receberá seu pedido e entrará em contato pelo
+        WhatsApp para finalizar.
       </p>
 
       <div style={{ display: "flex", gap: "10px" }}>
@@ -920,7 +968,9 @@ function EtapaConfirmacao({ servico, dataHora, dados, aoVoltar, aoConfirmar, env
           style={{
             flex: 2,
             padding: "14px",
-            backgroundColor: enviando ? "var(--primaria-escura)" : "var(--primaria)",
+            backgroundColor: enviando
+              ? "var(--primaria-escura)"
+              : "var(--primaria)",
             color: "white",
             border: "none",
             borderRadius: "var(--radius-medium)",
@@ -1031,7 +1081,7 @@ function Sucesso({ servico, dataHora, dados }) {
             textTransform: "capitalize",
           }}
         >
-          {formatarDataExibicao(dataHora.data)} às {dataHora.hora}
+          {formatarData(dataHora.data)} às {dataHora.hora}
         </p>
         <p
           style={{
@@ -1089,7 +1139,7 @@ export default function PaginaAgendamento() {
     try {
       // 1. Buscar ou criar cliente pelo telefone
       const buscaCliente = await fetch(
-        `/api/clientes?busca=${encodeURIComponent(dados.telefone)}`
+        `/api/clientes?busca=${encodeURIComponent(dados.telefone)}`,
       );
       const clientesExistentes = await buscaCliente.json();
 
@@ -1132,7 +1182,9 @@ export default function PaginaAgendamento() {
         if (criarAgendamento.status === 409) {
           throw new Error("Esse horário já está ocupado. Escolha outro.");
         }
-        throw new Error(body?.error || "Não foi possível confirmar. Tente novamente.");
+        throw new Error(
+          body?.error || "Não foi possível confirmar. Tente novamente.",
+        );
       }
 
       setConcluido(true);
@@ -1209,14 +1261,20 @@ export default function PaginaAgendamento() {
             {etapa === 0 && (
               <EtapaServico
                 servicoSelecionado={servico}
-                aoAvancar={(s) => { setServico(s); setEtapa(1); }}
+                aoAvancar={(s) => {
+                  setServico(s);
+                  setEtapa(1);
+                }}
               />
             )}
 
             {etapa === 1 && (
               <EtapaData
                 dataHoraSelecionada={dataHora}
-                aoAvancar={(dh) => { setDataHora(dh); setEtapa(2); }}
+                aoAvancar={(dh) => {
+                  setDataHora(dh);
+                  setEtapa(2);
+                }}
                 aoVoltar={() => setEtapa(0)}
               />
             )}
@@ -1224,7 +1282,10 @@ export default function PaginaAgendamento() {
             {etapa === 2 && (
               <EtapaDados
                 dadosSalvos={dados}
-                aoAvancar={(d) => { setDados(d); setEtapa(3); }}
+                aoAvancar={(d) => {
+                  setDados(d);
+                  setEtapa(3);
+                }}
                 aoVoltar={() => setEtapa(1)}
               />
             )}
@@ -1246,4 +1307,3 @@ export default function PaginaAgendamento() {
     </div>
   );
 }
-

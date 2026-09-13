@@ -398,50 +398,31 @@ function EtapaServico({ servicoSelecionado, aoAvancar }) {
   );
 }
 
-function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
+function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
   const [data, setData] = useState(dataHoraSelecionada?.data || "");
   const [hora, setHora] = useState(dataHoraSelecionada?.hora || "");
 
-  //Guarda a lista filtrada e o status de carregamento
-  const [horariosDisponiveis, setHorariosDisponiveis] = useState([]);
+  // Guarda a lista com os agendamentos reais e completos que vieram do banco
+  const [agendamentosDoDia, setAgendamentosDoDia] = useState([]);
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
-  // Busca os horários ocupados e filtra a lista
   useEffect(() => {
-    if (!data) return; // Se não tem data escolhida, não faz nada
+    if (!data) return; 
 
     async function buscarHorariosLivres() {
       setCarregandoHorarios(true);
-      setHora(""); // Limpa a hora caso o cliente mude de dia no meio do processo
+      setHora(""); 
 
       try {
-        // 1.Intervalo de busca para o dia todo
         const inicioDoDia = `${data}T00:00:00.000Z`;
         const fimDoDia = `${data}T23:59:59.999Z`;
 
-        // 2. Chama a API passando os filtros
         const res = await fetch(
           `/api/agendamentos?inicio=${inicioDoDia}&fim=${fimDoDia}`
         );
-        const agendamentosOcupados = await res.json();
+        const dadosOcupados = await res.json();
 
-        // 3. Extrai apenas a hora (em formato "HH:MM") dos agendamentos que voltaram
-        const horasOcupadas = agendamentosOcupados.map((agendamento) => {
-          const dataObj = new Date(agendamento.inicio);
-          // Pega a hora no formato de Brasília para bater com a lista
-          return dataObj.toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "America/Sao_Paulo",
-          });
-        });
-
-        // 4. Filtra a lista completa, tirando o que já está ocupado
-        const horinhasLivres = TODOS_OS_HORARIOS.filter(
-          (h) => !horasOcupadas.includes(h)
-        );
-
-        setHorariosDisponiveis(horinhasLivres);
+        setAgendamentosDoDia(dadosOcupados);
       } catch (erro) {
         console.error("Erro ao buscar horários", erro);
       } finally {
@@ -546,8 +527,7 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
           >
             Horário
           </p>
-          
-          {/*Controle de tela (Carregando, Vazio ou Lista) */}
+
           {carregandoHorarios ? (
             <p
               style={{
@@ -556,17 +536,7 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
                 color: "var(--texto-secundario)",
               }}
             >
-              Buscando horários livres... 🕵️‍♀️
-            </p>
-          ) : horariosDisponiveis.length === 0 ? (
-            <p
-              style={{
-                fontFamily: "var(--fonte-corpo)",
-                fontSize: "13px",
-                color: "var(--erro-texto)",
-              }}
-            >
-              Poxa, nenhum horário livre para esse dia. Tente outra data! 🗓️
+              Buscando horários da agenda... 🕵️‍♀️
             </p>
           ) : (
             <div
@@ -576,30 +546,64 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
                 gap: "8px",
               }}
             >
-              {/* O .map usa a lista filtrada horariosDisponiveis */}
-              {horariosDisponiveis.map((h) => (
-                <button
-                  key={h}
-                  type="button"
-                  onClick={() => setHora(h)}
-                  style={{
-                    padding: "10px 4px",
-                    borderRadius: "var(--radius-medium)",
-                    border: `2px solid ${hora === h ? "var(--primaria)" : "var(--borda)"}`,
-                    backgroundColor:
-                      hora === h ? "rgba(183,110,121,0.08)" : "var(--superficie)",
-                    color:
-                      hora === h ? "var(--primaria)" : "var(--texto-principal)",
-                    fontFamily: "var(--fonte-corpo)",
-                    fontSize: "13px",
-                    fontWeight: hora === h ? 600 : 400,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {h}
-                </button>
-              ))}
+              {TODOS_OS_HORARIOS.map((h) => {
+                // Cálculo de conflito baseado no tempo de duração
+                const [horaH, horaM] = h.split(":").map(Number);
+                const [ano, mes, dia] = data.split("-").map(Number);
+                const duracao = servico?.duracao_minutos || 60;
+                
+                // Monta o horário de início e fim que o cliente está tentando clicar
+                const inicioDesejado = new Date(ano, mes - 1, dia, horaH, horaM);
+                const fimDesejado = new Date(inicioDesejado.getTime() + duracao * 60 * 1000);
+                
+                // Verifica se o espaço desejado sobrepõe alguma consulta agendada
+                const ocupado = agendamentosDoDia.some((agendamento) => {
+                  const inicioAgendado = new Date(agendamento.inicio);
+                  const fimAgendado = new Date(agendamento.fim);
+                  return inicioDesejado < fimAgendado && fimDesejado > inicioAgendado;
+                });
+
+                const selecionado = hora === h;
+
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    disabled={ocupado}
+                    onClick={() => setHora(h)}
+                    style={{
+                      padding: "10px 4px",
+                      borderRadius: "var(--radius-medium)",
+                      border: `2px solid ${
+                        ocupado
+                          ? "var(--borda-escura)"
+                          : selecionado
+                            ? "var(--primaria)"
+                            : "var(--borda)"
+                      }`,
+                      backgroundColor: ocupado
+                        ? "transparent"
+                        : selecionado
+                          ? "rgba(183,110,121,0.08)"
+                          : "var(--superficie)",
+                      color: ocupado
+                        ? "var(--texto-secundario)"
+                        : selecionado
+                          ? "var(--primaria)"
+                          : "var(--texto-principal)",
+                      fontFamily: "var(--fonte-corpo)",
+                      fontSize: "13px",
+                      fontWeight: selecionado ? 600 : 400,
+                      cursor: ocupado ? "not-allowed" : "pointer",
+                      textDecoration: ocupado ? "line-through" : "none",
+                      opacity: ocupado ? 0.4 : 1,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {h}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1345,6 +1349,7 @@ export default function PaginaAgendamento() {
 
             {etapa === 1 && (
               <EtapaData
+                servico={servico}
                 dataHoraSelecionada={dataHora}
                 aoAvancar={(dh) => {
                   setDataHora(dh);

@@ -9,7 +9,7 @@ import {
   formatarTelefone,
 } from "@/lib/formatters";
 
-const HORARIOS = [
+const TODOS_OS_HORARIOS = [
   "08:00",
   "08:30",
   "09:00",
@@ -402,6 +402,56 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
   const [data, setData] = useState(dataHoraSelecionada?.data || "");
   const [hora, setHora] = useState(dataHoraSelecionada?.hora || "");
 
+  //Guarda a lista filtrada e o status de carregamento
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState([]);
+  const [carregandoHorarios, setCarregandoHorarios] = useState(false);
+
+  // Busca os horários ocupados e filtra a lista
+  useEffect(() => {
+    if (!data) return; // Se não tem data escolhida, não faz nada
+
+    async function buscarHorariosLivres() {
+      setCarregandoHorarios(true);
+      setHora(""); // Limpa a hora caso o cliente mude de dia no meio do processo
+
+      try {
+        // 1.Intervalo de busca para o dia todo
+        const inicioDoDia = `${data}T00:00:00.000Z`;
+        const fimDoDia = `${data}T23:59:59.999Z`;
+
+        // 2. Chama a API passando os filtros
+        const res = await fetch(
+          `/api/agendamentos?inicio=${inicioDoDia}&fim=${fimDoDia}`
+        );
+        const agendamentosOcupados = await res.json();
+
+        // 3. Extrai apenas a hora (em formato "HH:MM") dos agendamentos que voltaram
+        const horasOcupadas = agendamentosOcupados.map((agendamento) => {
+          const dataObj = new Date(agendamento.inicio);
+          // Pega a hora no formato de Brasília para bater com a lista
+          return dataObj.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo",
+          });
+        });
+
+        // 4. Filtra a lista completa, tirando o que já está ocupado
+        const horinhasLivres = TODOS_OS_HORARIOS.filter(
+          (h) => !horasOcupadas.includes(h)
+        );
+
+        setHorariosDisponiveis(horinhasLivres);
+      } catch (erro) {
+        console.error("Erro ao buscar horários", erro);
+      } finally {
+        setCarregandoHorarios(false);
+      }
+    }
+
+    buscarHorariosLivres();
+  }, [data]);
+
   const podeContinuar = data && hora;
 
   return (
@@ -496,37 +546,62 @@ function EtapaData({ dataHoraSelecionada, aoAvancar, aoVoltar }) {
           >
             Horário
           </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "8px",
-            }}
-          >
-            {HORARIOS.map((h) => (
-              <button
-                key={h}
-                type="button"
-                onClick={() => setHora(h)}
-                style={{
-                  padding: "10px 4px",
-                  borderRadius: "var(--radius-medium)",
-                  border: `2px solid ${hora === h ? "var(--primaria)" : "var(--borda)"}`,
-                  backgroundColor:
-                    hora === h ? "rgba(183,110,121,0.08)" : "var(--superficie)",
-                  color:
-                    hora === h ? "var(--primaria)" : "var(--texto-principal)",
-                  fontFamily: "var(--fonte-corpo)",
-                  fontSize: "13px",
-                  fontWeight: hora === h ? 600 : 400,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {h}
-              </button>
-            ))}
-          </div>
+          
+          {/*Controle de tela (Carregando, Vazio ou Lista) */}
+          {carregandoHorarios ? (
+            <p
+              style={{
+                fontFamily: "var(--fonte-corpo)",
+                fontSize: "13px",
+                color: "var(--texto-secundario)",
+              }}
+            >
+              Buscando horários livres... 🕵️‍♀️
+            </p>
+          ) : horariosDisponiveis.length === 0 ? (
+            <p
+              style={{
+                fontFamily: "var(--fonte-corpo)",
+                fontSize: "13px",
+                color: "var(--erro-texto)",
+              }}
+            >
+              Poxa, nenhum horário livre para esse dia. Tente outra data! 🗓️
+            </p>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "8px",
+              }}
+            >
+              {/* O .map usa a lista filtrada horariosDisponiveis */}
+              {horariosDisponiveis.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setHora(h)}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "var(--radius-medium)",
+                    border: `2px solid ${hora === h ? "var(--primaria)" : "var(--borda)"}`,
+                    backgroundColor:
+                      hora === h ? "rgba(183,110,121,0.08)" : "var(--superficie)",
+                    color:
+                      hora === h ? "var(--primaria)" : "var(--texto-principal)",
+                    fontFamily: "var(--fonte-corpo)",
+                    fontSize: "13px",
+                    fontWeight: hora === h ? 600 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div style={{ display: "flex", gap: "10px" }}>

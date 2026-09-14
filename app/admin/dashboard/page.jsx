@@ -4,28 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { buscarResumoDashboard } from "@/services/resumoDashboard";
+import { saudacao, formatarDataHoje } from "@/lib/formatters";
 
 import HeaderDashboard from "@/app/admin/components/HeaderDashboard";
 import CardsResumo from "@/app/admin/components/CardsResumo";
 import ListaAgendamentos from "@/app/admin/components/ListaAgendamentos";
 import ListaRetornos from "@/app/admin/components/ListaRetornos";
 
-// Funções globais que ficam no page pois são usadas para montar os dados passados como props
-function saudacao() {
-  const hora = new Date().getHours();
-  if (hora < 12) return "Bom dia";
-  if (hora < 18) return "Boa tarde";
-  return "Boa noite";
-}
-
-function formatarDataHoje() {
-  return new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 export default function PaginaDashboard() {
   const roteador = useRouter();
@@ -76,7 +61,7 @@ export default function PaginaDashboard() {
 
   // Logout
   async function aoSair() {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ callbackUrl: "/" });
   }
 
   // Tela de carregando

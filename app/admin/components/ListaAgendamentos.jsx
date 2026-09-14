@@ -1,12 +1,5 @@
-// Formata timestamp para "09:00"
-// Fica aqui pois só esse componente usa essa função
-function formatarHora(valor) {
-  const data = new Date(valor)
-  return data.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
+import { formatarHora } from "@/lib/formatters"
+
 
 export default function ListaAgendamentos({ agendamentos }) {
   return (

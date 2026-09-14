@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from "react"
+import { useEffect } from "react"
 
 //Importa o JS do Bootstrap apenas no navegador
 //Necessário porque o Bootstrap acessa o 'window', que não existe no navegador

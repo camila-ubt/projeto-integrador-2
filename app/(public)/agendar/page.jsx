@@ -8,6 +8,7 @@ import {
   dataMinimaAgendamento,
   formatarTelefone,
 } from "@/lib/formatters";
+import { IcoCalendario, IcoCheck, IcoRelogio } from "@/app/components/icons";
 
 const TODOS_OS_HORARIOS = [
   "08:00",
@@ -214,7 +215,7 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
                 color: "var(--texto-secundario)",
               }}
             >
-              ⏱ {servico.duracao_minutos} min
+              <IcoRelogio size={'12px'} /> {servico.duracao_minutos} min
             </span>
           )}
           {servico.necessita_avaliacao && (
@@ -838,7 +839,7 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
             transition: "background-color 0.2s ease",
           }}
         >
-          Revisar pedido
+          Revisar agendamento
         </button>
       </div>
     </div>
@@ -1016,7 +1017,7 @@ function EtapaConfirmacao({
           lineHeight: 1.6,
         }}
       >
-        Ao confirmar, a Paola receberá seu pedido e entrará em contato pelo
+        Ao confirmar, a Paola receberá seu agendamento e entrará em contato pelo
         WhatsApp para finalizar.
       </p>
 
@@ -1084,6 +1085,22 @@ function EtapaConfirmacao({
 }
 
 function Sucesso({ servico, dataHora, dados }) {
+  // 1. Calcula as datas de início e fim
+  const [ano, mes, dia] = dataHora.data.split("-").map(Number);
+  const [horaH, horaM] = dataHora.hora.split(":").map(Number);
+  const duracao = servico.duracao_minutos || 60;
+  
+  const dataInicio = new Date(ano, mes - 1, dia, horaH, horaM);
+  const dataFim = new Date(dataInicio.getTime() + duracao * 60 * 1000);
+
+  // 2. Formata a data do jeito que o Google exige (YYYYMMDDTHHMMSSZ)
+  const formataDataGCal = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+  
+  // 3. Cria os textos e junta tudo na URL do Google Calendar
+  const titulo = encodeURIComponent(`Agendamento: ${servico.nome} com Paola`);
+  const detalhes = encodeURIComponent(`Cliente: ${dados.nome}\nTelefone: ${dados.telefone}`);
+  const linkAgenda = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formataDataGCal(dataInicio)}/${formataDataGCal(dataFim)}&details=${detalhes}`;
+
   return (
     <div style={{ textAlign: "center", padding: "16px 0" }}>
       <div
@@ -1099,7 +1116,7 @@ function Sucesso({ servico, dataHora, dados }) {
           fontSize: "28px",
         }}
       >
-        ✓
+        <IcoCheck size={'28px'} />
       </div>
 
       <h2
@@ -1112,7 +1129,7 @@ function Sucesso({ servico, dataHora, dados }) {
           marginBottom: "8px",
         }}
       >
-        Pedido enviado!
+        Agendamento solicitado!
       </h2>
 
       <p
@@ -1174,13 +1191,39 @@ function Sucesso({ servico, dataHora, dados }) {
         </p>
       </div>
 
+      {/* Botão do Google Calendar */}
+      <a
+        href={linkAgenda}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          padding: "14px",
+          backgroundColor: "var(--primaria)",
+          color: "white",
+          borderRadius: "var(--radius-medium)",
+          fontFamily: "var(--fonte-corpo)",
+          fontSize: "14px",
+          fontWeight: 600,
+          textDecoration: "none",
+          marginBottom: "12px",
+        }}
+      >
+        <IcoCalendario /> Adicionar a agenda do Google
+      </a>
+
+      {/* Botão original de voltar */}
       <Link
         href="/"
         style={{
           display: "block",
           padding: "14px",
-          backgroundColor: "var(--primaria)",
-          color: "white",
+          backgroundColor: "transparent",
+          color: "var(--texto-secundario)",
+          border: "1px solid var(--borda)",
           borderRadius: "var(--radius-medium)",
           fontFamily: "var(--fonte-corpo)",
           fontSize: "14px",

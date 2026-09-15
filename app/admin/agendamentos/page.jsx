@@ -1,0 +1,753 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { formatarDataCurta, formatarHora } from "@/lib/formatters";
+import {
+  IcoAgendamentos,
+  IcoEditar,
+  IcoCancelar,
+  IcoCalendario,
+} from "@/app/components/icons";
+import styles from "./Agendamentos.module.css";
+
+export default function Agendamentos() {
+  const [agendamentos, setAgendamentos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  // Filtros
+  const [filtroCliente, setFiltroCliente] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
+
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10;
+
+  // Modal de confirmação de cancelamento e edição
+  const [modalDeletar, setModalDeletar] = useState({
+    aberto: false,
+    agenda: null,
+  });
+  const [modalEditar, setModalEditar] = useState({
+    aberto: false,
+    agenda: null,
+  });
+  const [editando, setEditando] = useState(false);
+  const [camposEdicao, setCamposEdicao] = useState({
+    status: "",
+    observacoes: "",
+  });
+
+  useEffect(() => {
+    const fetchAgendamentos = async () => {
+      try {
+        const res = await fetch("/api/agendamentos");
+        if (!res.ok) throw new Error("Erro ao buscar agendamentos");
+        const data = await res.json();
+        setAgendamentos(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Erro ao buscar agendamentos:", err);
+        setErro("Não foi possível carregar os agendamentos. Tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgendamentos();
+  }, []);
+
+  const exibirServicos = (agenda) => {
+    if (!agenda.servicos) return "—";
+    if (Array.isArray(agenda.servicos))
+      return agenda.servicos.map((s) => s.nome).join(", ");
+    return agenda.servicos;
+  };
+
+  const getBadgeClass = (status) => {
+    const map = {
+      agendado: styles.statusAgendado,
+      realizado: styles.statusRealizado,
+      cancelado: styles.statusCancelado,
+      faltou: styles.statusFaltou,
+    };
+    return `${styles.badgeStatus} ${map[status?.toLowerCase()] || ""}`;
+  };
+
+  const getLabelStatus = (status) => {
+    const labels = {
+      agendado: "Agendado",
+      realizado: "Realizado",
+      cancelado: "Cancelado",
+      faltou: "Faltou",
+    };
+    return labels[status?.toLowerCase()] || status;
+  };
+
+  // Filtragem
+  const agendamentosFiltrados = agendamentos.filter((agenda) => {
+    const matchCliente = agenda.cliente_nome
+      ?.toLowerCase()
+      .includes(filtroCliente.toLowerCase());
+    const matchStatus = filtroStatus === "" || agenda.status === filtroStatus;
+
+    let matchData = true;
+    if (filtroDataInicio || filtroDataFim) {
+      const dataAgenda = agenda.inicio.split("T")[0];
+      if (filtroDataInicio && dataAgenda < filtroDataInicio) matchData = false;
+      if (filtroDataFim && dataAgenda > filtroDataFim) matchData = false;
+    }
+
+    return matchCliente && matchStatus && matchData;
+  });
+
+  // Paginação
+  const indiceUltimoItem = paginaAtual * itensPorPagina;
+  const indicePrimeiroItem = indiceUltimoItem - itensPorPagina;
+  const itensAtuais = agendamentosFiltrados.slice(
+    indicePrimeiroItem,
+    indiceUltimoItem,
+  );
+  const totalPaginas = Math.ceil(agendamentosFiltrados.length / itensPorPagina);
+
+  const temFiltroAtivo =
+    filtroCliente || filtroStatus || filtroDataInicio || filtroDataFim;
+
+  const limparFiltros = () => {
+    setFiltroCliente("");
+    setFiltroStatus("");
+    setFiltroDataInicio("");
+    setFiltroDataFim("");
+    setPaginaAtual(1);
+  };
+
+  const [deletando, setDeletando] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  const handleDeletar = (agenda) => {
+    setModalDeletar({ aberto: true, agenda });
+  };
+
+  const confirmarDeletar = async () => {
+    setDeletando(true);
+    try {
+      const res = await fetch(`/api/agendamentos/${modalDeletar.agenda.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Erro ao excluir agendamento.");
+      }
+
+      // Remove da lista local sem precisar recarregar a página
+      setAgendamentos((prev) =>
+        prev.filter((a) => a.id !== modalDeletar.agenda.id),
+      );
+      setFeedback({
+        tipo: "sucesso",
+        msg: "Agendamento excluído com sucesso.",
+      });
+    } catch (err) {
+      setFeedback({ tipo: "erro", msg: err.message });
+    } finally {
+      setDeletando(false);
+      setModalDeletar({ aberto: false, agenda: null });
+      // Limpa o feedback após 4 segundos
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  const handleEditar = (agenda) => {
+    setCamposEdicao({
+      status: agenda.status ?? "",
+      observacoes: agenda.observacoes ?? "",
+    });
+    setModalEditar({ aberto: true, agenda });
+  };
+
+  const confirmarEdicao = async () => {
+    setEditando(true);
+    try {
+      const res = await fetch(`/api/agendamentos/${modalEditar.agenda.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: camposEdicao.status || undefined,
+          observacoes: camposEdicao.observacoes || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Erro ao atualizar agendamento.");
+      }
+
+      const atualizado = await res.json();
+
+      // Atualiza o item na lista local sem recarregar
+      setAgendamentos((prev) =>
+        prev.map((a) =>
+          a.id === modalEditar.agenda.id
+            ? {
+                ...a,
+                status: atualizado.status,
+                observacoes: atualizado.observacoes,
+              }
+            : a,
+        ),
+      );
+
+      setFeedback({
+        tipo: "sucesso",
+        msg: "Agendamento atualizado com sucesso.",
+      });
+    } catch (err) {
+      setFeedback({ tipo: "erro", msg: err.message });
+    } finally {
+      setEditando(false);
+      setModalEditar({ aberto: false, agenda: null });
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────
+
+  return (
+    <div className="container-fluid py-4 px-3 px-md-4">
+      {/* ── Cabeçalho ──────────────────────────────────────────────── */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className={styles.tituloPagina}>Agendamentos</h1>
+
+        {/* Mobile: só ícone  */}
+        <button
+          className={`btn-primario d-flex d-md-none align-items-center justify-content-center ${styles.btnNovoIcone}`}
+          aria-label="Novo agendamento"
+          title="Novo agendamento"
+        >
+          <IcoAgendamentos size={18} />
+        </button>
+
+        {/* Desktop: botão com texto completo */}
+        <button className="btn-primario d-none d-md-flex align-items-center gap-2">
+          <IcoAgendamentos size={18} />
+          Novo Agendamento
+        </button>
+      </div>
+      {/* ── Filtros ─────── */}
+      <div className={`${styles.cardFiltros} mb-4`}>
+        <div className="row g-2">
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro}>Cliente</label>
+            <input
+              type="text"
+              className={`form-control ${styles.inputFiltro}`}
+              placeholder="Nome do cliente..."
+              value={filtroCliente}
+              onChange={(e) => {
+                setFiltroCliente(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-8 col-md-3">
+            <label className={styles.labelFiltro}>Status</label>
+            <select
+              className={`form-select ${styles.inputFiltro}`}
+              value={filtroStatus}
+              onChange={(e) => {
+                setFiltroStatus(e.target.value);
+                setPaginaAtual(1);
+              }}
+            >
+              <option value="">Todos</option>
+              <option value="agendado">Agendado</option>
+              <option value="realizado">Realizado</option>
+              <option value="cancelado">Cancelado</option>
+              <option value="faltou">Faltou</option>
+            </select>
+          </div>
+
+          <div className="col-4 col-md-1 d-flex align-items-end">
+            <button
+              className={`${styles.btnLimpar} w-100`}
+              onClick={limparFiltros}
+              disabled={!temFiltroAtivo}
+              title="Limpar filtros"
+            >
+              <span className="d-md-none">
+                <IcoCancelar />
+              </span>
+              <span className="d-none d-md-inline">Limpar</span>
+            </button>
+          </div>
+
+          <div className="col-6 col-md-2">
+            <label className={styles.labelFiltro}>De</label>
+            <input
+              type="date"
+              className={`form-control ${styles.inputFiltro}`}
+              value={filtroDataInicio}
+              onChange={(e) => {
+                setFiltroDataInicio(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-6 col-md-2">
+            <label className={styles.labelFiltro}>Até</label>
+            <input
+              type="date"
+              className={`form-control ${styles.inputFiltro}`}
+              value={filtroDataFim}
+              onChange={(e) => {
+                setFiltroDataFim(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+      {/* ── Erro de carregamento ─────── */}
+      {erro && (
+        <div
+          className="rounded-3 py-2 px-3 mb-4 small"
+          role="alert"
+          style={{
+            backgroundColor: "var(--erro-fundo)",
+            color: "var(--erro-texto)",
+            border: "1px solid var(--erro-borda)",
+            fontFamily: "var(--fonte-corpo)",
+          }}
+        >
+          {erro}
+        </div>
+      )}
+      {feedback && (
+        <div
+          className="rounded-3 py-2 px-3 mb-4 small"
+          role="alert"
+          style={{
+            backgroundColor:
+              feedback.tipo === "sucesso"
+                ? "var(--sucesso-fundo)"
+                : "var(--erro-fundo)",
+            color:
+              feedback.tipo === "sucesso"
+                ? "var(--sucesso-texto)"
+                : "var(--erro-texto)",
+            border: `1px solid ${feedback.tipo === "sucesso" ? "var(--sucesso-texto)" : "var(--erro-borda)"}`,
+            fontFamily: "var(--fonte-corpo)",
+          }}
+        >
+          {feedback.msg}
+        </div>
+      )}
+      {/* ── Loading ───────── */}
+      {loading ? (
+        <div className={styles.loadingState}>
+          <div
+            className="spinner-border spinner-border-sm text-secondary me-2"
+            role="status"
+          />
+          Carregando agendamentos...
+        </div>
+      ) : agendamentosFiltrados.length === 0 ? (
+        /* ── Estado vazio ───────── */
+        <div className={styles.estadoVazio}>
+          <IcoAgendamentos size={40} />
+          <p className="mb-1 fw-medium">Nenhum agendamento encontrado</p>
+          {temFiltroAtivo && (
+            <button className={styles.btnLimpar} onClick={limparFiltros}>
+              Limpar filtros
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="d-md-none">
+            {itensAtuais.map((agenda) => (
+              <div key={agenda.id} className={styles.cardMobile}>
+                <span className={styles.cardHoraDestaque}>
+                  {formatarHora(agenda.inicio)}
+                </span>
+
+                <div className={styles.cardCentro}>
+                  <p className={styles.cardCliente}>{agenda.cliente_nome}</p>
+                  <p className={styles.cardServico}>{exibirServicos(agenda)}</p>
+                  <p className={styles.cardData}>
+                    {formatarDataCurta(agenda.inicio)}
+                  </p>
+                </div>
+
+                <div className={styles.cardDireita}>
+                  <span className={getBadgeClass(agenda.status)}>
+                    {getLabelStatus(agenda.status)}
+                  </span>
+                  <div className={styles.cardAcoes}>
+                    <button
+                      className={styles.btnIcone}
+                      title="Editar agendamento"
+                      aria-label="Editar agendamento"
+                      onClick={() => handleEditar(agenda)}
+                    >
+                      <IcoEditar />
+                    </button>
+                    {agenda.status !== "cancelado" && (
+                      <button
+                        className={styles.btnIconePerigo}
+                        onClick={() => handleDeletar(agenda)}
+                        title="Deletar agendamento"
+                        aria-label="Deletar agendamento"
+                      >
+                        <IcoCancelar />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className={`${styles.cardTabela} d-none d-md-block`}>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className={styles.tableHeader}>
+                  <tr>
+                    <th className="px-4 py-3 border-0">Data/Hora</th>
+                    <th className="py-3 border-0">Cliente</th>
+                    <th className="py-3 border-0">Serviço</th>
+                    <th className="py-3 border-0">Status</th>
+                    <th className="text-end px-4 py-3 border-0">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itensAtuais.map((agenda) => (
+                    <tr key={agenda.id}>
+                      <td className="px-4">
+                        <strong className={styles.tdData}>
+                          {formatarDataCurta(agenda.inicio)}
+                        </strong>
+                        <br />
+                        <span className={styles.tdHora}>
+                          {formatarHora(agenda.inicio)}
+                        </span>
+                      </td>
+                      <td style={{ fontFamily: "var(--fonte-corpo)" }}>
+                        {agenda.cliente_nome}
+                      </td>
+                      <td className={styles.tdServico}>
+                        {exibirServicos(agenda)}
+                      </td>
+                      <td>
+                        <span className={getBadgeClass(agenda.status)}>
+                          {getLabelStatus(agenda.status)}
+                        </span>
+                      </td>
+                      {/* Ações: botões ícone na tabela também */}
+                      <td className="text-end px-4">
+                        <div className="d-flex justify-content-end gap-2">
+                          <button
+                            className={styles.btnIcone}
+                            title="Editar agendamento"
+                            aria-label="Editar agendamento"
+                            onClick={() => handleEditar(agenda)}
+                          >
+                            <IcoEditar />
+                          </button>
+                          {agenda.status !== "cancelado" && (
+                            <button
+                              className={styles.btnIconePerigo}
+                              onClick={() => handleDeletar(agenda)}
+                              title="Deletar agendamento"
+                              aria-label="Deletar agendamento"
+                            >
+                              <IcoCancelar />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginação */}
+            {totalPaginas > 1 && (
+              <div className="card-footer bg-white border-top-0 py-3 d-flex justify-content-center">
+                <nav aria-label="Paginação de agendamentos">
+                  <ul className="pagination mb-0">
+                    <li
+                      className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPaginaAtual(paginaAtual - 1)}
+                        aria-label="Página anterior"
+                      >
+                        ‹
+                      </button>
+                    </li>
+                    {[...Array(totalPaginas)].map((_, index) => (
+                      <li
+                        key={index + 1}
+                        className={`page-item ${paginaAtual === index + 1 ? "active" : ""}`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() => setPaginaAtual(index + 1)}
+                          style={
+                            paginaAtual === index + 1
+                              ? {
+                                  backgroundColor: "var(--primaria)",
+                                  borderColor: "var(--primaria)",
+                                  color: "var(--superficie)",
+                                }
+                              : { color: "var(--primaria)" }
+                          }
+                        >
+                          {index + 1}
+                        </button>
+                      </li>
+                    ))}
+                    <li
+                      className={`page-item ${paginaAtual === totalPaginas ? "disabled" : ""}`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPaginaAtual(paginaAtual + 1)}
+                        aria-label="Próxima página"
+                      >
+                        ›
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            )}
+          </div>
+
+          {/* Paginação mobile  */}
+          {totalPaginas > 1 && (
+            <div className="d-flex d-md-none justify-content-center mt-3">
+              <nav aria-label="Paginação">
+                <ul className="pagination pagination-sm mb-0">
+                  <li
+                    className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => setPaginaAtual(paginaAtual - 1)}
+                    >
+                      ‹
+                    </button>
+                  </li>
+                  {[...Array(totalPaginas)].map((_, index) => (
+                    <li
+                      key={index + 1}
+                      className={`page-item ${paginaAtual === index + 1 ? "active" : ""}`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPaginaAtual(index + 1)}
+                        style={
+                          paginaAtual === index + 1
+                            ? {
+                                backgroundColor: "var(--primaria)",
+                                borderColor: "var(--primaria)",
+                                color: "var(--superficie)",
+                              }
+                            : { color: "var(--primaria)" }
+                        }
+                      >
+                        {index + 1}
+                      </button>
+                    </li>
+                  ))}
+                  <li
+                    className={`page-item ${paginaAtual === totalPaginas ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => setPaginaAtual(paginaAtual + 1)}
+                    >
+                      ›
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          )}
+        </>
+      )}
+      {/* ── Modal de confirmação de cancelamento ─────────────────── */}
+      {modalDeletar.aberto && (
+        <div
+          className="modal fade show d-block"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalDeletarTitulo"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h5 className={styles.modalTitulo} id="modalDeletarTitulo">
+                  Deletar agendamento
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Fechar"
+                  onClick={() =>
+                    setModalDeletar({ aberto: false, agenda: null })
+                  }
+                />
+              </div>
+              <div className="modal-body">
+                <p className={styles.modalTexto}>
+                  Tem certeza que deseja deletar o agendamento de{" "}
+                  <strong>{modalDeletar.agenda?.cliente_nome}</strong> em{" "}
+                  {formatarDataCurta(modalDeletar.agenda?.inicio)} às{" "}
+                  {formatarHora(modalDeletar.agenda?.inicio)}?
+                </p>
+              </div>
+              <div className="modal-footer border-0 pt-0 gap-2">
+                <button
+                  className={styles.btnLimpar}
+                  onClick={() =>
+                    setModalDeletar({ aberto: false, agenda: null })
+                  }
+                >
+                  Voltar
+                </button>
+                <button
+                  className={styles.btnIconePerigo}
+                  style={{
+                    width: "auto",
+                    height: "auto",
+                    padding: "0.4rem 1rem",
+                    borderRadius: "var(--radius-medium)",
+                    opacity: deletando ? 0.6 : 1,
+                  }}
+                  disabled={deletando}
+                  onClick={confirmarDeletar}
+                >
+                  {deletando ? "Excluindo..." : "Confirmar exclusão"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+       {/* ── Modal de edição ─────────────────── */}
+      {modalEditar.aberto && (
+        <div
+          className="modal fade show d-block"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalEditarTitulo"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h5 className={styles.modalTitulo} id="modalEditarTitulo">
+                  Editar agendamento
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Fechar"
+                  disabled={editando}
+                  onClick={() =>
+                    setModalEditar({ aberto: false, agenda: null })
+                  }
+                />
+              </div>
+
+              <div className="modal-body d-flex flex-column gap-3">
+                {/* Identificação do agendamento — somente leitura */}
+                <p className={styles.modalTexto} style={{ margin: 0 }}>
+                  <strong>{modalEditar.agenda?.cliente_nome}</strong> —{" "}
+                  {formatarDataCurta(modalEditar.agenda?.inicio)} às{" "}
+                  {formatarHora(modalEditar.agenda?.inicio)}
+                </p>
+
+                {/* Status */}
+                <div>
+                  <label className={styles.labelFiltro} htmlFor="editStatus">
+                    Status
+                  </label>
+                  <select
+                    id="editStatus"
+                    className={`form-select ${styles.inputFiltro}`}
+                    value={camposEdicao.status}
+                    onChange={(e) =>
+                      setCamposEdicao((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="agendado">Agendado</option>
+                    <option value="realizado">Realizado</option>
+                    <option value="cancelado">Cancelado</option>
+                    <option value="faltou">Faltou</option>
+                  </select>
+                </div>
+
+                {/* Observações */}
+                <div>
+                  <label
+                    className={styles.labelFiltro}
+                    htmlFor="editObservacoes"
+                  >
+                    Observações
+                  </label>
+                  <textarea
+                    id="editObservacoes"
+                    className={`form-control ${styles.inputFiltro}`}
+                    rows={3}
+                    placeholder="Observações sobre o atendimento..."
+                    value={camposEdicao.observacoes}
+                    onChange={(e) =>
+                      setCamposEdicao((prev) => ({
+                        ...prev,
+                        observacoes: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer border-0 pt-0 gap-2">
+                <button
+                  className={styles.btnLimpar}
+                  disabled={editando}
+                  onClick={() =>
+                    setModalEditar({ aberto: false, agenda: null })
+                  }
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="btn-primario"
+                  disabled={editando}
+                  style={{ opacity: editando ? 0.6 : 1 }}
+                  onClick={confirmarEdicao}
+                >
+                  {editando ? "Salvando..." : "Salvar alterações"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+    </div>
+  );
+}

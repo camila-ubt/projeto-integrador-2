@@ -1,6 +1,6 @@
+// Layout compartilhado de todas as páginas do painel admin.
+
 import { SessionProvider } from "next-auth/react";
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import AdminShell from "@/app/admin/components/AdminShell";
 
 export const metadata = {
@@ -8,10 +8,7 @@ export const metadata = {
   description: "Painel Administrativo do Paola Galvão Studio",
 };
 
-export default async function AdminLayout({ children }) {
-  const sessao = await auth();
-  if (!sessao?.user) redirect("/login");
-
+export default function AdminLayout({ children }) {
   return (
     <SessionProvider>
       <AdminShell>{children}</AdminShell>

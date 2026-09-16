@@ -6,12 +6,16 @@ import {
   IcoAgendamentos,
   IcoEditar,
   IcoCancelar,
-  IcoCalendario,
 } from "@/app/components/icons";
+import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
 import styles from "./Agendamentos.module.css";
+import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
 export default function Agendamentos() {
+  const [agendamentosDoDia, setAgendamentosDoDia] = useState([]);
+  const [carregandoHorarios, setcarregandoHorarios] = useState(false);
   const [agendamentos, setAgendamentos] = useState([]);
+  const [modalNovo, setModalNovo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
@@ -20,6 +24,7 @@ export default function Agendamentos() {
   const [filtroStatus, setFiltroStatus] = useState("");
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [ordemAsc, setOrdemAsc] = useState(false);
 
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -56,6 +61,34 @@ export default function Agendamentos() {
     };
     fetchAgendamentos();
   }, []);
+
+  useEffect(() => {
+    if (!camposEdicao.data) return;
+
+    const buscarHorarios = async () => {
+      setcarregandoHorarios(true);
+      try {
+        const inicioDoDia = `${camposEdicao.data}T00:00:00.000Z`;
+        const fimDoDia = `${camposEdicao.data}T23:59:59.999Z`;
+        const res = await fetch(
+          `/api/agendamentos?inicio=${inicioDoDia}&fim=${fimDoDia}`,
+        );
+        const data = await res.json();
+        // Exclui o próprio agendamento sendo editado da lista de ocupados
+        setAgendamentosDoDia(
+          Array.isArray(data)
+            ? data.filter((a) => a.id !== modalEditar.agenda?.id)
+            : [],
+        );
+      } catch {
+        setAgendamentosDoDia([]);
+      } finally {
+        setcarregandoHorarios(false);
+      }
+    };
+
+    buscarHorarios();
+  }, [camposEdicao.data, modalEditar.agenda?.id]);
 
   const exibirServicos = (agenda) => {
     if (!agenda.servicos) return "—";
@@ -101,14 +134,20 @@ export default function Agendamentos() {
     return matchCliente && matchStatus && matchData;
   });
 
+  const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) =>
+    ordemAsc
+      ? new Date(a.inicio) - new Date(b.inicio)
+      : new Date(b.inicio) - new Date(a.inicio),
+  );
+
   // Paginação
   const indiceUltimoItem = paginaAtual * itensPorPagina;
   const indicePrimeiroItem = indiceUltimoItem - itensPorPagina;
-  const itensAtuais = agendamentosFiltrados.slice(
+  const itensAtuais = agendamentosOrdenados.slice(
     indicePrimeiroItem,
     indiceUltimoItem,
   );
-  const totalPaginas = Math.ceil(agendamentosFiltrados.length / itensPorPagina);
+  const totalPaginas = Math.ceil(agendamentosOrdenados.length / itensPorPagina);
 
   const temFiltroAtivo =
     filtroCliente || filtroStatus || filtroDataInicio || filtroDataFim;
@@ -159,20 +198,31 @@ export default function Agendamentos() {
   };
 
   const handleEditar = (agenda) => {
+    const inicioDate = new Date(agenda.inicio);
+    const data = inicioDate.toISOString().split("T")[0];
+    const hora = inicioDate.toTimeString().slice(0, 5);
+
     setCamposEdicao({
       status: agenda.status ?? "",
       observacoes: agenda.observacoes ?? "",
+      data,
+      hora,
     });
     setModalEditar({ aberto: true, agenda });
   };
 
   const confirmarEdicao = async () => {
     setEditando(true);
+    const [ano, mes, dia] = camposEdicao.data.split("-").map(Number);
+    const [hH, hM] = camposEdicao.hora.split(":").map(Number);
+    const inicioDate = new Date(ano, mes - 1, dia, hH, hM);
+
     try {
       const res = await fetch(`/api/agendamentos/${modalEditar.agenda.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          inicio: inicioDate.toISOString(),
           status: camposEdicao.status || undefined,
           observacoes: camposEdicao.observacoes || undefined,
         }),
@@ -185,18 +235,13 @@ export default function Agendamentos() {
 
       const atualizado = await res.json();
 
-      // Atualiza o item na lista local sem recarregar
-      setAgendamentos((prev) =>
-        prev.map((a) =>
-          a.id === modalEditar.agenda.id
-            ? {
-                ...a,
-                status: atualizado.status,
-                observacoes: atualizado.observacoes,
-              }
-            : a,
-        ),
-      );
+      try {
+        const res = await fetch("/api/agendamentos");
+        const data = await res.json();
+        setAgendamentos(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn("Lista não atualizada após editar agendamento:", err);
+      }
 
       setFeedback({
         tipo: "sucesso",
@@ -209,6 +254,16 @@ export default function Agendamentos() {
       setModalEditar({ aberto: false, agenda: null });
       setTimeout(() => setFeedback(null), 4000);
     }
+  };
+
+  const aoSalvarNovo = async () => {
+    try {
+      const res = await fetch("/api/agendamentos");
+      const data = await res.json();
+      setAgendamentos(Array.isArray(data) ? data : []);
+    } catch {}
+    setFeedback({ tipo: "sucesso", msg: "Agendamento criado com sucesso." });
+    setTimeout(() => setFeedback(null), 4000);
   };
 
   // ─── Render ───────────────────────────────────────────────────────
@@ -224,12 +279,18 @@ export default function Agendamentos() {
           className={`btn-primario d-flex d-md-none align-items-center justify-content-center ${styles.btnNovoIcone}`}
           aria-label="Novo agendamento"
           title="Novo agendamento"
+          onClick={() => setModalNovo(true)}
         >
           <IcoAgendamentos size={18} />
         </button>
 
         {/* Desktop: botão com texto completo */}
-        <button className="btn-primario d-none d-md-flex align-items-center gap-2">
+        <button
+          className="btn-primario d-none d-md-flex align-items-center gap-2"
+          aria-label="Novo agendamento"
+          title="Novo agendamento"
+          onClick={() => setModalNovo(true)}
+        >
           <IcoAgendamentos size={18} />
           Novo Agendamento
         </button>
@@ -308,8 +369,19 @@ export default function Agendamentos() {
               }}
             />
           </div>
+
+          {/* ✅ Botão de ordenação — só aparece no mobile */}
+          <div className="col-12 d-md-none d-flex justify-content-end">
+            <button
+              className={styles.btnLimpar}
+              onClick={() => setOrdemAsc((prev) => !prev)}
+            >
+              {ordemAsc ? "↑ Mais antigo primeiro" : "↓ Mais recente primeiro"}
+            </button>
+          </div>
         </div>
       </div>
+
       {/* ── Erro de carregamento ─────── */}
       {erro && (
         <div
@@ -416,7 +488,34 @@ export default function Agendamentos() {
               <table className="table table-hover align-middle mb-0">
                 <thead className={styles.tableHeader}>
                   <tr>
-                    <th className="px-4 py-3 border-0">Data/Hora</th>
+                    <th className="px-4 py-3 border-0">
+                      <button
+                        onClick={() => setOrdemAsc((prev) => !prev)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          fontFamily: "var(--fonte-corpo)",
+                          fontWeight: 600,
+                          fontSize: "0.8rem",
+                          color: "var(--texto-secundario)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: 0,
+                        }}
+                        title={
+                          ordemAsc
+                            ? "Ordenar: mais recente primeiro"
+                            : "Ordenar: mais antigo primeiro"
+                        }
+                      >
+                        Data/Hora
+                        <span style={{ fontSize: "12px" }}>
+                          {ordemAsc ? "↑" : "↓"}
+                        </span>
+                      </button>
+                    </th>
                     <th className="py-3 border-0">Cliente</th>
                     <th className="py-3 border-0">Serviço</th>
                     <th className="py-3 border-0">Status</th>
@@ -643,7 +742,7 @@ export default function Agendamentos() {
           </div>
         </div>
       )}
-       {/* ── Modal de edição ─────────────────── */}
+      {/* ── Modal de edição ─────────────────── */}
       {modalEditar.aberto && (
         <div
           className="modal fade show d-block"
@@ -676,6 +775,123 @@ export default function Agendamentos() {
                   {formatarDataCurta(modalEditar.agenda?.inicio)} às{" "}
                   {formatarHora(modalEditar.agenda?.inicio)}
                 </p>
+
+                {/* Data */}
+                <div>
+                  <label className={styles.labelFiltro} htmlFor="editData">
+                    Data
+                  </label>
+                  <input
+                    id="editData"
+                    type="date"
+                    className={`form-control ${styles.inputFiltro}`}
+                    value={camposEdicao.data ?? ""}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) =>
+                      setCamposEdicao((prev) => ({
+                        ...prev,
+                        data: e.target.value,
+                        hora: "", // limpa hora ao trocar data
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Grade de horários */}
+                {camposEdicao.data && (
+                  <div>
+                    <label className={styles.labelFiltro}>Horário</label>
+                    {carregandoHorarios ? (
+                      <p
+                        style={{
+                          fontSize: "0.85rem",
+                          color: "var(--texto-secundario)",
+                          fontFamily: "var(--fonte-corpo)",
+                        }}
+                      >
+                        Verificando disponibilidade...
+                      </p>
+                    ) : (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(4, 1fr)",
+                          gap: "8px",
+                        }}
+                      >
+                        {HORARIOS_ATENDIMENTO.map((h) => {
+                          const [hH, hM] = h.split(":").map(Number);
+                          const [ano, mes, dia] = camposEdicao.data
+                            .split("-")
+                            .map(Number);
+                          const inicioDesejado = new Date(
+                            ano,
+                            mes - 1,
+                            dia,
+                            hH,
+                            hM,
+                          );
+
+                          const agora = new Date();
+                          const jaPassou = inicioDesejado < agora;
+
+                          const ocupado =
+                            jaPassou ||
+                            agendamentosDoDia.some((ag) => {
+                              const inicioAg = new Date(ag.inicio);
+                              const fimAg = new Date(ag.fim);
+                              return (
+                                inicioDesejado < fimAg &&
+                                inicioDesejado >= inicioAg
+                              );
+                            });
+
+                          const selecionado = camposEdicao.hora === h;
+
+                          return (
+                            <button
+                              key={h}
+                              type="button"
+                              disabled={ocupado}
+                              onClick={() =>
+                                setCamposEdicao((prev) => ({
+                                  ...prev,
+                                  hora: h,
+                                }))
+                              }
+                              className={styles.slotHorario}
+                              style={{
+                                borderColor: ocupado
+                                  ? "var(--borda-escura)"
+                                  : selecionado
+                                    ? "var(--primaria)"
+                                    : "var(--borda)",
+                                backgroundColor: ocupado
+                                  ? "transparent"
+                                  : selecionado
+                                    ? "var(--primaria-clara)"
+                                    : "var(--superficie)",
+                                color: ocupado
+                                  ? "var(--texto-secundario)"
+                                  : selecionado
+                                    ? "var(--primaria)"
+                                    : "var(--texto-principal)",
+                                fontWeight: selecionado ? 600 : 400,
+                                cursor: ocupado ? "not-allowed" : "pointer",
+                                textDecoration: ocupado
+                                  ? "line-through"
+                                  : "none",
+                                opacity: ocupado ? 0.4 : 1,
+                              }}
+                            >
+                              {h}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Status */}
                 <div>
@@ -747,7 +963,13 @@ export default function Agendamentos() {
           </div>
         </div>
       )}
-      
+
+      {modalNovo && (
+        <ModalNovoAgendamento
+          aoFechar={() => setModalNovo(false)}
+          aoSalvar={aoSalvarNovo}
+        />
+      )}
     </div>
   );
 }

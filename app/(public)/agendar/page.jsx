@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { HORARIOS_ATENDIMENTO, ETAPAS } from "@/lib/constantes"
 import {
   formatarMoeda,
   formatarData,
@@ -10,31 +11,7 @@ import {
 } from "@/lib/formatters";
 import { IcoCalendario, IcoCheck, IcoRelogio } from "@/app/components/icons";
 
-const TODOS_OS_HORARIOS = [
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-];
 
-const ETAPAS = ["Serviço", "Data", "Horário", "Confirmação"];
 
 // Barra de progresso do agendamento
 function BarraProgresso({ etapaAtual }) {
@@ -547,7 +524,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
                 gap: "8px",
               }}
             >
-              {TODOS_OS_HORARIOS.map((h) => {
+              {HORARIOS_ATENDIMENTO.map((h) => {
                 // Cálculo de conflito baseado no tempo de duração
                 const [horaH, horaM] = h.split(":").map(Number);
                 const [ano, mes, dia] = data.split("-").map(Number);

@@ -15,22 +15,16 @@
   }
 }
 
-/* ── [ALTERAÇÃO 4] Botão "Novo Agendamento" no mobile ────────────
-   Vira um círculo com só o ícone — compacto e elegante.
-   No desktop aparece o botão completo via d-none d-md-flex.
-──────────────────────────────────────────────────────────────── */
+/* ──  Botão "Novo Agendamento" no mobile ─────── */
 .btnNovoIcone {
   width: 40px;
   height: 40px;
   padding: 0;
   border-radius: 50%;
   flex-shrink: 0;
-  /* Herda background/color/border do .btn-primario global */
+  
 }
 
-/* ── [ALTERAÇÃO 2] Card de filtros ───────────────────────────────
-   Layout em grade compacta no mobile.
-──────────────────────────────────────────────────────────────── */
 .cardFiltros {
   background-color: var(--superficie);
   border-radius: var(--radius-large);
@@ -61,7 +55,7 @@
   outline: none;
 }
 
-/* ── Botão limpar filtros ─────────────────────────────────────── */
+/* ── Botão limpar filtros ────── */
 
 .btnLimpar {
   background: transparent;
@@ -74,7 +68,7 @@
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
   white-space: nowrap;
-  line-height: 1.5; /* alinha com os inputs */
+  line-height: 1.5; 
 }
 
 .btnLimpar:hover:not(:disabled) {
@@ -87,7 +81,7 @@
   cursor: not-allowed;
 }
 
-/* ── Estados: loading e vazio ─────────────────────────────────── */
+/* ── Estados: loading e vazio ────────── */
 
 .loadingState {
   display: flex;
@@ -111,11 +105,7 @@
   text-align: center;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   [ALTERAÇÃO 3] MOBILE — Cards compactos
-   Layout de linha: hora | cliente+serviço+data | badge+ações
-   Inspirado no ListaAgendamentos do dashboard.
-═══════════════════════════════════════════════════════════════════ */
+/* ══MOBILE — Cards compactos══════ */
 
 .cardMobile {
   background-color: var(--superficie);
@@ -128,7 +118,7 @@
   gap: 0.75rem;
 }
 
-/* Hora em rosa — destaque visual, igual ao dashboard */
+
 .cardHoraDestaque {
   font-family: "Jost", sans-serif;
   font-size: 0.88rem;
@@ -139,10 +129,9 @@
   flex-shrink: 0;
 }
 
-/* Bloco central: empurra para a esquerda */
 .cardCentro {
   flex: 1;
-  min-width: 0; /* evita overflow em nomes/serviços longos */
+  min-width: 0;
 }
 
 .cardCliente {
@@ -188,10 +177,7 @@
   gap: 0.3rem;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   [ALTERAÇÃO 3] Botões ícone — usados em mobile E desktop
-   Substituem os botões de texto "Editar" / "Cancelar".
-═══════════════════════════════════════════════════════════════════ */
+/* ══Botões ícone — usados em mobile E desktop════════ */
 
 .btnIcone {
   width: 30px;
@@ -327,4 +313,237 @@
   font-size: 0.93rem;
   color: var(--texto-secundario);
   line-height: 1.6;
+}
+
+
+/* ── Busca de cliente — dropdown ─────────────────────────────── */
+
+.dropdownCliente {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 500;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0.6rem 0.85rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--borda);
+  cursor: pointer;
+  text-align: left;
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+  transition: background-color 0.15s;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: var(--primaria-clara);
+}
+
+.dropdownItemNovo {
+  color: var(--primaria);
+  font-weight: 500;
+  border-top: 1px solid var(--borda);
+}
+
+.dropdownVazio {
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-secundario);
+}
+
+.dropdownVazio p {
+  margin: 0;
+}
+
+/* ── Cliente selecionado — chip ──────────────────────────────── */
+
+.clienteChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background-color: var(--primaria-clara);
+  border-radius: var(--radius-medium);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+  border: 1px solid var(--borda);
+}
+
+.btnChipRemover {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--texto-secundario);
+  font-size: 0.8rem;
+  font-family: "Jost", sans-serif;
+  padding: 2px 4px;
+  border-radius: var(--radius-medium);
+  transition: color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btnChipRemover:hover {
+  color: var(--erro-texto);
+}
+
+/* ── Formulário inline de novo cliente ───────────────────────── */
+
+.novoClienteBox {
+  padding: 0.75rem;
+  background-color: var(--fundo);
+  border-radius: var(--radius-medium);
+  border: 1px dashed var(--borda-escura);
+}
+
+.btnNovoClienteInline {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primaria);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.15s;
+}
+
+.btnNovoClienteInline:hover {
+  opacity: 0.75;
+}
+
+/* Slot de horário — grade de seleção */
+.slotHorario {
+  padding: 10px 4px;
+  border-radius: var(--radius-medium);
+  border: 2px solid var(--borda);
+  background-color: var(--superficie);
+  font-family: "Jost", sans-serif;
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+/* ── Lista de serviços — cards clicáveis ─────────────────────── */
+
+.listaServicos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cardServico {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  text-align: left;
+  font-family: "Jost", sans-serif;
+  transition: border-color 0.15s, background-color 0.15s;
+  position: relative;
+}
+
+.cardServico:hover {
+  border-color: var(--primaria);
+  background-color: var(--primaria-clara);
+}
+
+.cardServicoAtivo {
+  border-color: var(--primaria);
+  background-color: var(--primaria-clara);
+}
+
+.cardServicoNome {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--texto-principal);
+}
+
+.cardServicoInfo {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  flex-shrink: 0;
+}
+
+.cardServicoCheck {
+  font-size: 0.85rem;
+  color: var(--primaria);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Resumo do agendamento ───────────────────────────────────── */
+
+.resumoAgendamento {
+  background-color: var(--fundo);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--borda);
+  padding: 0.85rem 1rem;
+}
+
+.resumoTitulo {
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+  margin: 0 0 0.6rem;
+}
+
+.resumoLinha {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+  margin: 0 0 0.3rem;
+}
+
+.resumoLinha:last-child {
+  margin-bottom: 0;
+}
+
+.resumoLinha strong {
+  color: var(--texto-principal);
+  text-align: right;
 }

@@ -268,7 +268,9 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
           </div>
 
           {/* ── Corpo ── */}
-          <div className="modal-body d-flex flex-column gap-4">
+          <div className="modal-body d-flex flex-column gap-4"
+          style={{ overflowY: "auto" }}
+          >
             {/* Erro geral */}
             {erroForm && (
               <div

@@ -300,6 +300,9 @@
   border: none;
   border-radius: var(--radius-large);
   font-family: "Jost", sans-serif;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modalTitulo {

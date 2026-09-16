@@ -233,7 +233,7 @@ export default function Agendamentos() {
         throw new Error(data.error ?? "Erro ao atualizar agendamento.");
       }
 
-      const atualizado = await res.json();
+      await res.json();
 
       try {
         const res = await fetch("/api/agendamentos");

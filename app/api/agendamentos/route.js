@@ -4,6 +4,9 @@ import { requireAuth } from "@/lib/auth-helpers";
 
 // Lista agendamentos no período, já com o nome do cliente e os serviços agregados.
 export async function GET(request) {
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const inicio = searchParams.get("inicio");

@@ -1,4 +1,4 @@
-import { withTransaction } from "@/lib/db";
+import { query, withTransaction } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 
 // Rate limit simples em memória: no máximo 5 tentativas por IP a cada 10 minutos.
@@ -23,8 +23,68 @@ function podeTentar(ip) {
   return true;
 }
 
-// POST /api/agendamentos/publico
+
+// Endpoint PÚBLICO (sem login/senha) para a página de agendamento consultar
+// quais horários já estão ocupados num período (ex.: o dia selecionado no
+// calendário), e assim desenhar os horários disponíveis.
 //
+// Diferente de GET /api/agendamentos (autenticado), aqui a resposta traz
+// APENAS { inicio, fim } de cada agendamento — nunca nome/telefone da
+// cliente, observações, status ou valores. Esses dados continuam exigindo
+// login, através da rota administrativa.
+//
+// 'inicio' e 'fim' são obrigatórios (ISO 8601) e o período não pode passar
+// de 62 dias, pra evitar consultas exageradas sem autenticação.
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const inicio = searchParams.get("inicio");
+  const fim = searchParams.get("fim");
+
+  if (!inicio || !fim) {
+    return jsonError("Os parâmetros 'inicio' e 'fim' são obrigatórios.", 400);
+  }
+
+  const dataInicio = new Date(inicio);
+  const dataFim = new Date(fim);
+  if (Number.isNaN(dataInicio.getTime()) || Number.isNaN(dataFim.getTime())) {
+    return jsonError(
+      "'inicio'/'fim' inválidos. Envie data e hora em formato reconhecível (ISO 8601).",
+      400
+    );
+  }
+  if (dataFim <= dataInicio) {
+    return jsonError("'fim' deve ser depois de 'inicio'.", 400);
+  }
+
+  const LIMITE_DIAS_CONSULTA = 62;
+  if (dataFim - dataInicio > LIMITE_DIAS_CONSULTA * 24 * 60 * 60 * 1000) {
+    return jsonError(
+      `O período consultado não pode ultrapassar ${LIMITE_DIAS_CONSULTA} dias.`,
+      400
+    );
+  }
+
+  try {
+    // Sobreposição de intervalo: pega qualquer agendamento que toque o
+    // período pedido, não só os que começam dentro dele. Cancelados liberam
+    // o horário de volta.
+    const { rows } = await query(
+      `SELECT inicio, fim
+         FROM agendamentos
+        WHERE inicio < $2
+          AND fim > $1
+          AND status <> 'cancelado'
+        ORDER BY inicio ASC`,
+      [dataInicio.toISOString(), dataFim.toISOString()]
+    );
+
+    return jsonOk(rows);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+
 // Endpoint PÚBLICO (sem login/senha) para a cliente final solicitar um
 // agendamento diretamente pela página do estúdio.
 //
@@ -56,7 +116,7 @@ export async function POST(request) {
 
   const { cliente, servicos, inicio, fim, observacoes } = body ?? {};
 
-  // ---- validação dos dados da cliente -------------
+  // ---- validação dos dados da cliente ---
   const nome = cliente?.nome?.toString().trim();
   const telefone = cliente?.telefone?.toString().trim();
 
@@ -72,13 +132,13 @@ export async function POST(request) {
     return jsonError("Informe um telefone válido para contato.", 400);
   }
 
-  // ---- validação dos serviços ---------------------
+  // ---- validação dos serviços ---
   if (!Array.isArray(servicos) || servicos.length === 0) {
     return jsonError("Informe ao menos um serviço em 'servicos' (array de IDs).", 400);
   }
   const servicoIds = [...new Set(servicos)];
 
-  // ---- validação de data/horário ---------------------
+  // ---- validação de data/horário ---
   if (!inicio || !fim) {
     return jsonError("Os campos 'inicio' e 'fim' são obrigatórios.", 400);
   }

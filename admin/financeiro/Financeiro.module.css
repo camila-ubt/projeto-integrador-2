@@ -1,0 +1,227 @@
+.tituloPagina {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .tituloPagina {
+    font-size: 2rem;
+  }
+}
+
+/* ── Resumo Financeiro ── */
+.resumoContainer {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.resumoCard {
+  flex: 1;
+  min-width: 140px;
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 1.25rem 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--borda);
+}
+
+.valorPositivo {
+  color: var(--sucesso-texto);
+  font-family: "Jost", sans-serif;
+  font-size: 1.2rem;
+}
+
+.valorNegativo {
+  color: var(--erro-texto);
+  font-family: "Jost", sans-serif;
+  font-size: 1.2rem;
+}
+
+/* ── Filtros ── */
+.cardFiltros {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.labelFiltro {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.inputFiltro {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  color: var(--texto-principal);
+  background-color: var(--superficie);
+}
+
+.inputFiltro:focus {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(183, 110, 121, 0.15);
+  outline: none;
+}
+
+/* ── Estados ── */
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+}
+
+.estadoVazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  text-align: center;
+}
+
+/* ══MOBILE — Cards compactos══ */
+.cardMobile {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.55rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--borda);
+}
+
+.cardCentro {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardCliente {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--texto-principal);
+  margin: 0;
+}
+
+.cardServico {
+  font-family: "Jost", sans-serif;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  margin: 1px 0 0;
+}
+
+.cardDireita {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.cardAcoes {
+  display: flex;
+  gap: 0.3rem;
+}
+
+/* Botões ──── */
+.btnIcone, .btnIconePerigo {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+}
+
+.btnIcone { border: 1px solid var(--borda-escura); color: var(--texto-secundario); }
+.btnIconePerigo { border: 1px solid var(--erro-borda); color: var(--erro-texto); }
+.btnIconePerigo:hover { background-color: var(--erro-fundo); }
+
+.btnLimpar {
+  background: transparent;
+  border: 1px solid var(--borda-escura);
+  color: var(--texto-secundario);
+  border-radius: var(--radius-medium);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: "Jost", sans-serif;
+  cursor: pointer;
+}
+
+/* Tabela Desktop ──── */
+.cardTabela {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  border: 1px solid var(--borda);
+}
+
+.tableHeader {
+  background-color: var(--primaria-clara);
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tableHeader th {
+  border-bottom: 1px solid var(--borda) !important;
+}
+
+.tdData { font-family: "Jost", sans-serif; font-size: 0.88rem; color: var(--texto-principal); }
+.tdHora { font-family: "Jost", sans-serif; font-size: 0.8rem; color: var(--texto-secundario); }
+
+/* ── Badges de status ──── */
+.badgeStatus {
+  padding: 0.3em 0.7em;
+  border-radius: var(--radius-large);
+  font-weight: 500;
+  font-size: 0.75rem;
+  font-family: "Jost", sans-serif;
+  display: inline-block;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.statusRealizado { background-color: var(--sucesso-fundo); color: var(--sucesso-texto); }
+.statusCancelado { background-color: var(--erro-fundo); color: var(--erro-texto); border: 1px solid var(--erro-borda); }
+
+/* Modal ─── */
+.modalContent {
+  border: none;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+}
+
+.modalTitulo {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+}

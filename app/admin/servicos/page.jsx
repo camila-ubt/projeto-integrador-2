@@ -118,8 +118,6 @@ export default function PageServicos() {
         throw new Error(d.error ?? "Erro ao salvar serviço.");
       }
 
-      const salvo = await res.json();
-
       const msg = form.id
         ? "Serviço atualizado com sucesso."
         : "Serviço criado com sucesso.";

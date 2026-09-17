@@ -7,6 +7,9 @@ import { requireAuth } from "@/lib/auth-helpers";
 // um agendamento muda para status 'realizado'. Esta rota também permite criar
 // um retorno manual (ex.: contato avulso).
 export async function GET(request) {
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");

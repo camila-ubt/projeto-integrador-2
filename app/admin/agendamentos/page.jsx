@@ -5,7 +5,8 @@ import { formatarDataCurta, formatarHora } from "@/lib/formatters";
 import {
   IcoAgendamentos,
   IcoEditar,
-  IcoCancelar,
+  
+  IcoLixeira
 } from "@/app/components/icons";
 import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
 import styles from "./Agendamentos.module.css";
@@ -338,7 +339,7 @@ export default function Agendamentos() {
               title="Limpar filtros"
             >
               <span className="d-md-none">
-                <IcoCancelar />
+                <IcoLixeira />
               </span>
               <span className="d-none d-md-inline">Limpar</span>
             </button>
@@ -474,7 +475,7 @@ export default function Agendamentos() {
                         title="Deletar agendamento"
                         aria-label="Deletar agendamento"
                       >
-                        <IcoCancelar />
+                        <IcoLixeira />
                       </button>
                     )}
                   </div>
@@ -563,7 +564,7 @@ export default function Agendamentos() {
                               title="Deletar agendamento"
                               aria-label="Deletar agendamento"
                             >
-                              <IcoCancelar />
+                              <IcoLixeira />
                             </button>
                           )}
                         </div>

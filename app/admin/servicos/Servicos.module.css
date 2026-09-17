@@ -1,0 +1,312 @@
+
+/* ── Título ─────────── */
+.tituloPagina {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .tituloPagina { font-size: 2rem; }
+}
+
+/* ── Botão novo (mobile: ícone circular) ────────── */
+.btnNovoIcone {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* ── Filtros ──────────────────────────── */
+.cardFiltros {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.checkboxLabel {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-secundario);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+/* ── Estados ────────────────────────────── */
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.95rem;
+}
+
+.estadoVazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  text-align: center;
+}
+
+/* ── Desktop — tabela ────────────────────────────────────────── */
+.cardTabela {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.tableHeader {
+  background-color: var(--primaria-clara);
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.tableHeader th {
+  border-bottom: 1px solid var(--borda) !important;
+}
+
+.tdData {
+  font-family: "Jost", sans-serif;
+  font-size: 0.9rem;
+  color: var(--texto-principal);
+}
+
+.tdHora {
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+  margin-top: 2px;
+}
+
+.tdServico {
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+}
+
+/* ── Mobile — cards ──────────────────────────────────────────── */
+.cardMobile {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cardCentro {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardCliente {
+  font-family: "Jost", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--texto-principal);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardServico {
+  font-family: "Jost", sans-serif;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  margin: 2px 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+}
+
+.cardDireita {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.cardAcoes {
+  display: flex;
+  gap: 0.3rem;
+}
+
+/* ── Botões ícone ─────────────────────────────────────────────── */
+.btnIcone {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-medium);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.btnIcone:hover {
+  background-color: var(--primaria-clara);
+  color: var(--texto-principal);
+}
+
+.btnIconePerigo {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--erro-borda);
+  border-radius: var(--radius-medium);
+  color: var(--erro-texto);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  flex-shrink: 0;
+}
+
+.btnIconePerigo:hover {
+  background-color: var(--erro-fundo);
+}
+
+/* ── Badges ──────────────────────────────────────────────────── */
+.badgeAtivo {
+  display: inline-block;
+  padding: 0.25em 0.65em;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
+}
+
+.badgeInativo {
+  display: inline-block;
+  padding: 0.25em 0.65em;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--fundo);
+  color: var(--texto-secundario);
+  border: 1px solid var(--borda-escura);
+}
+
+.badgeAvaliacao {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background-color: var(--alerta-fundo);
+  color: var(--alerta-texto);
+}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.modalContent {
+  border: none;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalTitulo {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+.modalTexto {
+  font-family: "Jost", sans-serif;
+  font-size: 0.93rem;
+  color: var(--texto-secundario);
+  line-height: 1.6;
+}
+
+/* ── Inputs do formulário ────────────────────────────────────── */
+.labelFiltro {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  margin-bottom: 0.3rem;
+}
+
+.inputFiltro {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  color: var(--texto-principal);
+  background-color: var(--superficie);
+}
+
+.inputFiltro:focus {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(183, 110, 121, 0.15);
+  outline: none;
+}
+
+/* ── Botão limpar / secundário ───────────────────────────────── */
+.btnLimpar {
+  background: transparent;
+  border: 1px solid var(--borda-escura);
+  color: var(--texto-secundario);
+  border-radius: var(--radius-medium);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-family: "Jost", sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.btnLimpar:hover:not(:disabled) {
+  background-color: var(--fundo);
+  color: var(--texto-principal);
+}
+
+.btnLimpar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

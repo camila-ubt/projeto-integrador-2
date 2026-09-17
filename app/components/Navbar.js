@@ -6,30 +6,36 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./Navbar.module.css";
 
-/**
- * Navbar principal da área pública.
- * Desktop: links horizontais à direita.
- * Mobile: botão hambúrguer abre drawer lateral direito com overlay.
- */
+/*Navbar principal da área pública. */
 export default function Navbar() {
-  // ── Estado ──────────────────────────────────────
-  // Controla se o drawer mobile está aberto ou fechado
-  const [menuAberto, setMenuAberto] = useState(false);
-  // Controla sombra no header após scroll
-  const [scrolled, setScrolled] = useState(false);
+  const [menuAberto, setMenuAberto] = useState(false); // Controla se o drawer está aberto ou fechado
+  const [scrolled, setScrolled] = useState(false); // Controla sombra no header após scroll
 
   // ── Efeito de scroll ────────────────────────────
-  // Adiciona sombra ao header após 40px de scroll (ngOnInit)
   useEffect(() => {
+    // Adiciona sombra ao header após 40px de scroll (ngOnInit)
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll, { passive: true });
     // Remove listener quando componente sai da tela (ngOnDestroy)
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // ── Efeito de scroll do body ─────────────────────
-  // Trava o scroll da página quando o drawer estiver aberto
+  // Efeito de fechar menu ao redimensionar tela
   useEffect(() => {
+    function aoRedimensionar() {
+      if(window.innerWidth >= 992) {
+        setMenuAberto(false)
+      }
+    }
+    window.addEventListener('resize', aoRedimensionar, {passive: true})
+
+    // Remove listener quando componente sai da tela (ngOnDestroy)
+    return () => window.removeEventListener('resize', aoRedimensionar)
+  }, [])
+
+  // ── Efeito de scroll do body ─────────────────────
+  useEffect(() => {
+    // Trava o scroll da página quando o drawer estiver aberto
     document.body.style.overflow = menuAberto ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
@@ -37,6 +43,8 @@ export default function Navbar() {
   }, [menuAberto]);
 
   const fecharMenu = () => setMenuAberto(false);
+
+
 
   // ── Renderização ────────────────────────────────
   return (
@@ -54,7 +62,7 @@ export default function Navbar() {
                 src="/images/logo.png"
                 alt="Paola Galvão Studio"
                 width={120}
-                height={60}
+                height={80}
                 className={styles.logo}
                 priority
               />
@@ -73,13 +81,13 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#avaliacoes" className={styles.navLink}>
-                  Avaliações
+                <Link href="#contato" className={styles.navLink}>
+                  Contato
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#contato" className={styles.navLink}>
-                  Contato
+                <Link href="/admin/login" className={styles.navLinkAdmin}>
+                  Admin
                 </Link>
               </li>
               <li className="nav-item">
@@ -148,20 +156,20 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItem}>
             <Link
-              href="#avaliacoes"
-              className={styles.drawerLink}
-              onClick={fecharMenu}
-            >
-              Avaliações
-            </Link>
-          </li>
-          <li className={styles.drawerItem}>
-            <Link
               href="#contato"
               className={styles.drawerLink}
               onClick={fecharMenu}
             >
               Contato
+            </Link>
+          </li>
+          <li className={styles.drawerItemAdmin}>
+            <Link
+              href="/admin/login"
+              className={styles.drawerLinkAdmin}
+              onClick={fecharMenu}
+            >
+              Admin
             </Link>
           </li>
           <li className="mt-4">

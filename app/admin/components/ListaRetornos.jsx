@@ -1,20 +1,4 @@
-
-//Calcula prazo de retorno em relação data atual
-function calcularPrazo(dataRecomendada) {
-  const hoje = new Date();
-  //zera o relogio, pega as datas mas ignora minutos/segundos
-  hoje.setHours(0, 0, 0, 0);
-  const data = new Date(dataRecomendada);
-  data.setHours(0, 0, 0, 0);
-  //transforma em dias inteiros (1000 ms × 60 seg × 60 min × 24 horas = 1 dia)
-  const diff = Math.round((data - hoje) / (1000 * 60 * 60 * 24));
-
-  if (diff < 0)
-    return { texto: `Vencido há ${Math.abs(diff)}d`, vencido: true };
-  if (diff === 0) return { texto: "Hoje", vencido: false };
-  if (diff === 1) return { texto: "Amanhã", vencido: false };
-  return { texto: `Em ${diff} dias`, vencido: false };
-}
+import { calcularPrazoRetorno } from "@/lib/formatters"
 
 export default function ListaRetornos({ retornos }) {
   return (
@@ -63,7 +47,7 @@ export default function ListaRetornos({ retornos }) {
         </p>
       ) : (
         retornos.map((item) => {
-          const prazo = calcularPrazo(item.data_recomendada)
+          const prazo = calcularPrazoRetorno(item.data_recomendada)
           return (
             <div
               key={item.id}

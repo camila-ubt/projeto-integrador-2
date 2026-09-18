@@ -1,0 +1,552 @@
+/* ── Título da página ─────────────────────────────────────────── */
+
+.tituloPagina {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .tituloPagina {
+    font-size: 2rem;
+  }
+}
+
+/* ──  Botão "Novo Agendamento" no mobile ─────── */
+.btnNovoIcone {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+  
+}
+
+.cardFiltros {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.labelFiltro {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  margin-bottom: 0.3rem;
+}
+
+.inputFiltro {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  color: var(--texto-principal);
+  background-color: var(--superficie);
+}
+
+.inputFiltro:focus {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(183, 110, 121, 0.15);
+  outline: none;
+}
+
+/* ── Botão limpar filtros ────── */
+
+.btnLimpar {
+  background: transparent;
+  border: 1px solid var(--borda-escura);
+  color: var(--texto-secundario);
+  border-radius: var(--radius-medium);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: "Jost", sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  line-height: 1.5; 
+}
+
+.btnLimpar:hover:not(:disabled) {
+  background-color: var(--fundo);
+  color: var(--texto-principal);
+}
+
+.btnLimpar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Estados: loading e vazio ────────── */
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.95rem;
+}
+
+.estadoVazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem;
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  text-align: center;
+}
+
+/* ══MOBILE — Cards compactos══════ */
+
+.cardMobile {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.55rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+
+.cardHoraDestaque {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primaria);
+  min-width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cardCentro {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardCliente {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--texto-principal);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardServico {
+  font-family: "Jost", sans-serif;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  margin: 1px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardData {
+  font-family: "Jost", sans-serif;
+  font-size: 0.72rem;
+  color: var(--texto-secundario);
+  margin: 2px 0 0;
+  opacity: 0.8;
+}
+
+/* Bloco direito: badge + botões */
+.cardDireita {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.cardAcoes {
+  display: flex;
+  gap: 0.3rem;
+}
+
+/* ══Botões ícone — usados em mobile E desktop════════ */
+
+.btnIcone {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-medium);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.btnIcone:hover {
+  background-color: var(--primaria-clara);
+  color: var(--texto-principal);
+}
+
+.btnIconePerigo {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--erro-borda);
+  border-radius: var(--radius-medium);
+  color: var(--erro-texto);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  flex-shrink: 0;
+}
+
+.btnIconePerigo:hover {
+  background-color: var(--erro-fundo);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DESKTOP — Tabela
+═══════════════════════════════════════════════════════════════════ */
+
+.cardTabela {
+  background-color: var(--superficie);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.tableHeader {
+  background-color: var(--primaria-clara);
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.tableHeader th {
+  border-bottom: 1px solid var(--borda) !important;
+}
+
+.tdData {
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+}
+
+.tdHora {
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.tdServico {
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+}
+
+/* ── Badges de status ─────────────────────────────────────────── */
+
+.badgeStatus {
+  padding: 0.3em 0.7em;
+  border-radius: var(--radius-large);
+  font-weight: 500;
+  font-size: 0.75rem;
+  font-family: "Jost", sans-serif;
+  display: inline-block;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.statusAgendado {
+  background-color: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
+}
+
+.statusRealizado {
+  background-color: var(--info-fundo);
+  color: var(--info-texto);
+}
+
+.statusCancelado {
+  background-color: var(--erro-fundo);
+  color: var(--erro-texto);
+  border: 1px solid var(--erro-borda);
+}
+
+.statusFaltou {
+  background-color: var(--alerta-fundo);
+  color: var(--alerta-texto);
+}
+
+/* ── Modal de cancelamento ────────────────────────────────────── */
+
+.modalContent {
+  border: none;
+  border-radius: var(--radius-large);
+  font-family: "Jost", sans-serif;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalTitulo {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+.modalTexto {
+  font-size: 0.93rem;
+  color: var(--texto-secundario);
+  line-height: 1.6;
+}
+
+
+/* ── Busca de cliente — dropdown ─────────────────────────────── */
+
+.dropdownCliente {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 500;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0.6rem 0.85rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--borda);
+  cursor: pointer;
+  text-align: left;
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+  transition: background-color 0.15s;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: var(--primaria-clara);
+}
+
+.dropdownItemNovo {
+  color: var(--primaria);
+  font-weight: 500;
+  border-top: 1px solid var(--borda);
+}
+
+.dropdownVazio {
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-secundario);
+}
+
+.dropdownVazio p {
+  margin: 0;
+}
+
+/* ── Cliente selecionado — chip ──────────────────────────────── */
+
+.clienteChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background-color: var(--primaria-clara);
+  border-radius: var(--radius-medium);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  color: var(--texto-principal);
+  border: 1px solid var(--borda);
+}
+
+.btnChipRemover {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--texto-secundario);
+  font-size: 0.8rem;
+  font-family: "Jost", sans-serif;
+  padding: 2px 4px;
+  border-radius: var(--radius-medium);
+  transition: color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btnChipRemover:hover {
+  color: var(--erro-texto);
+}
+
+/* ── Formulário inline de novo cliente ───────────────────────── */
+
+.novoClienteBox {
+  padding: 0.75rem;
+  background-color: var(--fundo);
+  border-radius: var(--radius-medium);
+  border: 1px dashed var(--borda-escura);
+}
+
+.btnNovoClienteInline {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primaria);
+  font-family: "Jost", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.15s;
+}
+
+.btnNovoClienteInline:hover {
+  opacity: 0.75;
+}
+
+/* Slot de horário — grade de seleção */
+.slotHorario {
+  padding: 10px 4px;
+  border-radius: var(--radius-medium);
+  border: 2px solid var(--borda);
+  background-color: var(--superficie);
+  font-family: "Jost", sans-serif;
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+/* ── Lista de serviços — cards clicáveis ─────────────────────── */
+
+.listaServicos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cardServico {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  text-align: left;
+  font-family: "Jost", sans-serif;
+  transition: border-color 0.15s, background-color 0.15s;
+  position: relative;
+}
+
+.cardServico:hover {
+  border-color: var(--primaria);
+  background-color: var(--primaria-clara);
+}
+
+.cardServicoAtivo {
+  border-color: var(--primaria);
+  background-color: var(--primaria-clara);
+}
+
+.cardServicoNome {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--texto-principal);
+}
+
+.cardServicoInfo {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+  flex-shrink: 0;
+}
+
+.cardServicoCheck {
+  font-size: 0.85rem;
+  color: var(--primaria);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Resumo do agendamento ───────────────────────────────────── */
+
+.resumoAgendamento {
+  background-color: var(--fundo);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--borda);
+  padding: 0.85rem 1rem;
+}
+
+.resumoTitulo {
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+  margin: 0 0 0.6rem;
+}
+
+.resumoLinha {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+  margin: 0 0 0.3rem;
+}
+
+.resumoLinha:last-child {
+  margin-bottom: 0;
+}
+
+.resumoLinha strong {
+  color: var(--texto-principal);
+  text-align: right;
+}

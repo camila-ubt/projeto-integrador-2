@@ -1,5 +1,7 @@
+// Layout compartilhado de todas as páginas do painel admin.
+
 import { SessionProvider } from "next-auth/react";
-// Layout exclusivo de todas as páginas dentro de ADM.
+import AdminShell from "@/app/admin/components/AdminShell";
 
 export const metadata = {
   title: "Admin | Paola Galvão Studio",
@@ -9,14 +11,7 @@ export const metadata = {
 export default function AdminLayout({ children }) {
   return (
     <SessionProvider>
-      {/* // Container principal */}
-      <div
-        className="min-vh-100 d-flex flex-column"
-        style={{ backgroundColor: "var(--fundo)" }}
-      >
-        {/* // Conteúdo da página atual (login/dashboard etc) */}
-        <main className="flex-grow-1">{children}</main>
-      </div>
+      <AdminShell>{children}</AdminShell>
     </SessionProvider>
   );
 }

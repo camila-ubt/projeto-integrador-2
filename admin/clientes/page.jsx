@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import styles from "./Clientes.module.css"; 
 import { formatarTelefone } from "@/lib/formatters"; 
-import { IcoFechar } from "@/app/components/icons";
 
 export default function PageClientes() {
   const [clientes, setClientes] = useState([]);

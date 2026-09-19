@@ -76,7 +76,7 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#servicos" className={styles.navLink}>
+                <Link href="/servicos" className={styles.navLink}>
                   Serviços
                 </Link>
               </li>
@@ -147,7 +147,7 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItem}>
             <Link
-              href="#servicos"
+              href="/servicos"
               className={styles.drawerLink}
               onClick={fecharMenu}
             >

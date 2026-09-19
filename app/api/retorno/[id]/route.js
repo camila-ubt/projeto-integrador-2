@@ -3,6 +3,9 @@ import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET(request, { params }) {
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   try {
     const { rows } = await query("SELECT * FROM retornos WHERE id = $1", [id]);

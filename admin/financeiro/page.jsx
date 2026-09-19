@@ -2,38 +2,59 @@
 
 import { useState, useEffect } from "react";
 import styles from "./Financeiro.module.css";
-import { formatarDataCurta } from "@/lib/formatters"; 
+import { formatarDataCurta } from "@/lib/formatters";
 
 export default function PageFinanceiro() {
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [resumo, setResumo] = useState({ receitas: 0, despesas: 0, saldo: 0 });
   const [carregando, setCarregando] = useState(true);
-  
+
   // Filtros padrão para o mês atual
   const dataAtual = new Date();
   const [filtroMes, setFiltroMes] = useState(String(dataAtual.getMonth() + 1).padStart(2, '0'));
   const [filtroAno, setFiltroAno] = useState(String(dataAtual.getFullYear()));
 
-  // ─ Estados do Modal ─
+  // ── Estados do Modal ──
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState(null);
   const [form, setForm] = useState({ descricao: "", valor: "", tipo: "receita", data: "" });
 
-  // ─ Busca de Dados na API ─
+  // ── Busca de Dados na API ──
   useEffect(() => {
     carregarFinanceiro();
   }, [filtroMes, filtroAno]);
 
+  // Calcula o primeiro e o último dia do mês/ano selecionados,
+  // pois a API espera "inicio" e "fim", e não "mes"/"ano".
+  function calcularPeriodo(mes, ano) {
+    const mesNum = Number(mes);
+    const anoNum = Number(ano);
+    const inicio = `${ano}-${mes}-01`;
+    const ultimoDia = new Date(anoNum, mesNum, 0).getDate(); // dia 0 do próximo mês = último dia do mês atual
+    const fim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+    return { inicio, fim };
+  }
+
   async function carregarFinanceiro() {
     setCarregando(true);
     try {
-      const res = await fetch(`/api/financeiro?mes=${filtroMes}&ano=${filtroAno}`);
+      const { inicio, fim } = calcularPeriodo(filtroMes, filtroAno);
+      const res = await fetch(`/api/financeiro?inicio=${inicio}&fim=${fim}`);
       const data = await res.json();
-      
-     
-      setMovimentacoes(Array.isArray(data.movimentacoes) ? data.movimentacoes : []);
-      setResumo(data.resumo || { receitas: 0, despesas: 0, saldo: 0 });
+
+      // A API retorna uma lista (array) de movimentações, não { movimentacoes, resumo }.
+      const lista = Array.isArray(data) ? data : [];
+
+      const receitas = lista
+        .filter((m) => m.tipo === "receita")
+        .reduce((acc, m) => acc + Number(m.valor || 0), 0);
+      const despesas = lista
+        .filter((m) => m.tipo === "despesa")
+        .reduce((acc, m) => acc + Number(m.valor || 0), 0);
+
+      setMovimentacoes(lista);
+      setResumo({ receitas, despesas, saldo: receitas - despesas });
     } catch (err) {
       setMovimentacoes([]);
       setResumo({ receitas: 0, despesas: 0, saldo: 0 });
@@ -67,8 +88,11 @@ export default function PageFinanceiro() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          valor: parseFloat(form.valor.replace(',', '.'))
+          descricao: form.descricao,
+          valor: parseFloat(form.valor.replace(',', '.')),
+          tipo: form.tipo,
+          // A API espera "data_movimentacao", não "data".
+          data_movimentacao: form.data,
         }),
       });
 
@@ -88,7 +112,7 @@ export default function PageFinanceiro() {
 
   async function excluirMovimentacao(id) {
     if (!window.confirm("Tem certeza que deseja excluir este registro? O saldo será recalculado.")) return;
-    
+
     try {
       await fetch(`/api/financeiro/${id}`, { method: "DELETE" });
       carregarFinanceiro(); // Recarrega para atualizar o resumo corretamente
@@ -182,7 +206,7 @@ export default function PageFinanceiro() {
               <tbody>
                 {movimentacoes.map((m) => (
                   <tr key={m.id}>
-                    <td className={`p-3 ${styles.tdHora}`}>{formatarDataCurta(m.data)}</td>
+                    <td className={`p-3 ${styles.tdHora}`}>{formatarDataCurta(m.data_movimentacao)}</td>
                     <td className={`p-3 ${styles.tdData}`}>{m.descricao}</td>
                     <td className="p-3">
                       <span className={`${styles.badgeStatus} ${m.tipo === 'receita' ? styles.statusRealizado : styles.statusCancelado}`}>
@@ -209,7 +233,7 @@ export default function PageFinanceiro() {
               <div key={m.id} className={styles.cardMobile}>
                 <div className={styles.cardCentro}>
                   <p className={styles.cardCliente}>{m.descricao}</p>
-                  <p className={styles.cardServico}>{formatarDataCurta(m.data)}</p>
+                  <p className={styles.cardServico}>{formatarDataCurta(m.data_movimentacao)}</p>
                 </div>
                 <div className={styles.cardDireita}>
                   <strong className={m.tipo === 'receita' ? styles.valorPositivo : styles.valorNegativo}>
@@ -234,14 +258,14 @@ export default function PageFinanceiro() {
                 <h5 className={styles.modalTitulo}>Nova Movimentação</h5>
                 <button type="button" className="btn-close" disabled={salvando} onClick={fecharModal} />
               </div>
-              
+
               <div className="modal-body d-flex flex-column gap-3">
                 {erroForm && (
                   <div className="rounded-3 py-2 px-3 small" style={{ backgroundColor: "var(--erro-fundo)", color: "var(--erro-texto)", border: "1px solid var(--erro-borda)" }}>
                     {erroForm}
                   </div>
                 )}
-                
+
                 <div>
                   <label className={styles.labelFiltro}>Tipo</label>
                   <select className={`form-control ${styles.inputFiltro}`} value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>

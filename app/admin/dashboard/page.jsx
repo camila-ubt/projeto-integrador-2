@@ -37,8 +37,8 @@ export default function PaginaDashboard() {
   const [faturamento, setFaturamento] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
-  const [saudacaoTexto, setSaudacaoTexto] = useState("");
-  const [dataHoje, setDataHoje] = useState("");
+  const [saudacaoTexto] = useState(() => saudacao());
+  const [dataHoje] = useState(() => formatarDataHoje());
 
   // Redireciona se não autenticado
   useEffect(() => {
@@ -46,12 +46,6 @@ export default function PaginaDashboard() {
       roteador.push("/login");
     }
   }, [statusSessao, roteador]);
-
-  //Preenche a saudação e a data de hoje
-  useEffect(() => {
-    setSaudacaoTexto(saudacao());
-    setDataHoje(formatarDataHoje());
-  }, []);
 
   // Busca os dados via serviço ao carregar
   useEffect(() => {

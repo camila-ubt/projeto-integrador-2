@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { HORARIOS_ATENDIMENTO, ETAPAS } from "@/lib/constantes"
+import { HORARIOS_ATENDIMENTO, ETAPAS } from "@/lib/constantes";
 import {
   formatarMoeda,
   formatarData,
@@ -10,8 +10,6 @@ import {
   formatarTelefone,
 } from "@/lib/formatters";
 import { IcoCalendario, IcoCheck, IcoRelogio } from "@/app/components/icons";
-
-
 
 // Barra de progresso do agendamento
 function BarraProgresso({ etapaAtual }) {
@@ -192,7 +190,7 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
                 color: "var(--texto-secundario)",
               }}
             >
-              <IcoRelogio size={'12px'} /> {servico.duracao_minutos} min
+              <IcoRelogio size={"12px"} /> {servico.duracao_minutos} min
             </span>
           )}
           {servico.necessita_avaliacao && (
@@ -385,18 +383,18 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
   useEffect(() => {
-    if (!data) return; 
+    if (!data) return;
 
     async function buscarHorariosLivres() {
       setCarregandoHorarios(true);
-      setHora(""); 
+      setHora("");
 
       try {
         const inicioDoDia = `${data}T00:00:00.000Z`;
         const fimDoDia = `${data}T23:59:59.999Z`;
 
         const res = await fetch(
-          `/api/agendamentos?inicio=${inicioDoDia}&fim=${fimDoDia}`
+          `/api/agendamentos/publico?inicio=${inicioDoDia}&fim=${fimDoDia}`,
         );
         const dadosOcupados = await res.json();
 
@@ -529,16 +527,26 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
                 const [horaH, horaM] = h.split(":").map(Number);
                 const [ano, mes, dia] = data.split("-").map(Number);
                 const duracao = servico?.duracao_minutos || 60;
-                
+
                 // Monta o horário de início e fim que o cliente está tentando clicar
-                const inicioDesejado = new Date(ano, mes - 1, dia, horaH, horaM);
-                const fimDesejado = new Date(inicioDesejado.getTime() + duracao * 60 * 1000);
-                
+                const inicioDesejado = new Date(
+                  ano,
+                  mes - 1,
+                  dia,
+                  horaH,
+                  horaM,
+                );
+                const fimDesejado = new Date(
+                  inicioDesejado.getTime() + duracao * 60 * 1000,
+                );
+
                 // Verifica se o espaço desejado sobrepõe alguma consulta agendada
                 const ocupado = agendamentosDoDia.some((agendamento) => {
                   const inicioAgendado = new Date(agendamento.inicio);
                   const fimAgendado = new Date(agendamento.fim);
-                  return inicioDesejado < fimAgendado && fimDesejado > inicioAgendado;
+                  return (
+                    inicioDesejado < fimAgendado && fimDesejado > inicioAgendado
+                  );
                 });
 
                 const selecionado = hora === h;
@@ -1066,16 +1074,18 @@ function Sucesso({ servico, dataHora, dados }) {
   const [ano, mes, dia] = dataHora.data.split("-").map(Number);
   const [horaH, horaM] = dataHora.hora.split(":").map(Number);
   const duracao = servico.duracao_minutos || 60;
-  
+
   const dataInicio = new Date(ano, mes - 1, dia, horaH, horaM);
   const dataFim = new Date(dataInicio.getTime() + duracao * 60 * 1000);
 
   // 2. Formata a data do jeito que o Google exige (YYYYMMDDTHHMMSSZ)
   const formataDataGCal = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
-  
+
   // 3. Cria os textos e junta tudo na URL do Google Calendar
   const titulo = encodeURIComponent(`Agendamento: ${servico.nome} com Paola`);
-  const detalhes = encodeURIComponent(`Cliente: ${dados.nome}\nTelefone: ${dados.telefone}`);
+  const detalhes = encodeURIComponent(
+    `Cliente: ${dados.nome}\nTelefone: ${dados.telefone}`,
+  );
   const linkAgenda = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formataDataGCal(dataInicio)}/${formataDataGCal(dataFim)}&details=${detalhes}`;
 
   return (
@@ -1093,7 +1103,7 @@ function Sucesso({ servico, dataHora, dados }) {
           fontSize: "28px",
         }}
       >
-        <IcoCheck size={'28px'} />
+        <IcoCheck size={"28px"} />
       </div>
 
       <h2
@@ -1236,27 +1246,7 @@ export default function PaginaAgendamento() {
     setErroEnvio("");
 
     try {
-      // 1. Buscar ou criar cliente pelo telefone
-      const buscaCliente = await fetch(
-        `/api/clientes?busca=${encodeURIComponent(dados.telefone)}`,
-      );
-      const clientesExistentes = await buscaCliente.json();
-
-      let clienteId;
-      if (clientesExistentes.length > 0) {
-        clienteId = clientesExistentes[0].id;
-      } else {
-        const criarCliente = await fetch("/api/clientes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nome: dados.nome, telefone: dados.telefone }),
-        });
-        if (!criarCliente.ok) throw new Error("Erro ao cadastrar dados.");
-        const novoCliente = await criarCliente.json();
-        clienteId = novoCliente.id;
-      }
-
-      // 2. Montar datas ISO com o fuso local
+      // Montar datas ISO com o fuso local
       const [ano, mes, dia] = dataHora.data.split("-").map(Number);
       const [horaH, horaM] = dataHora.hora.split(":").map(Number);
       const duracao = servico.duracao_minutos || 60;
@@ -1264,15 +1254,18 @@ export default function PaginaAgendamento() {
       const fim = new Date(inicio.getTime() + duracao * 60 * 1000);
 
       // 3. Criar agendamento
-      const criarAgendamento = await fetch("/api/agendamentos", {
+      const criarAgendamento = await fetch("/api/agendamentos/publico", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cliente_id: clienteId,
+          cliente: {
+            nome: dados.nome,
+            telefone: dados.telefone,
+          },
+          servicos: [servico.id],
           inicio: inicio.toISOString(),
           fim: fim.toISOString(),
           observacoes: dados.observacoes || null,
-          servicos: [{ servico_id: servico.id, valor: servico.preco_padrao }],
         }),
       });
 

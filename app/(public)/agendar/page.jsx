@@ -129,7 +129,7 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
   return (
     <button
       type="button"
-      onClick={() => aoSelecionar(servico)}
+      onClick={() => { if (servico.necessita_avaliacao) { alert(`O serviço "${servico.nome}" exige avaliação prévia. Entre em contato com o estúdio pelo WhatsApp ou telefone para agendar sua avaliação.`); return; } aoSelecionar(servico); }}
       style={{
         width: "100%",
         textAlign: "left",

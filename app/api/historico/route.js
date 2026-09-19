@@ -4,6 +4,9 @@ import { requireAuth } from "@/lib/auth-helpers";
 
 // GET /api/historico?cliente_id=...
 export async function GET(request) {
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const clienteId = searchParams.get("cliente_id");

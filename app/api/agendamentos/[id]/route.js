@@ -3,7 +3,12 @@ import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 // GET /api/agendamentos/:id
+// Expõe dados da cliente (nome, telefone, observações) -> precisa de login,
+// assim como todas as outras rotas [id] do projeto (clientes, financeiro, etc).
 export async function GET(request, { params }) {
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   try {
     const { rows } = await query(

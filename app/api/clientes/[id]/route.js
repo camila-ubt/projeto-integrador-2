@@ -4,7 +4,10 @@ import { requireAuth } from "@/lib/auth-helpers";
 
 // GET /api/clientes/:id  -> dados do cliente + histórico de procedimentos + agendamentos
 export async function GET(request, { params }) {
-  const { id } = await params;
+  const { errorResponse } = await requireAuth();
+  if (errorResponse) return errorResponse;
+
+  const {id} = await params;
   try {
     const { rows } = await query("SELECT * FROM clientes WHERE id = $1", [id]);
     const cliente = rows[0];

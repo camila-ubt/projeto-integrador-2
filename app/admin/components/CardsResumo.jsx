@@ -1,12 +1,4 @@
-
-
-// Formata número para moeda brasileira: 480 → "R$ 480,00"
-function formatarMoeda(valor) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(valor)
-}
+import { formatarMoeda } from "@/lib/formatters"
 
 export default function CardsResumo({ totalAgendamentos, totalRetornos, faturamento }) {
   return (

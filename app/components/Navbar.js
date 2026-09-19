@@ -76,7 +76,7 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#servicos" className={styles.navLink}>
+                <Link href="/servicos" className={styles.navLink}>
                   Serviços
                 </Link>
               </li>
@@ -86,12 +86,12 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="/admin/login" className={styles.navLinkAdmin}>
+                <Link href="/login" className={styles.navLinkAdmin}>
                   Admin
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#agendar" className={styles.btnAgendar}>
+                <Link href="/agendar" className={styles.btnAgendar}>
                   Agendar
                 </Link>
               </li>
@@ -147,7 +147,7 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItem}>
             <Link
-              href="#servicos"
+              href="/servicos"
               className={styles.drawerLink}
               onClick={fecharMenu}
             >
@@ -165,7 +165,7 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItemAdmin}>
             <Link
-              href="/admin/login"
+              href="/login"
               className={styles.drawerLinkAdmin}
               onClick={fecharMenu}
             >
@@ -174,7 +174,7 @@ export default function Navbar() {
           </li>
           <li className="mt-4">
             <Link
-              href="#agendar"
+              href="/agendar"
               className={`${styles.drawerBtnAgendar} w-100 text-center`}
               onClick={fecharMenu}
             >

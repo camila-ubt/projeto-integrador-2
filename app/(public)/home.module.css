@@ -1,0 +1,116 @@
+/* 1. Estilos normais do Hero */
+
+.hero {
+  min-height: calc(100vh - var(--navbar-altura));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.heroMarca {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  margin-bottom: 1rem;
+}
+
+.heroTitulo {
+  font-size: 3rem;
+  line-height: 1.1;
+  max-width: 700px;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitulo {
+  color: var(--texto-secundario);
+  margin-bottom: 2rem;
+}
+
+
+/* 2. Estilos normais do Sobre */
+
+.sobre {
+  padding: 5rem 1.5rem;
+  background: var(--superficie);
+}
+
+.sobreConteudo {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.sobreImagem {
+  min-height: 420px;
+  background: var(--primaria-clara);
+  border-radius: var(--radius-large);
+}
+
+.imagemStudio {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-large);
+}
+
+alt="Interior do Paola Galvão Studio"
+
+.sobreTexto h2 {
+  font-size: 2.4rem;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+.sobreTexto > p:not(.secaoLegenda) {
+  color: var(--texto-claro);
+  margin-bottom: 1rem;
+}
+
+.secaoLegenda {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  margin-bottom: 0.8rem;
+}
+
+
+/* 3. Estilos para celular */
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 3rem 1.25rem;
+  }
+
+  .heroTitulo {
+    font-size: 2.3rem;
+  }
+
+  .heroSubtitulo {
+    font-size: 0.95rem;
+  }
+
+  .sobre {
+    padding: 4rem 1.25rem;
+  }
+
+  .sobreConteudo {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .sobreImagem {
+    min-height: 280px;
+  }
+
+  .sobreTexto h2 {
+    font-size: 2rem;
+  }
+}

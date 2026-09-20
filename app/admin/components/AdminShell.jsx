@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
@@ -37,12 +37,7 @@ export default function AdminShell({ children }) {
   const pathname = usePathname();
   const { data: sessao, status } = useSession();
 
-  const [saudacao, setSaudacao] = useState("");
-
-  // Evita divergência servidor/cliente na saudação
-  useEffect(() => {
-    setSaudacao(saudacaoAtual());
-  }, []);
+  const [saudacao] = useState(() => saudacaoAtual());
 
   // Redireciona para login se não autenticado
   useEffect(() => {

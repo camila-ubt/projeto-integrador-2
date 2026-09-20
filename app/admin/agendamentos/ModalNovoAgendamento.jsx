@@ -51,13 +51,13 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
 
   // ── Busca de clientes com debounce ────────
   useEffect(() => {
-    if (buscaCliente.length < 2) {
-      setResultadosCliente([]);
-      setMostrarDropdown(false);
-      return;
-    }
-
     const timer = setTimeout(async () => {
+      if (buscaCliente.length < 2) {
+        setResultadosCliente([]);
+        setMostrarDropdown(false);
+        return;
+      }
+
       setBuscando(true);
       try {
         const res = await fetch(
@@ -412,7 +412,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
                             className={styles.btnNovoClienteInline}
                             onClick={ativarNovoCliente}
                           >
-                            + Cadastrar "{buscaCliente}"
+                            + Cadastrar &quot;{buscaCliente}&quot;
                           </button>
                         </div>
                       )}

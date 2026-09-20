@@ -71,7 +71,7 @@ export default function Navbar() {
             {/* Links — visíveis só no desktop (d-none d-lg-flex) */}
             <ul className="navbar-nav d-none d-lg-flex flex-row align-items-center gap-4 mb-0">
               <li className="nav-item">
-                <Link href="#sobre" className={styles.navLink}>
+                <Link href="/#sobre" className={styles.navLink}>
                   Sobre
                 </Link>
               </li>
@@ -81,7 +81,7 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="#contato" className={styles.navLink}>
+                <Link href="/#contato" className={styles.navLink}>
                   Contato
                 </Link>
               </li>
@@ -138,7 +138,7 @@ export default function Navbar() {
         <ul className="list-unstyled d-flex flex-column mb-0">
           <li className={styles.drawerItem}>
             <Link
-              href="#sobre"
+              href="/#sobre"
               className={styles.drawerLink}
               onClick={fecharMenu}
             >
@@ -156,7 +156,7 @@ export default function Navbar() {
           </li>
           <li className={styles.drawerItem}>
             <Link
-              href="#contato"
+              href="/#contato"
               className={styles.drawerLink}
               onClick={fecharMenu}
             >

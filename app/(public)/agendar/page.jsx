@@ -2,16 +2,190 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { HORARIOS_ATENDIMENTO, ETAPAS } from "@/lib/constantes";
+import { HORARIOS_ATENDIMENTO, ETAPAS, WHATSAPP_ESTUDIO} from "@/lib/constantes";
 import {
   formatarMoeda,
   formatarData,
   dataMinimaAgendamento,
   formatarTelefone,
 } from "@/lib/formatters";
-import { IcoCalendario, IcoCheck, IcoRelogio } from "@/app/components/icons";
+import {
+  IcoCalendario,
+  IcoCheck,
+  IcoRelogio,
+  IcoAvaliacao, 
+  IcoWhatsApp,  
+} from "@/app/components/icons";
 
-// Barra de progresso do agendamento
+
+// ─── Modal: serviço requer avaliação prévia ───────────────────────────────────
+function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
+  
+  if (!servico) return null;
+
+  function abrirWhatsApp() {
+    const mensagem = encodeURIComponent(
+      `Olá! Tenho interesse no serviço *${servico.nome}* e gostaria de agendar uma avaliação prévia. Poderia me informar a disponibilidade? `
+    );
+    window.open(
+      `https://wa.me/${WHATSAPP_ESTUDIO}?text=${mensagem}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+    aoFechar();
+  }
+
+  return (
+    // Backdrop — clique fora fecha o modal
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-avaliacao-titulo"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) aoFechar();
+      }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1050,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+        backgroundColor: "rgba(0,0,0,0.45)",
+      }}
+    >
+      {/* Painel do modal */}
+      <div
+        style={{
+          backgroundColor: "var(--superficie)",
+          borderRadius: "var(--radius-large)",
+          padding: "28px 24px 24px",
+          maxWidth: "380px",
+          width: "100%",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+        }}
+      >
+        {/* Ícone de aviso */}
+        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "52px",
+              height: "52px",
+              borderRadius: "50%",
+              backgroundColor: "var(--alerta-fundo)",
+            }}
+          >
+            <IcoAvaliacao
+              size={26}
+              style={{ color: "var(--alerta-texto)" }}
+            />
+          </div>
+        </div>
+
+        {/* Título */}
+        <h2
+          id="modal-avaliacao-titulo"
+          style={{
+            fontFamily: "var(--fonte-titulo)",
+            fontSize: "20px",
+            fontWeight: 600,
+            fontStyle: "italic",
+            color: "var(--texto-principal)",
+            textAlign: "center",
+            marginBottom: "12px",
+          }}
+        >
+          Avaliação prévia necessária
+        </h2>
+
+        {/* Corpo */}
+        <p
+          style={{
+            fontFamily: "var(--fonte-corpo)",
+            fontSize: "14px",
+            color: "var(--texto-secundario)",
+            textAlign: "center",
+            lineHeight: 1.6,
+            marginBottom: "8px",
+          }}
+        >
+          O serviço{" "}
+          <strong style={{ color: "var(--texto-principal)" }}>
+            {servico.nome}
+          </strong>{" "}
+          exige uma avaliação prévia antes do agendamento.
+        </p>
+        <p
+          style={{
+            fontFamily: "var(--fonte-corpo)",
+            fontSize: "14px",
+            color: "var(--texto-secundario)",
+            textAlign: "center",
+            lineHeight: 1.6,
+            marginBottom: "24px",
+          }}
+        >
+          Vamos te direcionar ao WhatsApp do estúdio para combinar sua
+          avaliação. Deseja continuar?
+        </p>
+
+        {/* Ações */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {/* Botão principal — verde WhatsApp */}
+          <button
+            type="button"
+            onClick={abrirWhatsApp}
+            style={{
+              width: "100%",
+              padding: "13px",
+              backgroundColor: "#25D366",
+              color: "white",
+              border: "none",
+              borderRadius: "var(--radius-medium)",
+              fontFamily: "var(--fonte-corpo)",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              transition: "opacity 0.15s ease",
+            }}
+          >
+            <IcoWhatsApp size={18} style={{ color: "white" }} />
+            Continuar para WhatsApp
+          </button>
+
+          {/* Botão secundário — voltar */}
+          <button
+            type="button"
+            onClick={aoFechar}
+            style={{
+              width: "100%",
+              padding: "12px",
+              backgroundColor: "transparent",
+              color: "var(--texto-secundario)",
+              border: "1px solid var(--borda-escura)",
+              borderRadius: "var(--radius-medium)",
+              fontFamily: "var(--fonte-corpo)",
+              fontSize: "14px",
+              cursor: "pointer",
+            }}
+          >
+            Voltar para os serviços
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Barra de progresso ───────────────────────────────────────────────────────
 function BarraProgresso({ etapaAtual }) {
   return (
     <div style={{ padding: "0 24px", marginBottom: "28px" }}>
@@ -69,10 +243,10 @@ function BarraProgresso({ etapaAtual }) {
                   height: "28px",
                   borderRadius: "50%",
                   backgroundColor:
-                    concluida || ativa
-                      ? "var(--primaria)"
-                      : "var(--superficie)",
-                  border: `2px solid ${concluida || ativa ? "var(--primaria)" : "var(--borda-escura)"}`,
+                    concluida || ativa ? "var(--primaria)" : "var(--superficie)",
+                  border: `2px solid ${
+                    concluida || ativa ? "var(--primaria)" : "var(--borda-escura)"
+                  }`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -80,15 +254,7 @@ function BarraProgresso({ etapaAtual }) {
                 }}
               >
                 {concluida ? (
-                  <span
-                    style={{
-                      color: "white",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    ✓
-                  </span>
+                  <IcoCheck size={12} style={{ color: "white" }} />
                 ) : (
                   <span
                     style={{
@@ -125,11 +291,20 @@ function BarraProgresso({ etapaAtual }) {
   );
 }
 
-function CardServico({ servico, selecionado, aoSelecionar }) {
+// ─── Card de serviço ──────────────────────────────────────────────────────────
+// Recebe aoAbrirAvaliacao: quando o serviço requer avaliação, dispara o modal
+// em vez de selecionar o serviço diretamente.
+function CardServico({ servico, selecionado, aoSelecionar, aoAbrirAvaliacao }) {
   return (
     <button
       type="button"
-      onClick={() => { if (servico.necessita_avaliacao) { alert(`O serviço "${servico.nome}" exige avaliação prévia. Entre em contato com o estúdio pelo WhatsApp ou telefone para agendar sua avaliação.`); return; } aoSelecionar(servico); }}
+      onClick={() => {
+        if (servico.necessita_avaliacao) {
+          aoAbrirAvaliacao(servico); // abre modal — não avança no fluxo
+          return;
+        }
+        aoSelecionar(servico);
+      }}
       style={{
         width: "100%",
         textAlign: "left",
@@ -190,7 +365,7 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
                 color: "var(--texto-secundario)",
               }}
             >
-              <IcoRelogio size={"12px"} /> {servico.duracao_minutos} min
+              <IcoRelogio size={12} /> {servico.duracao_minutos} min
             </span>
           )}
           {servico.necessita_avaliacao && (
@@ -228,7 +403,9 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
             width: "20px",
             height: "20px",
             borderRadius: "50%",
-            border: `2px solid ${selecionado ? "var(--primaria)" : "var(--borda-escura)"}`,
+            border: `2px solid ${
+              selecionado ? "var(--primaria)" : "var(--borda-escura)"
+            }`,
             backgroundColor: selecionado ? "var(--primaria)" : "transparent",
             marginTop: "6px",
             marginLeft: "auto",
@@ -249,13 +426,15 @@ function CardServico({ servico, selecionado, aoSelecionar }) {
   );
 }
 
-// ETAPAS DE AGENDAMENTO
-
+// ─── Etapa 1 — Escolha do serviço ────────────────────────────────────────────
 function EtapaServico({ servicoSelecionado, aoAvancar }) {
   const [servicos, setServicos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [selecionado, setSelecionado] = useState(servicoSelecionado);
+
+  // Controla qual serviço disparou o modal de avaliação (null = fechado)
+  const [modalAvaliacao, setModalAvaliacao] = useState(null);
 
   useEffect(() => {
     async function carregar() {
@@ -275,6 +454,12 @@ function EtapaServico({ servicoSelecionado, aoAvancar }) {
 
   return (
     <div>
+      {/* Modal de avaliação */}
+      <ModalAvaliacaoWhatsApp
+        servico={modalAvaliacao}
+        aoFechar={() => setModalAvaliacao(null)}
+      />
+
       <h2
         style={{
           fontFamily: "var(--fonte-titulo)",
@@ -345,6 +530,7 @@ function EtapaServico({ servicoSelecionado, aoAvancar }) {
             servico={s}
             selecionado={selecionado?.id === s.id}
             aoSelecionar={setSelecionado}
+            aoAbrirAvaliacao={setModalAvaliacao}
           />
         ))}
       </div>
@@ -374,11 +560,10 @@ function EtapaServico({ servicoSelecionado, aoAvancar }) {
   );
 }
 
+// ─── Etapa 2 — Data e horário ─────────────────────────────────────────────────
 function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
   const [data, setData] = useState(dataHoraSelecionada?.data || "");
   const [hora, setHora] = useState(dataHoraSelecionada?.hora || "");
-
-  // Guarda a lista com os agendamentos reais e completos que vieram do banco
   const [agendamentosDoDia, setAgendamentosDoDia] = useState([]);
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
@@ -388,16 +573,13 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
     async function buscarHorariosLivres() {
       setCarregandoHorarios(true);
       setHora("");
-
       try {
         const inicioDoDia = `${data}T00:00:00.000Z`;
         const fimDoDia = `${data}T23:59:59.999Z`;
-
         const res = await fetch(
-          `/api/agendamentos/publico?inicio=${inicioDoDia}&fim=${fimDoDia}`,
+          `/api/agendamentos/publico?inicio=${inicioDoDia}&fim=${fimDoDia}`
         );
         const dadosOcupados = await res.json();
-
         setAgendamentosDoDia(dadosOcupados);
       } catch (erro) {
         console.error("Erro ao buscar horários", erro);
@@ -436,10 +618,10 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
         Escolha a data e o horário de preferência.
       </p>
 
-      {/* Campo de data */}
+      {/* Seletor de data */}
       <div style={{ marginBottom: "20px" }}>
         <label
-          htmlFor="data"
+          htmlFor="data-agendamento"
           style={{
             display: "block",
             fontFamily: "var(--fonte-corpo)",
@@ -450,22 +632,19 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
             letterSpacing: "0.04em",
           }}
         >
-          Data
+          <IcoCalendario size={13} /> Data
         </label>
         <input
-          id="data"
+          id="data-agendamento"
           type="date"
           value={data}
           min={dataMinimaAgendamento()}
-          onChange={(e) => {
-            setData(e.target.value);
-            setHora("");
-          }}
+          onChange={(e) => setData(e.target.value)}
           style={{
             width: "100%",
             padding: "12px 14px",
             borderRadius: "var(--radius-medium)",
-            border: `1px solid ${data ? "var(--primaria)" : "var(--borda-escura)"}`,
+            border: "1px solid var(--borda-escura)",
             backgroundColor: "var(--superficie)",
             fontFamily: "var(--fonte-corpo)",
             fontSize: "14px",
@@ -473,19 +652,6 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
             outline: "none",
           }}
         />
-        {data && (
-          <p
-            style={{
-              fontFamily: "var(--fonte-corpo)",
-              fontSize: "12px",
-              color: "var(--primaria)",
-              marginTop: "6px",
-              textTransform: "capitalize",
-            }}
-          >
-            {formatarData(data)}
-          </p>
-        )}
       </div>
 
       {/* Grade de horários */}
@@ -497,11 +663,11 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
               fontSize: "12px",
               fontWeight: 600,
               color: "var(--texto-secundario)",
-              marginBottom: "10px",
+              marginBottom: "12px",
               letterSpacing: "0.04em",
             }}
           >
-            Horário
+            Horário disponível para {formatarData(data)}
           </p>
 
           {carregandoHorarios ? (
@@ -523,24 +689,15 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
               }}
             >
               {HORARIOS_ATENDIMENTO.map((h) => {
-                // Cálculo de conflito baseado no tempo de duração
                 const [horaH, horaM] = h.split(":").map(Number);
                 const [ano, mes, dia] = data.split("-").map(Number);
                 const duracao = servico?.duracao_minutos || 60;
 
-                // Monta o horário de início e fim que o cliente está tentando clicar
-                const inicioDesejado = new Date(
-                  ano,
-                  mes - 1,
-                  dia,
-                  horaH,
-                  horaM,
-                );
+                const inicioDesejado = new Date(ano, mes - 1, dia, horaH, horaM);
                 const fimDesejado = new Date(
-                  inicioDesejado.getTime() + duracao * 60 * 1000,
+                  inicioDesejado.getTime() + duracao * 60 * 1000
                 );
 
-                // Verifica se o espaço desejado sobrepõe alguma consulta agendada
                 const ocupado = agendamentosDoDia.some((agendamento) => {
                   const inicioAgendado = new Date(agendamento.inicio);
                   const fimAgendado = new Date(agendamento.fim);
@@ -564,19 +721,19 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
                         ocupado
                           ? "var(--borda-escura)"
                           : selecionado
-                            ? "var(--primaria)"
-                            : "var(--borda)"
+                          ? "var(--primaria)"
+                          : "var(--borda)"
                       }`,
                       backgroundColor: ocupado
                         ? "transparent"
                         : selecionado
-                          ? "rgba(183,110,121,0.08)"
-                          : "var(--superficie)",
+                        ? "rgba(183,110,121,0.08)"
+                        : "var(--superficie)",
                       color: ocupado
                         ? "var(--texto-secundario)"
                         : selecionado
-                          ? "var(--primaria)"
-                          : "var(--texto-principal)",
+                        ? "var(--primaria)"
+                        : "var(--texto-principal)",
                       fontFamily: "var(--fonte-corpo)",
                       fontSize: "13px",
                       fontWeight: selecionado ? 600 : 400,
@@ -594,6 +751,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
           )}
         </div>
       )}
+
       <div style={{ display: "flex", gap: "10px" }}>
         <button
           type="button"
@@ -637,21 +795,17 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
   );
 }
 
+// ─── Etapa 3 — Dados da cliente ───────────────────────────────────────────────
 function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
   const [nome, setNome] = useState(dadosSalvos?.nome || "");
   const [telefone, setTelefone] = useState(dadosSalvos?.telefone || "");
-  const [observacoes, setObservacoes] = useState(
-    dadosSalvos?.observacoes || "",
-  );
+  const [observacoes, setObservacoes] = useState(dadosSalvos?.observacoes || "");
   const [erros, setErros] = useState({});
 
   function validar() {
     const novosErros = {};
-
     if (!nome.trim()) novosErros.nome = "Informe seu nome completo.";
-
     const apenasNumeros = telefone.replace(/\D/g, "");
-
     if (!telefone.trim()) {
       novosErros.telefone = "Informe seu telefone ou WhatsApp.";
     } else if (apenasNumeros.length < 10) {
@@ -831,6 +985,7 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
   );
 }
 
+// ─── Etapa 4 — Confirmação ────────────────────────────────────────────────────
 function EtapaConfirmacao({
   servico,
   dataHora,
@@ -1033,10 +1188,8 @@ function EtapaConfirmacao({
           style={{
             flex: 2,
             padding: "14px",
-            backgroundColor: enviando
-              ? "var(--primaria-escura)"
-              : "var(--primaria)",
-            color: "white",
+            backgroundColor: enviando ? "var(--borda)" : "var(--primaria)",
+            color: enviando ? "var(--texto-secundario)" : "white",
             border: "none",
             borderRadius: "var(--radius-medium)",
             fontFamily: "var(--fonte-corpo)",
@@ -1044,52 +1197,19 @@ function EtapaConfirmacao({
             fontWeight: 600,
             cursor: enviando ? "not-allowed" : "pointer",
             transition: "background-color 0.2s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
           }}
         >
-          {enviando ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm"
-                role="status"
-                aria-hidden="true"
-                style={{ width: "14px", height: "14px" }}
-              />
-              Confirmando...
-            </>
-          ) : (
-            "Confirmar agendamento"
-          )}
+          {enviando ? "Confirmando..." : "Confirmar agendamento"}
         </button>
       </div>
     </div>
   );
 }
 
+// ─── Tela de sucesso ──────────────────────────────────────────────────────────
 function Sucesso({ servico, dataHora, dados }) {
-  // 1. Calcula as datas de início e fim
-  const [ano, mes, dia] = dataHora.data.split("-").map(Number);
-  const [horaH, horaM] = dataHora.hora.split(":").map(Number);
-  const duracao = servico.duracao_minutos || 60;
-
-  const dataInicio = new Date(ano, mes - 1, dia, horaH, horaM);
-  const dataFim = new Date(dataInicio.getTime() + duracao * 60 * 1000);
-
-  // 2. Formata a data do jeito que o Google exige (YYYYMMDDTHHMMSSZ)
-  const formataDataGCal = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
-
-  // 3. Cria os textos e junta tudo na URL do Google Calendar
-  const titulo = encodeURIComponent(`Agendamento: ${servico.nome} com Paola`);
-  const detalhes = encodeURIComponent(
-    `Cliente: ${dados.nome}\nTelefone: ${dados.telefone}`,
-  );
-  const linkAgenda = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formataDataGCal(dataInicio)}/${formataDataGCal(dataFim)}&details=${detalhes}`;
-
   return (
-    <div style={{ textAlign: "center", padding: "16px 0" }}>
+    <div style={{ textAlign: "center", padding: "16px 0 32px" }}>
       <div
         style={{
           width: "64px",
@@ -1100,117 +1220,48 @@ function Sucesso({ servico, dataHora, dados }) {
           alignItems: "center",
           justifyContent: "center",
           margin: "0 auto 20px",
-          fontSize: "28px",
         }}
       >
-        <IcoCheck size={"28px"} />
+        <IcoCheck size={30} style={{ color: "var(--sucesso-texto)" }} />
       </div>
 
       <h2
         style={{
           fontFamily: "var(--fonte-titulo)",
-          fontSize: "26px",
+          fontSize: "24px",
           fontWeight: 600,
           fontStyle: "italic",
           color: "var(--texto-principal)",
           marginBottom: "8px",
         }}
       >
-        Agendamento solicitado!
+        Agendamento confirmado!
       </h2>
-
       <p
         style={{
           fontFamily: "var(--fonte-corpo)",
           fontSize: "14px",
           color: "var(--texto-secundario)",
           lineHeight: 1.6,
-          marginBottom: "28px",
-          maxWidth: "280px",
-          margin: "0 auto 28px",
+          marginBottom: "24px",
         }}
       >
-        A Paola vai confirmar seu horário pelo WhatsApp em breve.
+        Olá, {dados.nome.split(" ")[0]}! Seu agendamento para{" "}
+        <strong>{servico.nome}</strong> em{" "}
+        <strong style={{ textTransform: "capitalize" }}>
+          {formatarData(dataHora.data)}
+        </strong>{" "}
+        às <strong>{dataHora.hora}</strong> foi recebido. A Paola vai entrar em
+        contato pelo WhatsApp para confirmar.
       </p>
 
-      <div
-        style={{
-          backgroundColor: "var(--superficie)",
-          border: "1px solid var(--borda)",
-          borderRadius: "var(--radius-medium)",
-          padding: "16px",
-          textAlign: "left",
-          marginBottom: "28px",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--fonte-titulo)",
-            fontSize: "16px",
-            fontStyle: "italic",
-            fontWeight: 600,
-            color: "var(--texto-principal)",
-            marginBottom: "8px",
-          }}
-        >
-          {servico.nome}
-        </p>
-        <p
-          style={{
-            fontFamily: "var(--fonte-corpo)",
-            fontSize: "13px",
-            color: "var(--texto-secundario)",
-            margin: 0,
-            textTransform: "capitalize",
-          }}
-        >
-          {formatarData(dataHora.data)} às {dataHora.hora}
-        </p>
-        <p
-          style={{
-            fontFamily: "var(--fonte-corpo)",
-            fontSize: "13px",
-            color: "var(--texto-secundario)",
-            margin: "4px 0 0",
-          }}
-        >
-          {dados.nome} · {dados.telefone}
-        </p>
-      </div>
-
-      {/* Botão do Google Calendar */}
-      <a
-        href={linkAgenda}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          padding: "14px",
-          backgroundColor: "var(--primaria)",
-          color: "white",
-          borderRadius: "var(--radius-medium)",
-          fontFamily: "var(--fonte-corpo)",
-          fontSize: "14px",
-          fontWeight: 600,
-          textDecoration: "none",
-          marginBottom: "12px",
-        }}
-      >
-        <IcoCalendario /> Adicionar a agenda do Google
-      </a>
-
-      {/* Botão original de voltar */}
       <Link
         href="/"
         style={{
-          display: "block",
-          padding: "14px",
-          backgroundColor: "transparent",
-          color: "var(--texto-secundario)",
-          border: "1px solid var(--borda)",
+          display: "inline-block",
+          padding: "12px 24px",
+          backgroundColor: "var(--primaria)",
+          color: "white",
           borderRadius: "var(--radius-medium)",
           fontFamily: "var(--fonte-corpo)",
           fontSize: "14px",
@@ -1225,8 +1276,7 @@ function Sucesso({ servico, dataHora, dados }) {
   );
 }
 
-// ─── Página principal ────────────────────────────────────────────────────────────
-
+// ─── Página principal ─────────────────────────────────────────────────────────
 export default function PaginaAgendamento() {
   const [etapa, setEtapa] = useState(0);
   const [servico, setServico] = useState(null);
@@ -1246,14 +1296,12 @@ export default function PaginaAgendamento() {
     setErroEnvio("");
 
     try {
-      // Montar datas ISO com o fuso local
       const [ano, mes, dia] = dataHora.data.split("-").map(Number);
       const [horaH, horaM] = dataHora.hora.split(":").map(Number);
       const duracao = servico.duracao_minutos || 60;
       const inicio = new Date(ano, mes - 1, dia, horaH, horaM);
       const fim = new Date(inicio.getTime() + duracao * 60 * 1000);
 
-      // 3. Criar agendamento
       const criarAgendamento = await fetch("/api/agendamentos/publico", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1275,7 +1323,7 @@ export default function PaginaAgendamento() {
           throw new Error("Esse horário já está ocupado. Escolha outro.");
         }
         throw new Error(
-          body?.error || "Não foi possível confirmar. Tente novamente.",
+          body?.error || "Não foi possível confirmar. Tente novamente."
         );
       }
 
@@ -1292,56 +1340,14 @@ export default function PaginaAgendamento() {
       style={{
         minHeight: "100vh",
         backgroundColor: "var(--fundo)",
-        display: "flex",
-        flexDirection: "column",
+        paddingTop: "var(--navbar-altura)",
       }}
     >
-      {/* Header mínimo */}
-      <header
-        style={{
-          backgroundColor: "var(--superficie)",
-          borderBottom: "1px solid var(--borda)",
-          padding: "14px 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <p
-            style={{
-              fontFamily: "var(--fonte-titulo)",
-              fontSize: "18px",
-              fontWeight: 600,
-              fontStyle: "italic",
-              color: "var(--texto-principal)",
-              margin: 0,
-            }}
-          >
-            Paola Galvão Studio
-          </p>
-        </Link>
-        {!concluido && (
-          <span
-            style={{
-              fontFamily: "var(--fonte-corpo)",
-              fontSize: "12px",
-              color: "var(--texto-secundario)",
-            }}
-          >
-            Agendamento
-          </span>
-        )}
-      </header>
-
-      {/* Conteúdo */}
       <main
         style={{
-          flex: 1,
-          width: "100%",
           maxWidth: "480px",
           margin: "0 auto",
-          padding: "28px 16px 48px",
+          padding: "32px 16px 48px",
         }}
       >
         {concluido ? (

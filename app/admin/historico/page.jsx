@@ -5,218 +5,496 @@ import {
   formatarMoeda,
   formatarDataCurta,
   formatarHora,
-  formatarDuracao,
-  calcularDuracao,
-  agruparPorMes,
   somarServicos,
 } from "@/lib/formatters";
-import { IcoHistorico, IcoCalendario, IcoRelogio, IcoClientes } from "@/app/components/icons";
-import { STATUS_LABELS, STATUS_OPCOES } from "@/lib/constantes";
+import { IcoHistorico, IcoLixeira } from "@/app/components/icons";
+import {
+  STATUS_LABELS,
+  STATUS_OPCOES,
+  ITENS_POR_PAGINA,
+} from "@/lib/constantes";
+
 import styles from "./Historico.module.css";
 
-// ─── Subcomponentes ───────────────────────────────────────────────────────────
-//Ao invés do spinner, mostra a forma do conteudo enquanto os dados vem da API
+// ─── Helpers ───
+function exibirServicos(atendimento) {
+  const servicos = atendimento.servicos ?? [];
+  return servicos.length > 0 ? servicos.map((s) => s.nome).join(", ") : "—";
+}
+
+function getBadgeClass(status, styles) {
+  const map = {
+    realizado: styles.statusRealizado,
+    agendado: styles.statusAgendado,
+    cancelado: styles.statusCancelado,
+    faltou: styles.statusFaltou,
+  };
+  return `${styles.badgeStatus} ${map[status?.toLowerCase()] ?? ""}`;
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+//Ao buscar os dados da API, ao invez de um sppiner, carrega o corpo do compoenente
 function SkeletonCard() {
   return (
-    <div className={styles.skeletonCard} aria-hidden="true">
-      <div className={styles.skeletonLine} style={{ width: "55%", height: 15 }} />
-      <div className={styles.skeletonLine} style={{ width: "35%", height: 12, marginTop: 6 }} />
-      <div className={styles.skeletonLine} style={{ width: "25%", height: 12, marginTop: 14 }} />
+    <div className={styles.cardMobile} aria-hidden="true">
+      <div className={styles.cardCentro}>
+        <div
+          className={styles.skeletonLine}
+          style={{ width: "50%", height: 14 }}
+        />
+        <div
+          className={styles.skeletonLine}
+          style={{ width: "35%", height: 12, marginTop: 5 }}
+        />
+        <div
+          className={styles.skeletonLine}
+          style={{ width: "25%", height: 11, marginTop: 4 }}
+        />
+      </div>
+      <div
+        className={styles.skeletonLine}
+        style={{ width: 60, height: 22, borderRadius: 20 }}
+      />
     </div>
   );
 }
 
-function BadgeStatus({ status }) {
+// ─── Card mobile ──────────────────────────────────────────────────────────────
+
+function CardMobile({ atendimento }) {
+  const servicos = atendimento.servicos ?? [];
+  const total = somarServicos(servicos);
+  const cancelado = atendimento.status === "cancelado";
+
   return (
-    <span className={`${styles.badge} ${styles[`badge_${status}`]}`}>
-      {STATUS_LABELS[status] ?? status}
-    </span>
+    <div className={styles.cardMobile}>
+      <div className={styles.cardCentro}>
+        <p className={styles.cardCliente}>{atendimento.cliente_nome}</p>
+        <p className={styles.cardServico}>{exibirServicos(atendimento)}</p>
+        <p className={styles.cardData}>
+          {formatarDataCurta(atendimento.inicio)} ·{" "}
+          {formatarHora(atendimento.inicio)}
+          {" · "}
+          <span
+            className={cancelado ? styles.precoRiscado : styles.precoInline}
+          >
+            {formatarMoeda(total)}
+          </span>
+        </p>
+      </div>
+      <div className={styles.cardDireita}>
+        <span className={getBadgeClass(atendimento.status, styles)}>
+          {STATUS_LABELS[atendimento.status] ?? atendimento.status}
+        </span>
+      </div>
+    </div>
   );
 }
 
-function CardAtendimento({ atendimento }) {
-  const servicos  = atendimento.servicos ?? [];
-  const total     = somarServicos(servicos);
-  const duracao   = calcularDuracao(atendimento.inicio, atendimento.fim);
-  const cancelado = atendimento.status === "cancelado";
-  const nomesServicos = servicos.length > 0
-    ? servicos.map((s) => s.nome).join(", ")
-    : "Serviço não informado";
+// ─── Paginação ────────────────────────────────────────────────────────────────
 
+function Paginacao({ paginaAtual, totalPaginas, onChange }) {
+  if (totalPaginas <= 1) return null;
   return (
-    <article
-      className={styles.card}
-      aria-label={`Atendimento de ${atendimento.cliente_nome} em ${formatarDataCurta(atendimento.inicio)}`}
-    >
-      {/* Cabeçalho: serviço + badge */}
-      <div className={styles.cardHeader}>
-        <div className={styles.cardInfo}>
-          <p className={styles.cardServico}>{nomesServicos}</p>
-          <p className={styles.cardCliente}>
-            <IcoClientes size={13} aria-hidden="true" />
-            {atendimento.cliente_nome}
-          </p>
-          <p className={styles.cardData}>
-            <IcoCalendario size={13} aria-hidden="true" />
-            {formatarDataCurta(atendimento.inicio)} às {formatarHora(atendimento.inicio)}
-          </p>
-        </div>
-        <BadgeStatus status={atendimento.status} />
-      </div>
-
-      {/* Rodapé: valor + duração */}
-      <div className={styles.cardFooter}>
-        <span className={cancelado ? styles.precoRiscado : styles.preco}>
-          {formatarMoeda(total)}
-        </span>
-        {duracao && (
-          <span className={styles.duracao}>
-            <IcoRelogio size={13} aria-hidden="true" />
-            {formatarDuracao(duracao)}
-          </span>
-        )}
-      </div>
-
-      {atendimento.observacoes && (
-        <p className={styles.observacoes}>{atendimento.observacoes}</p>
-      )}
-    </article>
+    <nav className="d-flex justify-content-center mt-4" aria-label="Paginação">
+      <ul className="pagination pagination-sm mb-0">
+        <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
+          <button
+            className="page-link"
+            onClick={() => onChange(paginaAtual - 1)}
+            aria-label="Anterior"
+          >
+            ‹
+          </button>
+        </li>
+        {[...Array(totalPaginas)].map((_, i) => (
+          <li
+            key={i + 1}
+            className={`page-item ${paginaAtual === i + 1 ? "active" : ""}`}
+          >
+            <button
+              className="page-link"
+              onClick={() => onChange(i + 1)}
+              style={
+                paginaAtual === i + 1
+                  ? {
+                      backgroundColor: "var(--primaria)",
+                      borderColor: "var(--primaria)",
+                      color: "var(--superficie)",
+                    }
+                  : { color: "var(--primaria)" }
+              }
+            >
+              {i + 1}
+            </button>
+          </li>
+        ))}
+        <li
+          className={`page-item ${paginaAtual === totalPaginas ? "disabled" : ""}`}
+        >
+          <button
+            className="page-link"
+            onClick={() => onChange(paginaAtual + 1)}
+            aria-label="Próxima"
+          >
+            ›
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 }
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function HistoricoPage() {
-  const [atendimentos,    setAtendimentos]    = useState([]);
-  const [filtroStatus,    setFiltroStatus]    = useState("");
-  const [buscaCliente,    setBuscaCliente]    = useState("");
-  const [carregando,      setCarregando]      = useState(true);
-  const [erro,            setErro]            = useState(null);
+  const [atendimentos, setAtendimentos] = useState([]);
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [ordemAsc, setOrdemAsc] = useState(false);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
 
   // ── Busca na API ──────────────────────────────────────────────────────────
   const buscarHistorico = useCallback(async () => {
     setCarregando(true);
     setErro(null);
-
     try {
       const params = new URLSearchParams();
       if (filtroStatus) params.set("status", filtroStatus);
-      // Traz do mais antigo para o mais recente; agrupamos por mês no cliente
+      if (filtroDataInicio) params.set("inicio", filtroDataInicio);
+      if (filtroDataFim) params.set("fim", filtroDataFim);
+
       const res = await fetch(`/api/agendamentos?${params.toString()}`);
       if (!res.ok) throw new Error(`Erro ${res.status}`);
-      const dados = await res.json();
-      setAtendimentos(dados);
+      setAtendimentos(await res.json());
+      setPaginaAtual(1);
     } catch (e) {
-      console.error("[Histórico] Erro ao buscar:", e);
+      console.error("[Histórico]", e);
       setErro("Não foi possível carregar o histórico. Tente novamente.");
     } finally {
       setCarregando(false);
     }
-  }, [filtroStatus]);
+  }, [filtroStatus, filtroDataInicio, filtroDataFim]);
 
   useEffect(() => {
     buscarHistorico();
   }, [buscarHistorico]);
 
-  // ── Filtro de busca por cliente (client-side, sem nova chamada) ───────────
-  const atendimentosFiltrados = buscaCliente.trim()
-    ? atendimentos.filter((a) =>
-        a.cliente_nome?.toLowerCase().includes(buscaCliente.toLowerCase())
-      )
-    : atendimentos;
+  // ── Filtro client-side + ordenação ────────────────────────────────────────
+  const filtrados = atendimentos
+    .filter((a) =>
+      buscaCliente.trim()
+        ? a.cliente_nome?.toLowerCase().includes(buscaCliente.toLowerCase())
+        : true,
+    )
+    .sort((a, b) =>
+      ordemAsc
+        ? new Date(a.inicio) - new Date(b.inicio)
+        : new Date(b.inicio) - new Date(a.inicio),
+    );
 
-  const grupos = agruparPorMes(atendimentosFiltrados);
-  const temFiltroAtivo = filtroStatus || buscaCliente.trim();
+  // ── Paginação ─────────────────────────────────────────────────────────────
+  const totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const itensPagina = filtrados.slice(inicio, inicio + ITENS_POR_PAGINA);
+
+  const temFiltroAtivo =
+    filtroStatus || buscaCliente.trim() || filtroDataInicio || filtroDataFim;
+
+  function limparFiltros() {
+    setBuscaCliente("");
+    setFiltroStatus("");
+    setFiltroDataInicio("");
+    setFiltroDataFim("");
+    setPaginaAtual(1);
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={styles.container}>
-
-      {/* Filtros */}
-      <div className={styles.barraFiltros}>
-
-        {/* Busca por cliente */}
-        <div className={styles.buscaWrap}>
-          <label htmlFor="busca-cliente" className={styles.srOnly}>
-            Buscar por cliente
-          </label>
-          <input
-            id="busca-cliente"
-            type="search"
-            className={styles.inputBusca}
-            placeholder="Buscar por cliente…"
-            value={buscaCliente}
-            onChange={(e) => setBuscaCliente(e.target.value)}
-          />
-        </div>
-
-        {/* Chips de status */}
-        <nav className={styles.filtros} aria-label="Filtrar por status">
-          {STATUS_OPCOES.map((op) => (
-            <button
-              key={op.valor}
-              className={`${styles.chip} ${filtroStatus === op.valor ? styles.chipAtivo : ""}`}
-              onClick={() => setFiltroStatus(op.valor)}
-              aria-pressed={filtroStatus === op.valor}
-            >
-              {op.label}
-            </button>
-          ))}
-        </nav>
+    <div className="container-fluid py-4 px-3 px-md-4">
+      {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className={styles.tituloPagina}>Histórico</h1>
+        <button
+          className={`${styles.btnOrdem} d-none d-md-inline-flex`}
+          onClick={() => {
+            setOrdemAsc((p) => !p);
+            setPaginaAtual(1);
+          }}
+          title={
+            ordemAsc
+              ? "Ordenar: mais recente primeiro"
+              : "Ordenar: mais antigo primeiro"
+          }
+        >
+          {ordemAsc ? "↑ Mais antigo" : "↓ Mais recente"}
+        </button>
       </div>
 
-      {/* ── Estado: carregando ──────────────────────────────────────────────── */}
-      {carregando && (
-        <section
-          className={styles.listaWrap}
-          aria-busy="true"
-          aria-label="Carregando histórico"
-        >
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </section>
-      )}
+      {/* ── Filtros ───────────────────────────────────────────────────────── */}
+      <div className={`${styles.cardFiltros} mb-4`}>
+        <div className="row g-2">
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="busca-cliente">
+              Cliente
+            </label>
+            <input
+              id="busca-cliente"
+              type="search"
+              className={`form-control ${styles.inputFiltro}`}
+              placeholder="Nome do cliente..."
+              value={buscaCliente}
+              onChange={(e) => {
+                setBuscaCliente(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
 
-      {/* ── Estado: erro ────────────────────────────────────────────────────── */}
-      {!carregando && erro && (
-        <div className={styles.estadoErro} role="alert">
-          <p>{erro}</p>
-          <button className={styles.btnRetry} onClick={buscarHistorico}>
-            Tentar novamente
-          </button>
+          <div className="col-8 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtro-status">
+              Status
+            </label>
+            <select
+              id="filtro-status"
+              className={`form-select ${styles.inputFiltro}`}
+              value={filtroStatus}
+              onChange={(e) => {
+                setFiltroStatus(e.target.value);
+                setPaginaAtual(1);
+              }}
+            >
+              {STATUS_OPCOES.map((op) => (
+                <option key={op.valor} value={op.valor}>
+                  {op.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-4 col-md-1 d-flex align-items-end">
+            <button
+              className={`${styles.btnLimpar} w-100`}
+              onClick={limparFiltros}
+              disabled={!temFiltroAtivo}
+              title="Limpar filtros"
+            >
+              <span className="d-md-none">
+                <IcoLixeira />
+              </span>
+              <span className="d-none d-md-inline">Limpar</span>
+            </button>
+          </div>
+
+          <div className="col-6 col-md-2">
+            <label className={styles.labelFiltro} htmlFor="filtro-de">
+              De
+            </label>
+            <input
+              id="filtro-de"
+              type="date"
+              className={`form-control ${styles.inputFiltro}`}
+              value={filtroDataInicio}
+              onChange={(e) => {
+                setFiltroDataInicio(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-6 col-md-2">
+            <label className={styles.labelFiltro} htmlFor="filtro-ate">
+              Até
+            </label>
+            <input
+              id="filtro-ate"
+              type="date"
+              className={`form-control ${styles.inputFiltro}`}
+              value={filtroDataFim}
+              onChange={(e) => {
+                setFiltroDataFim(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          {/* Ordenação só aparece no mobile (no desktop fica no cabeçalho) */}
+          <div className="col-12 d-md-none d-flex justify-content-end">
+            <button
+              className={styles.btnLimpar}
+              onClick={() => {
+                setOrdemAsc((p) => !p);
+                setPaginaAtual(1);
+              }}
+            >
+              {ordemAsc ? "↑ Mais antigo primeiro" : "↓ Mais recente primeiro"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Erro ──────────────────────────────────────────────────────────── */}
+      {erro && (
+        <div
+          className="rounded-3 py-2 px-3 mb-4 small"
+          role="alert"
+          style={{
+            backgroundColor: "var(--erro-fundo)",
+            color: "var(--erro-texto)",
+            border: "1px solid var(--erro-borda)",
+            fontFamily: "var(--fonte-corpo)",
+          }}
+        >
+          {erro}
         </div>
       )}
 
-      {/* ── Estado: vazio ───────────────────────────────────────────────────── */}
-      {!carregando && !erro && atendimentosFiltrados.length === 0 && (
+      {/* ── Carregando ────────────────────────────────────────────────────── */}
+      {carregando && (
+        <div aria-busy="true" aria-label="Carregando histórico">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      )}
+
+      {/* ── Vazio ─────────────────────────────────────────────────────────── */}
+      {!carregando && !erro && filtrados.length === 0 && (
         <div className={styles.estadoVazio} role="status">
           <IcoHistorico size={40} aria-hidden="true" />
-          <p className={styles.estadoVazioTitulo}>Nenhum atendimento encontrado</p>
-          <p className={styles.estadoVazioDesc}>
-            {temFiltroAtivo
-              ? "Tente ajustar os filtros."
-              : "Os atendimentos realizados aparecerão aqui."}
-          </p>
+          <p className="mb-1 fw-medium">Nenhum atendimento encontrado</p>
+          {temFiltroAtivo && (
+            <button className={styles.btnLimpar} onClick={limparFiltros}>
+              Limpar filtros
+            </button>
+          )}
         </div>
       )}
 
-      {/* ── Lista agrupada por mês ──────────────────────────────────────────── */}
-      {!carregando && !erro && grupos.length > 0 && (
-        <section aria-label="Atendimentos agrupados por mês">
-          {grupos.map(([chave, grupo]) => (
-            <div key={chave}>
-              <h2 className={styles.mesLabel}>{grupo.label}</h2>
-              <ul className={styles.lista} role="list">
-                {grupo.itens.map((atendimento) => (
-                  <li key={atendimento.id} role="listitem">
-                    <CardAtendimento atendimento={atendimento} />
-                  </li>
-                ))}
-              </ul>
+      {/* ── Conteúdo ──────────────────────────────────────────────────────── */}
+      {!carregando && !erro && itensPagina.length > 0 && (
+        <>
+          {/* MOBILE: cards */}
+          <div className="d-md-none">
+            {itensPagina.map((a) => (
+              <CardMobile key={a.id} atendimento={a} />
+            ))}
+          </div>
+
+          {/* DESKTOP: tabela */}
+          <div className={`${styles.cardTabela} d-none d-md-block`}>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className={styles.tableHeader}>
+                  <tr>
+                    <th className="px-4 py-3 border-0">
+                      <button
+                        onClick={() => {
+                          setOrdemAsc((p) => !p);
+                          setPaginaAtual(1);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          fontFamily: "var(--fonte-corpo)",
+                          fontWeight: 600,
+                          fontSize: "0.8rem",
+                          color: "var(--texto-secundario)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: 0,
+                        }}
+                        title={
+                          ordemAsc
+                            ? "Ordenar: mais recente primeiro"
+                            : "Ordenar: mais antigo primeiro"
+                        }
+                      >
+                        Data/Hora
+                        <span style={{ fontSize: 12 }}>
+                          {ordemAsc ? "↑" : "↓"}
+                        </span>
+                      </button>
+                    </th>
+                    <th className="py-3 border-0">Cliente</th>
+                    <th className="py-3 border-0">Serviço</th>
+                    <th className="py-3 border-0">Valor</th>
+                    <th className="py-3 border-0">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itensPagina.map((a) => {
+                    const servicos = a.servicos ?? [];
+                    const total = somarServicos(servicos);
+                    const cancelado = a.status === "cancelado";
+                    return (
+                      <tr key={a.id}>
+                        <td className="px-4">
+                          <strong className={styles.tdData}>
+                            {formatarDataCurta(a.inicio)}
+                          </strong>
+                          <br />
+                          <span className={styles.tdHora}>
+                            {formatarHora(a.inicio)}
+                          </span>
+                        </td>
+                        <td style={{ fontFamily: "var(--fonte-corpo)" }}>
+                          {a.cliente_nome}
+                        </td>
+                        <td className={styles.tdServico}>
+                          {exibirServicos(a)}
+                        </td>
+                        <td
+                          style={{
+                            fontFamily: "var(--fonte-corpo)",
+                            fontSize: "0.88rem",
+                          }}
+                        >
+                          <span
+                            style={
+                              cancelado
+                                ? {
+                                    textDecoration: "line-through",
+                                    color: "var(--texto-secundario)",
+                                  }
+                                : {}
+                            }
+                          >
+                            {formatarMoeda(total)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={getBadgeClass(a.status, styles)}>
+                            {STATUS_LABELS[a.status] ?? a.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </section>
+          </div>
+
+          {/* Paginação */}
+          <Paginacao
+            paginaAtual={paginaAtual}
+            totalPaginas={totalPaginas}
+            onChange={setPaginaAtual}
+          />
+
+          {/* Contador */}
+          <p className={styles.contador}>
+            {filtrados.length} atendimento{filtrados.length !== 1 ? "s" : ""}{" "}
+            encontrado{filtrados.length !== 1 ? "s" : ""}
+          </p>
+        </>
       )}
     </div>
   );

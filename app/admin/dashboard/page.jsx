@@ -25,12 +25,7 @@ export default function PaginaDashboard() {
   const [faturamento,  setFaturamento]  = useState(0);
   const [carregando,   setCarregando]   = useState(true);
   const [erro,         setErro]         = useState("");
-  const [dataHoje,     setDataHoje]     = useState("");
-
-  // Evita divergência servidor/cliente na data
-  useEffect(() => {
-    setDataHoje(formatarDataHoje());
-  }, []);
+  const [dataHoje] = useState(() => formatarDataHoje());
 
   useEffect(() => {
     async function buscarDados() {

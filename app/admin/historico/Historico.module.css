@@ -1,0 +1,328 @@
+/* ─── Container ──────────────────────────────────────────────────────────────── */
+.container {
+  padding: 16px 14px 32px;
+  max-width: 860px;
+}
+
+/* ─── Barra de filtros ───────────────────────────────────────────────────────── */
+.barraFiltros {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ─── Busca ──────────────────────────────────────────────────────────────────── */
+.buscaWrap {
+  width: 100%;
+}
+
+.inputBusca {
+  width: 100%;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-medium);
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  font-family: var(--fonte-corpo);
+  color: var(--texto-principal);
+  background-color: var(--superficie);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s;
+}
+
+.inputBusca:focus {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 2px rgba(183, 110, 121, 0.15);
+}
+
+/* ─── Chips de status ────────────────────────────────────────────────────────── */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  border: 1px solid var(--borda-escura);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-family: var(--fonte-corpo);
+  color: var(--texto-secundario);
+  background-color: var(--superficie);
+  cursor: pointer;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background-color: var(--primaria-clara);
+  color: var(--texto-claro);
+}
+
+.chipAtivo {
+  background-color: var(--primaria);
+  color: var(--superficie);
+  border-color: var(--primaria);
+}
+
+/* ─── Rótulo de mês ──────────────────────────────────────────────────────────── */
+.mesLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  text-transform: capitalize;
+  letter-spacing: 0.05em;
+  padding: 16px 0 6px;
+  margin: 0;
+  font-family: var(--fonte-corpo);
+}
+
+/* ─── Lista ──────────────────────────────────────────────────────────────────── */
+.lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listaWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Card ───────────────────────────────────────────────────────────────────── */
+.card {
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-large);
+  padding: 12px 14px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardServico {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 0 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--fonte-corpo);
+}
+
+.cardCliente {
+  font-size: 0.78rem;
+  color: var(--primaria);
+  font-weight: 500;
+  margin: 0 0 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--fonte-corpo);
+}
+
+.cardData {
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--fonte-corpo);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--borda);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.preco {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  font-family: var(--fonte-corpo);
+}
+
+.precoRiscado {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  text-decoration: line-through;
+  font-family: var(--fonte-corpo);
+}
+
+.duracao {
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--fonte-corpo);
+}
+
+.observacoes {
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--borda);
+  font-style: italic;
+  font-family: var(--fonte-corpo);
+}
+
+/* ─── Badges de status ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--fonte-corpo);
+}
+
+/* Usa os tokens de feedback do tokens.css */
+.badge_realizado {
+  background-color: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
+}
+
+.badge_agendado {
+  background-color: var(--info-fundo);
+  color: var(--info-texto);
+}
+
+.badge_cancelado {
+  background-color: var(--erro-fundo);
+  color: var(--erro-texto);
+}
+
+/* ─── Estados ────────────────────────────────────────────────────────────────── */
+.estadoVazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--texto-secundario);
+}
+
+.estadoVazioTitulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 14px 0 6px;
+  font-family: var(--fonte-corpo);
+}
+
+.estadoVazioDesc {
+  font-size: 0.82rem;
+  font-family: var(--fonte-corpo);
+}
+
+.estadoErro {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--erro-texto);
+  font-size: 0.875rem;
+  font-family: var(--fonte-corpo);
+}
+
+.btnRetry {
+  margin-top: 12px;
+  background: none;
+  border: 1px solid var(--erro-texto);
+  color: var(--erro-texto);
+  border-radius: var(--radius-medium);
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-family: var(--fonte-corpo);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+/* ─── Skeleton ───────────────────────────────────────────────────────────────── */
+.skeletonCard {
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-large);
+  padding: 14px;
+}
+
+.skeletonLine {
+  background: linear-gradient(
+    90deg,
+    var(--fundo) 25%,
+    var(--primaria-clara) 50%,
+    var(--fundo) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-small);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Acessibilidade ─────────────────────────────────────────────────────────── */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Desktop ────────────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .container {
+    padding: 24px 28px 40px;
+  }
+
+  .barraFiltros {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .buscaWrap {
+    max-width: 280px;
+  }
+
+  .filtros {
+    flex-wrap: nowrap;
+  }
+}

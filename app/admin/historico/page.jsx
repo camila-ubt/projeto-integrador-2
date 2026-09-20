@@ -165,8 +165,10 @@ export default function HistoricoPage() {
     try {
       const params = new URLSearchParams();
       if (filtroStatus) params.set("status", filtroStatus);
-      if (filtroDataInicio) params.set("inicio", filtroDataInicio);
-      if (filtroDataFim) params.set("fim", filtroDataFim);
+
+      if (filtroDataInicio)
+        params.set("inicio", `${filtroDataInicio}T00:00:00.000Z`);
+      if (filtroDataFim) params.set("fim", `${filtroDataFim}T23:59:59.999Z`);
 
       const res = await fetch(`/api/agendamentos?${params.toString()}`);
       if (!res.ok) throw new Error(`Erro ${res.status}`);

@@ -2,11 +2,11 @@ import { query } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
-// GET /api/clientes?busca=texto  -> lista clientes (busca por nome ou telefone)
+// GET /api/clientes?busca=texto -> lista clientes (busca por nome ou telefone)
 export async function GET(request) {
   const { errorResponse } = await requireAuth();
   if (errorResponse) return errorResponse;
-  
+
   try {
     const { searchParams } = new URL(request.url);
     const busca = searchParams.get("busca")?.trim();

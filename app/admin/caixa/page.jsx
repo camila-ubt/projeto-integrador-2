@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./Financeiro.module.css";
 import { formatarDataCurta } from "@/lib/formatters";
 
@@ -23,7 +23,7 @@ export default function PageFinanceiro() {
   // ── Busca de Dados na API ──
   useEffect(() => {
     carregarFinanceiro();
-  }, [filtroMes, filtroAno]);
+  }, [carregarFinanceiro]);
 
   // Calcula o primeiro e o último dia do mês/ano selecionados,
   // pois a API espera "inicio" e "fim", e não "mes"/"ano".
@@ -36,7 +36,7 @@ export default function PageFinanceiro() {
     return { inicio, fim };
   }
 
-  async function carregarFinanceiro() {
+    const carregarFinanceiro = useCallback(async () => {
     setCarregando(true);
     try {
       const { inicio, fim } = calcularPeriodo(filtroMes, filtroAno);
@@ -61,7 +61,7 @@ export default function PageFinanceiro() {
     } finally {
       setCarregando(false);
     }
-  }
+  }, [filtroMes, filtroAno]);
 
   // ── Ações do Modal ──
   function abrirModal() {

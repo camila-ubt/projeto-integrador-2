@@ -6,16 +6,18 @@ A evolução da Beta acompanha os testes da equipe e a validação com a cliente
 
 A primeira versão reúne a área pública, agendamento online, contato pelo WhatsApp para avaliação prévia e painel administrativo. O banco já mantém os relacionamentos, bloqueia conflitos entre horários agendados e gera recomendações de retorno. Os recursos de cada tela estão em [Funcionalidades](Funcionalidades).
 
-## Pontos para ajuste e validação
+## Testes internos da Beta
 
-| Frente | Próxima evolução |
-| --- | --- |
-| Login | Alinhar o redirecionamento do painel e a configuração do NextAuth, que apontam para `/admin/login`, com a página existente em `/login`. |
-| Retornos | Alinhar os status entre tela, API e schema: a opção `faltou` aparece na interface e na API, enquanto o banco aceita `pendente`, `agendado`, `realizado` e `cancelado`. Revisar também a continuidade dos retornos pendentes na tela. |
-| Agendamento | Validar horários, duração dos serviços, cancelamentos e mensagens de conflito com os cenários reais do estúdio. |
-| Histórico | Avaliar com a cliente como incorporar à interface os detalhes de procedimentos já previstos no banco e na API. |
-| Caixa e dashboard | Conferir lançamentos e totais durante os testes de uso. |
-| Responsividade | Revisar navegação, formulários e leitura dos registros em diferentes tamanhos de tela. |
-| Qualidade | Tratar os apontamentos do lint e acompanhar as análises de segurança e dependências. |
+A próxima etapa é testar os principais fluxos da versão Beta, do agendamento online ao uso do painel administrativo. Os testes da equipe devem ajudar a identificar dificuldades de navegação e problemas que precisam de correção antes da validação com a cliente.
 
-A consolidação da versão final depende das correções e do retorno da cliente sobre os fluxos testados.
+## Validação com a cliente
+
+Com os ajustes iniciais, os fluxos serão avaliados com a cliente em situações da rotina do estúdio. Essa etapa deve orientar a revisão do histórico, dos retornos, da agenda e do caixa conforme o uso real e as necessidades observadas.
+
+## Ajustes durante os testes
+
+Os problemas encontrados serão corrigidos e os fluxos ajustados serão testados novamente. Também serão revisados a responsividade e a usabilidade, com atenção à navegação, ao preenchimento dos formulários e à leitura das informações no computador e no celular.
+
+## Consolidação da versão final
+
+A versão final será consolidada a partir dos resultados dos testes e do retorno da cliente sobre os fluxos avaliados. As prioridades poderão mudar ao longo desse processo, conforme as dificuldades encontradas e os ajustes necessários para a entrega.

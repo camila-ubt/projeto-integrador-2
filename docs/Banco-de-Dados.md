@@ -4,7 +4,7 @@ O PostgreSQL/Neon concentra os dados do estúdio. A estrutura documentada corres
 
 ## Tabelas
 
-Todas as tabelas possuem `id` UUID como chave primária e `criado_em`. Os principais campos são:
+As tabelas principais do sistema utilizam UUID como identificador. A tabela técnica `rate_limits` usa uma chave textual gerada a partir de hash para controlar tentativas de acesso. Os principais campos são:
 
 | Tabela | Dados armazenados |
 | --- | --- |
@@ -15,6 +15,7 @@ Todas as tabelas possuem `id` UUID como chave primária e `criado_em`. Os princi
 | `historico_procedimentos` | Cliente, agendamento e serviço opcionais, produto utilizado, cor, técnica, observações e data do procedimento. |
 | `retornos` | Cliente, serviço e agendamento de origem opcionais, data recomendada, status e observações. |
 | `movimentacoes_financeiras` | Agendamento opcional, tipo, descrição, categoria, valor, forma de pagamento e data da movimentação. |
+| `rate_limits` | Chave de controle, quantidade de tentativas e início da janela usada no limite de requisições. |
 | `usuarios` | Nome, e-mail único, `senha_hash`, perfil `admin`, indicador `ativo` e `atualizado_em`. |
 
 ## Relacionamentos

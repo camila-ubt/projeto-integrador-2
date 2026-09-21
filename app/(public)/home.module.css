@@ -11,17 +11,17 @@
 }
 
 .heroMarca {
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.9rem;
-  color: var(--texto-secundario);
+  font-size: 3rem;
+  line-height: 1.1;
+  color: var(--texto-principal);
   margin-bottom: 1rem;
 }
 
 .heroTitulo {
-  font-size: 3rem;
-  line-height: 1.1;
-  max-width: 700px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.9rem;
+  color: var(--texto-secundario);
   margin-bottom: 1rem;
 }
 
@@ -132,16 +132,33 @@
 .contatoLinks {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .contatoLinks a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-width: 190px;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--primaria);
+  border-radius: 8px;
   color: var(--primaria-escura);
   font-weight: 500;
+  text-decoration: none;
+  transition: 0.2s ease;
 }
 
 .contatoLinks a:hover {
-  color: var(--primaria);
+  background-color: var(--primaria);
+  color: white;
+}
+
+.iconeContato {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 

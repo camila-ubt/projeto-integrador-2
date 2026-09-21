@@ -305,6 +305,12 @@
   flex-direction: column;
 }
 
+.modalContent .modal-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .modalTitulo {
   font-family: "Cormorant Garamond", serif;
   font-size: 1.2rem;

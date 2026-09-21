@@ -769,7 +769,7 @@ export default function Agendamentos() {
                 />
               </div>
 
-              <div className="modal-body d-flex flex-column gap-3">
+              <div className="modal-body d-flex flex-column gap-3" style={{ overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
                 {/* Identificação do agendamento — somente leitura */}
                 <p className={styles.modalTexto} style={{ margin: 0 }}>
                   <strong>{modalEditar.agenda?.cliente_nome}</strong> —{" "}

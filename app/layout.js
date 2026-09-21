@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/style.css";
+import AppVersion from "./components/AppVersion";
 
 import BootstrapClient from "./components/BootstrapClient";
 
@@ -38,6 +39,8 @@ export default function RootLayout({ children }) {
         <BootstrapClient />
 
         {children}
+        
+        <AppVersion />
       </body>
     </html>
   );

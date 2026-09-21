@@ -27,7 +27,7 @@ export async function PUT(request, { params }) {
   if (parseError) return parseError;
 
   const { status, data_recomendada, observacoes } = body ?? {};
-  const statusValidos = ["pendente", "agendado", "realizado", "cancelado"];
+  const statusValidos = ["pendente", "agendado", "realizado", "cancelado", "faltou"];
   if (status && !statusValidos.includes(status)) {
     return jsonError(`status inválido. Use um de: ${statusValidos.join(", ")}.`, 400);
   }

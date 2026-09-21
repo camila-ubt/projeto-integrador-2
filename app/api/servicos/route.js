@@ -3,16 +3,7 @@ import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 // GET /api/servicos -> lista pública de serviços ativos.
-// GET /api/servicos?todos=true -> lista administrativa, incluindo inativos.
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const todos = searchParams.get("todos") === "true";
-
-  if (todos) {
-    const { errorResponse } = await requireAuth();
-    if (errorResponse) return errorResponse;
-  }
-
+export async function GET() {
   try {
     const { rows } = await query(
       `SELECT
@@ -25,7 +16,7 @@ export async function GET(request) {
           retorno_dias,
           ativo
          FROM servicos
-         ${todos ? "" : "WHERE ativo = true"}
+         WHERE ativo = true
          ORDER BY nome ASC`
     );
 

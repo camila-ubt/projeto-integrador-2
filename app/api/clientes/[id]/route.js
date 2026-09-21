@@ -51,8 +51,8 @@ export async function PUT(request, { params }) {
       `UPDATE clientes SET
          nome = COALESCE($1, nome),
          telefone = COALESCE($2, telefone),
-         aniversario = COALESCE($5, aniversario),
-         observacoes = COALESCE($6, observacoes),
+         aniversario = COALESCE($3, aniversario),
+         observacoes = COALESCE($4, observacoes),
          atualizado_em = now()
        WHERE id = $5
        RETURNING *`,

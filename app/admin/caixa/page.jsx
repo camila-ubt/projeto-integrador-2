@@ -20,11 +20,6 @@ export default function PageFinanceiro() {
   const [erroForm, setErroForm] = useState(null);
   const [form, setForm] = useState({ descricao: "", valor: "", tipo: "receita", data: "" });
 
-  // ── Busca de Dados na API ──
-  useEffect(() => {
-    carregarFinanceiro();
-  }, [carregarFinanceiro]);
-
   // Calcula o primeiro e o último dia do mês/ano selecionados,
   // pois a API espera "inicio" e "fim", e não "mes"/"ano".
   function calcularPeriodo(mes, ano) {
@@ -62,6 +57,10 @@ export default function PageFinanceiro() {
       setCarregando(false);
     }
   }, [filtroMes, filtroAno]);
+
+  useEffect(() => {
+  carregarFinanceiro();
+  }, [carregarFinanceiro]);
 
   // ── Ações do Modal ──
   function abrirModal() {

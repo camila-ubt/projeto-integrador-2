@@ -13,7 +13,7 @@
 .heroMarca {
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--texto-secundario);
   margin-bottom: 1rem;
 }
@@ -44,12 +44,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
-  align-items: center;
+  align-items: start;
 }
 
 .sobreImagem {
   min-height: 420px;
-  background: var(--primaria-clara);
   border-radius: var(--radius-large);
   overflow: hidden;
 }
@@ -65,17 +64,19 @@
   font-size: 2.4rem;
   line-height: 1.2;
   margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .sobreTexto > p:not(.secaoLegenda) {
   color: var(--texto-claro);
   margin-bottom: 1rem;
+  text-align: justify;
 }
 
 .secaoLegenda {
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--texto-secundario);
   margin-bottom: 0.8rem;
 }
@@ -171,6 +172,10 @@
   .sobreImagem {
     min-height: 280px;
   }
+  
+  .sobreTexto .secaoLegenda {
+  text-align: center;
+}
 
   .sobreTexto h2 {
     font-size: 2rem;

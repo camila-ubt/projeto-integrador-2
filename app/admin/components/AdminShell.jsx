@@ -42,7 +42,7 @@ export default function AdminShell({ children }) {
   // Redireciona para login se não autenticado
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/admin/login");
+      router.push("/login");
     }
   }, [status, router]);
 

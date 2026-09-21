@@ -2,11 +2,11 @@ import { query } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
-// GET /api/clientes?busca=texto  -> lista clientes (busca por nome ou telefone)
+// GET /api/clientes?busca=texto -> lista clientes (busca por nome, telefone, CPF ou e-mail)
 export async function GET(request) {
   const { errorResponse } = await requireAuth();
   if (errorResponse) return errorResponse;
-  
+
   try {
     const { searchParams } = new URL(request.url);
     const busca = searchParams.get("busca")?.trim();
@@ -15,11 +15,11 @@ export async function GET(request) {
     let where = "";
     if (busca) {
       params.push(`%${busca}%`);
-      where = `WHERE nome ILIKE $1 OR telefone ILIKE $1`;
+      where = `WHERE nome ILIKE $1 OR telefone ILIKE $1 OR cpf ILIKE $1 OR email ILIKE $1`;
     }
 
     const { rows } = await query(
-      `SELECT id, nome, telefone, aniversario, observacoes, criado_em, atualizado_em
+      `SELECT id, nome, telefone, cpf, email, aniversario, observacoes, criado_em, atualizado_em
          FROM clientes
          ${where}
         ORDER BY nome ASC`,
@@ -33,7 +33,7 @@ export async function GET(request) {
 }
 
 // POST /api/clientes -> cria cliente
-// body: { nome, telefone, aniversario?, observacoes? }
+// body: { nome, telefone, cpf?, email?, aniversario?, observacoes? }
 export async function POST(request) {
   const { errorResponse } = await requireAuth();
   if (errorResponse) return errorResponse;
@@ -41,17 +41,17 @@ export async function POST(request) {
   const { data: body, error: parseError } = await readJson(request);
   if (parseError) return parseError;
 
-  const { nome, telefone, aniversario, observacoes } = body ?? {};
+  const { nome, telefone, cpf, email, aniversario, observacoes } = body ?? {};
   if (!nome || !telefone) {
     return jsonError("Os campos 'nome' e 'telefone' são obrigatórios.", 400);
   }
 
   try {
     const { rows } = await query(
-      `INSERT INTO clientes (nome, telefone, aniversario, observacoes)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO clientes (nome, telefone, cpf, email, aniversario, observacoes)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [nome, telefone, aniversario ?? null, observacoes ?? null]
+      [nome, telefone, cpf ?? null, email ?? null, aniversario ?? null, observacoes ?? null]
     );
     return jsonOk(rows[0], 201);
   } catch (error) {

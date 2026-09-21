@@ -23,7 +23,7 @@ export default function PageClientes() {
         const res = await fetch(`/api/clientes?busca=${encodeURIComponent(buscaCliente)}`);
         const data = await res.json();
         setClientes(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch {
         setClientes([]);
       } finally {
         setCarregando(false);
@@ -86,9 +86,13 @@ export default function PageClientes() {
     if (!window.confirm("Tem certeza que deseja excluir este cliente?")) return;
     
     try {
-      await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Não foi possível excluir o cliente.");
+        return;
+      }
       setClientes((prev) => prev.filter((c) => c.id !== id));
-    } catch (err) {
+    } catch {
       alert("Erro ao excluir cliente.");
     }
   }

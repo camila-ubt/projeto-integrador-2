@@ -23,7 +23,7 @@ export default function PageRetornos() {
         const res = await fetch(url);
         const data = await res.json();
         setRetornos(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch {
         setRetornos([]);
       } finally {
         setCarregando(false);
@@ -35,13 +35,17 @@ export default function PageRetornos() {
   async function alterarStatus(id, novoStatus) {
     try {
       // A API expõe PUT, não PATCH, para atualizar o status.
-      await fetch(`/api/retorno/${id}`, {
+      const res = await fetch(`/api/retorno/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: novoStatus })
       });
+      if (!res.ok) {
+        alert("Não foi possível atualizar o status do retorno.");
+        return;
+      }
       setRetornos(prev => prev.map(r => r.id === id ? { ...r, status: novoStatus } : r));
-    } catch (err) {
+    } catch {
       alert("Erro ao atualizar o status do retorno.");
     }
   }

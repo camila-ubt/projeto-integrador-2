@@ -129,7 +129,7 @@ export default function PageFinanceiro() {
   return (
     <div style={{ padding: "1rem" }}>
       <header className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className={styles.tituloPagina}>Financeiro</h1>
+        <h1 className={styles.tituloPagina}>Caixa</h1>
         <button className={styles.btnIcone} style={{ backgroundColor: "var(--primaria)", color: "white" }} onClick={abrirModal}>
           +
         </button>
@@ -184,7 +184,7 @@ export default function PageFinanceiro() {
 
       {/* ── Lista de Movimentações ── */}
       {carregando ? (
-        <div className={styles.loadingState}>Carregando financeiro...</div>
+        <div className={styles.loadingState}>Carregando caixa...</div>
       ) : movimentacoes.length === 0 ? (
         <div className={styles.estadoVazio}>
           <p>Nenhuma movimentação registrada neste período.</p>

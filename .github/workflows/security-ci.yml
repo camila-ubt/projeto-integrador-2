@@ -31,13 +31,12 @@ jobs:
           cache: npm
 
       - name: Instalar dependências
-        run: npm install
+        run: npm ci
 
       - name: Auditar dependências
         run: npm audit --audit-level=high
 
       - name: Executar lint
-        continue-on-error: true
         run: npm run lint
 
       - name: Validar build

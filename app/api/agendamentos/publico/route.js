@@ -1,27 +1,6 @@
 import { query, withTransaction } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
-
-// Rate limit simples em memória: no máximo 5 tentativas por IP a cada 10 minutos.
-// OBS: em ambiente serverless (várias instâncias), isso é uma primeira barreira
-// contra spam, não uma garantia absoluta — cada instância guarda seu próprio contador.
-const tentativasPorIp = new Map();
-const LIMITE_TENTATIVAS = 5;
-const JANELA_MS = 10 * 60 * 1000; // 10 minutos
-
-function podeTentar(ip) {
-  const agora = Date.now();
-  const registro = tentativasPorIp.get(ip);
-
-  if (!registro || agora - registro.desde > JANELA_MS) {
-    tentativasPorIp.set(ip, { tentativas: 1, desde: agora });
-    return true;
-  }
-
-  if (registro.tentativas >= LIMITE_TENTATIVAS) return false;
-
-  registro.tentativas++;
-  return true;
-}
+import { consumirLimite } from "@/lib/rate-limit";
 
 
 // Endpoint PÚBLICO (sem login/senha) para a página de agendamento consultar
@@ -104,7 +83,14 @@ export async function POST(request) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "desconhecido";
 
-  if (!podeTentar(ip)) {
+  const { permitido } = await consumirLimite({
+  escopo: "agendamento-publico",
+  identificador: ip,
+  limite: 5,
+  janelaMinutos: 10,
+  });
+  
+  if (!permitido) {
     return jsonError(
       "Muitas tentativas de agendamento em pouco tempo. Aguarde alguns minutos e tente novamente.",
       429

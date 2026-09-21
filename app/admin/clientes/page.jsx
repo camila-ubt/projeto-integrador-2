@@ -13,7 +13,7 @@ export default function PageClientes() {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState(null);
-  const [form, setForm] = useState({ id: null, nome: "", cpf: "", telefone: "" });
+  const [form, setForm] = useState({ id: null, nome: "", telefone: "" });
 
   // ── Busca de Clientes  ──
   useEffect(() => {
@@ -37,9 +37,9 @@ export default function PageClientes() {
   function abrirModal(cliente = null) {
     setErroForm(null);
     if (cliente) {
-      setForm({ id: cliente.id, nome: cliente.nome, cpf: cliente.cpf, telefone: cliente.telefone });
+      setForm({ id: cliente.id, nome: cliente.nome, telefone: cliente.telefone });
     } else {
-      setForm({ id: null, nome: "", cpf: "", telefone: "" });
+      setForm({ id: null, nome: "", telefone: "" });
     }
     setModalAberto(true);
   }
@@ -52,7 +52,7 @@ export default function PageClientes() {
     e.preventDefault();
     setErroForm(null);
 
-    if (!form.nome.trim() || !form.telefone.trim() || !form.cpf.trim()) {
+    if (!form.nome.trim() || !form.telefone.trim()) {
       return setErroForm("Preencha todos os campos obrigatórios.");
     }
 
@@ -110,7 +110,7 @@ export default function PageClientes() {
       {/* ── Filtros ── */}
       <section className={`${styles.cardFiltros} mb-4 d-flex gap-3 align-items-end`}>
         <div style={{ flex: 1 }}>
-          <label className={styles.labelFiltro} htmlFor="busca">Buscar Cliente (Nome, CPF ou E-mail)</label>
+          <label className={styles.labelFiltro} htmlFor="busca">Buscar Cliente (Nome ou Telefone)</label>
           <input
             id="busca"
             type="text"
@@ -137,7 +137,6 @@ export default function PageClientes() {
               <thead className={styles.tableHeader}>
                 <tr>
                   <th className="p-3">Nome</th>
-                  <th className="p-3">CPF</th>
                   <th className="p-3">Telefone</th>
                   <th className="p-3 text-end">Ações</th>
                 </tr>
@@ -146,7 +145,6 @@ export default function PageClientes() {
                 {clientes.map((c) => (
                   <tr key={c.id}>
                     <td className={`p-3 ${styles.tdData}`}>{c.nome}</td>
-                    <td className={`p-3 ${styles.tdHora}`}>{c.cpf}</td>
                     <td className={`p-3 ${styles.tdHora}`}>{formatarTelefone(c.telefone)}</td>
                     <td className="p-3 text-end">
                       <div className="d-flex gap-2 justify-content-end">
@@ -165,7 +163,7 @@ export default function PageClientes() {
               <div key={c.id} className={styles.cardMobile}>
                 <div className={styles.cardCentro}>
                   <p className={styles.cardCliente}>{c.nome}</p>
-                  <p className={styles.cardServico}>{c.cpf} | {formatarTelefone(c.telefone)}</p>
+                  <p className={styles.cardServico}>{formatarTelefone(c.telefone)}</p>
                 </div>
                 <div className={styles.cardDireita}>
                   <div className={styles.cardAcoes}>
@@ -199,10 +197,6 @@ export default function PageClientes() {
                 <div>
                   <label className={styles.labelFiltro}>Nome Completo</label>
                   <input type="text" className={`form-control ${styles.inputFiltro}`} value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus />
-                </div>
-                <div>
-                  <label className={styles.labelFiltro}>CPF</label>
-                  <input type="text" className={`form-control ${styles.inputFiltro}`} value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} />
                 </div>
                 <div>
                   <label className={styles.labelFiltro}>Telefone</label>

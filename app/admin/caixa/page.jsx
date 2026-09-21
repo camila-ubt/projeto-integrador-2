@@ -49,7 +49,6 @@ export default function PageFinanceiro() {
 
   // ── Busca de Dados na API ──
   const carregarFinanceiro = useCallback(async () => {
-    setCarregando(true);
 
     try {
       const { inicio, fim } = calcularPeriodo(filtroMes, filtroAno);
@@ -144,7 +143,8 @@ export default function PageFinanceiro() {
       }
 
       fecharModal();
-      carregarFinanceiro();
+      setCarregando(true);
+      await carregarFinanceiro();
     } catch (err) {
       setErroForm(err.message);
     } finally {
@@ -166,7 +166,8 @@ export default function PageFinanceiro() {
         method: "DELETE",
       });
 
-      carregarFinanceiro();
+      setCarregando(true);
+      await carregarFinanceiro();
     } catch {
       alert("Erro ao excluir registro.");
     }
@@ -245,7 +246,10 @@ export default function PageFinanceiro() {
           <select
             className={`form-control ${styles.inputFiltro}`}
             value={filtroMes}
-            onChange={(e) => setFiltroMes(e.target.value)}
+            onChange={(e) => {
+              setCarregando(true);
+              setFiltroMes(e.target.value);
+            }}
           >
             <option value="01">Janeiro</option>
             <option value="02">Fevereiro</option>
@@ -268,7 +272,10 @@ export default function PageFinanceiro() {
           <select
             className={`form-control ${styles.inputFiltro}`}
             value={filtroAno}
-            onChange={(e) => setFiltroAno(e.target.value)}
+            onChange={(e) => {
+              setCarregando(true);
+              setFiltroAno(e.target.value);
+            }}
           >
             <option value="2024">2024</option>
             <option value="2025">2025</option>

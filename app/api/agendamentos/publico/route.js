@@ -83,12 +83,17 @@ export async function POST(request) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "desconhecido";
 
-  const { permitido } = await consumirLimite({
-  escopo: "agendamento-publico",
-  identificador: ip,
-  limite: 5,
-  janelaMinutos: 10,
-  });
+  let permitido;
+  try {
+    ({ permitido } = await consumirLimite({
+      escopo: "agendamento-publico",
+      identificador: ip,
+      limite: 5,
+      janelaMinutos: 10,
+    }));
+  } catch (error) {
+    return handleDbError(error);
+  }
   
   if (!permitido) {
     return jsonError(
@@ -163,7 +168,7 @@ export async function POST(request) {
       const indisponivel = servicosEncontrados.find((s) => !s.ativo);
       if (indisponivel) {
         throw Object.assign(
-          new Error(`O serviço "${indisponivel.nome}" não está mais disponível.`),
+          new Error("Um dos serviços selecionados não está mais disponível."),
           { code: "APP_VALIDATION" }
         );
       }
@@ -217,8 +222,9 @@ export async function POST(request) {
       }
 
       return {
-        ...novoAgendamento,
-        cliente_nome: nome,
+        id: novoAgendamento.id,
+        inicio: novoAgendamento.inicio,
+        fim: novoAgendamento.fim,
         servicos: servicosEncontrados.map((s) => ({
           servico_id: s.id,
           nome: s.nome,

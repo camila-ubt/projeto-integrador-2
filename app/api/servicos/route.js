@@ -2,17 +2,33 @@ import { query } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
-// GET /api/servicos?todos=true -> lista serviços (por padrão só os ativos)
+// GET /api/servicos -> lista pública de serviços ativos.
+// GET /api/servicos?todos=true -> lista administrativa, incluindo inativos.
 export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const todos = searchParams.get("todos") === "true";
+  const { searchParams } = new URL(request.url);
+  const todos = searchParams.get("todos") === "true";
 
+  if (todos) {
+    const { errorResponse } = await requireAuth();
+    if (errorResponse) return errorResponse;
+  }
+
+  try {
     const { rows } = await query(
-      `SELECT * FROM servicos
-        ${todos ? "" : "WHERE ativo = true"}
-        ORDER BY nome ASC`
+      `SELECT
+          id,
+          nome,
+          descricao,
+          duracao_minutos,
+          preco_padrao,
+          necessita_avaliacao,
+          retorno_dias,
+          ativo
+         FROM servicos
+         ${todos ? "" : "WHERE ativo = true"}
+         ORDER BY nome ASC`
     );
+
     return jsonOk(rows);
   } catch (error) {
     return handleDbError(error);

@@ -48,46 +48,44 @@ export default function PageFinanceiro() {
   });
 
   // ── Busca de Dados na API ──
-  const carregarFinanceiro = useCallback(async () => {
+  const carregarFinanceiro = useCallback(() => {
+    const { inicio, fim } = calcularPeriodo(filtroMes, filtroAno);
 
-    try {
-      const { inicio, fim } = calcularPeriodo(filtroMes, filtroAno);
+    return fetch(`/api/financeiro?inicio=${inicio}&fim=${fim}`)
+      .then((res) => res.json())
+      .then((data) => {
 
-      const res = await fetch(
-        `/api/financeiro?inicio=${inicio}&fim=${fim}`
-      );
+        // A API retorna uma lista (array) de movimentações,
+        // não { movimentacoes, resumo }.
+        const lista = Array.isArray(data) ? data : [];
 
-      const data = await res.json();
+        const receitas = lista
+          .filter((m) => m.tipo === "receita")
+          .reduce((acc, m) => acc + Number(m.valor || 0), 0);
 
-      // A API retorna uma lista (array) de movimentações,
-      // não { movimentacoes, resumo }.
-      const lista = Array.isArray(data) ? data : [];
+        const despesas = lista
+          .filter((m) => m.tipo === "despesa")
+          .reduce((acc, m) => acc + Number(m.valor || 0), 0);
 
-      const receitas = lista
-        .filter((m) => m.tipo === "receita")
-        .reduce((acc, m) => acc + Number(m.valor || 0), 0);
+        setMovimentacoes(lista);
 
-      const despesas = lista
-        .filter((m) => m.tipo === "despesa")
-        .reduce((acc, m) => acc + Number(m.valor || 0), 0);
-
-      setMovimentacoes(lista);
-
-      setResumo({
-        receitas,
-        despesas,
-        saldo: receitas - despesas,
+        setResumo({
+          receitas,
+          despesas,
+          saldo: receitas - despesas,
+        });
+      })
+      .catch(() => {
+        setMovimentacoes([]);
+        setResumo({
+          receitas: 0,
+          despesas: 0,
+          saldo: 0,
+        });
+      })
+      .finally(() => {
+        setCarregando(false);
       });
-    } catch {
-      setMovimentacoes([]);
-      setResumo({
-        receitas: 0,
-        despesas: 0,
-        saldo: 0,
-      });
-    } finally {
-      setCarregando(false);
-    }
   }, [filtroMes, filtroAno]);
 
   useEffect(() => {

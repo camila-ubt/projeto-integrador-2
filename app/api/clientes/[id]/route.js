@@ -44,21 +44,19 @@ export async function PUT(request, { params }) {
   const { data: body, error: parseError } = await readJson(request);
   if (parseError) return parseError;
 
-  const { nome, telefone, cpf, email, aniversario, observacoes } = body ?? {};
+  const { nome, telefone, aniversario, observacoes } = body ?? {};
 
   try {
     const { rows } = await query(
       `UPDATE clientes SET
          nome = COALESCE($1, nome),
          telefone = COALESCE($2, telefone),
-         cpf = COALESCE($3, cpf),
-         email = COALESCE($4, email),
          aniversario = COALESCE($5, aniversario),
          observacoes = COALESCE($6, observacoes),
          atualizado_em = now()
-       WHERE id = $7
+       WHERE id = $5
        RETURNING *`,
-      [nome ?? null, telefone ?? null, cpf ?? null, email ?? null, aniversario ?? null, observacoes ?? null, id]
+      [nome ?? null, telefone ?? null, aniversario ?? null, observacoes ?? null, id]
     );
     if (rows.length === 0) return jsonError("Cliente não encontrado.", 404);
     return jsonOk(rows[0]);

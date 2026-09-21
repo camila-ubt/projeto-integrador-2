@@ -25,8 +25,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           limite: 5,
           janelaMinutos: 10,
         });
-
-if (!permitido) return null;
+        
+        if (!permitido) return null;
 
         const { rows } = await query(
           `SELECT id, nome, email, senha_hash, perfil, ativo

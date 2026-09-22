@@ -1,105 +1,270 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { buscarResumoDashboard } from "@/services/resumoDashboard";
+import { formatarMoeda } from "@/lib/formatters";
+import styles from "./Dashboard.module.css";
 
-import CardsResumo       from "@/app/admin/components/CardsResumo";
-import ListaAgendamentos from "@/app/admin/components/ListaAgendamentos";
-import ListaRetornos     from "@/app/admin/components/ListaRetornos";
+const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-function formatarDataHoje() {
-  return new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day:     "numeric",
-    month:   "long",
-    year:    "numeric",
+function dataLocal(data) {
+  return new Date(`${String(data).slice(0, 10)}T12:00:00`);
+}
+
+function dataInput(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function periodoInicial() {
+  const hoje = new Date();
+  return { inicio: dataInput(new Date(hoje.getFullYear(), hoje.getMonth(), 1)), fim: dataInput(hoje) };
+}
+
+function formatarPercentual(valor) {
+  return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+function Comparacao({ valor, pontos = false, melhorQuandoCresce = true }) {
+  if (valor === null) return <span className={styles.comparacaoNeutra}>Sem base anterior</span>;
+  const positivo = valor > 0;
+  const negativo = valor < 0;
+  return (
+    <span className={valor === 0 ? styles.comparacaoNeutra : (positivo === melhorQuandoCresce) ? styles.comparacaoPositiva : styles.comparacaoNegativa}>
+      {positivo ? "↑" : negativo ? "↓" : "•"} {formatarPercentual(Math.abs(valor))} {pontos ? "p.p. " : ""}vs. período anterior
+    </span>
+  );
+}
+
+function Kpi({ titulo, valor, comparacao, destaque, complemento, pontos, melhorQuandoCresce }) {
+  return (
+    <article className={`${styles.kpi} ${destaque ? styles.kpiDestaque : ""}`}>
+      <p>{titulo}</p>
+      <strong>{valor}</strong>
+      {comparacao !== undefined && <Comparacao valor={comparacao} pontos={pontos} melhorQuandoCresce={melhorQuandoCresce} />}
+      {complemento && <small>{complemento}</small>}
+    </article>
+  );
+}
+
+function Secao({ titulo, subtitulo, children, className = "", abertaInicialmente = false }) {
+  const [aberta, setAberta] = useState(abertaInicialmente);
+  return (
+    <section className={`${styles.secao} ${className} ${aberta ? styles.secaoAberta : ""}`}>
+      <div className={styles.cabecalhoSecao}>
+        <div>
+          <h2>{titulo}</h2>
+          {subtitulo && <p>{subtitulo}</p>}
+        </div>
+        <button
+          className={styles.botaoSecao}
+          type="button"
+          aria-label={`${aberta ? "Recolher" : "Expandir"} ${titulo}`}
+          aria-expanded={aberta}
+          onClick={() => setAberta((valor) => !valor)}
+        >
+          {aberta ? "−" : "+"}
+        </button>
+      </div>
+      <div className={styles.conteudoSecao}>{children}</div>
+    </section>
+  );
+}
+
+function BarraRanking({ rotulo, valor, maximo, detalhe, cor = "primaria" }) {
+  const largura = maximo ? Math.max((valor / maximo) * 100, valor ? 4 : 0) : 0;
+  return (
+    <div className={styles.itemRanking}>
+      <div className={styles.rotuloRanking}><span>{rotulo}</span><strong>{detalhe}</strong></div>
+      <div className={styles.trilho}><span className={styles[cor]} style={{ width: `${largura}%` }} /></div>
+    </div>
+  );
+}
+
+function agruparEvolucao(itens) {
+  if (!itens?.length) return [];
+  const modo = itens.length > 120 ? "mes" : itens.length > 45 ? "semana" : "dia";
+  const grupos = new Map();
+
+  itens.forEach((item) => {
+    const data = dataLocal(item.data);
+    let chave;
+    let rotulo;
+    if (modo === "mes") {
+      chave = `${data.getFullYear()}-${data.getMonth()}`;
+      rotulo = data.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    } else if (modo === "semana") {
+      const segunda = new Date(data);
+      const deslocamento = (data.getDay() + 6) % 7;
+      segunda.setDate(data.getDate() - deslocamento);
+      chave = dataInput(segunda);
+      rotulo = `Sem. ${segunda.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`;
+    } else {
+      chave = String(item.data).slice(0, 10);
+      rotulo = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    }
+    const grupo = grupos.get(chave) || { rotulo, faturamento: 0, atendimentos: 0 };
+    grupo.faturamento += item.faturamento;
+    grupo.atendimentos += item.atendimentos;
+    grupos.set(chave, grupo);
   });
+  return [...grupos.values()];
+}
+
+function GraficoEvolucao({ dados }) {
+  const pontos = agruparEvolucao(dados);
+  const maximoFaturamento = Math.max(...pontos.map((item) => item.faturamento), 1);
+  const maximoAtendimentos = Math.max(...pontos.map((item) => item.atendimentos), 1);
+  if (!pontos.some((item) => item.faturamento || item.atendimentos)) {
+    return <EstadoVazio texto="Ainda não há movimentação nesse período." />;
+  }
+  return (
+    <>
+      <div className={styles.legendaEvolucao}>
+        <span><i className={styles.amostraFaturamento} />Valor dos serviços realizados</span>
+        <span><i className={styles.amostraAtendimentos} />Atendimentos realizados</span>
+      </div>
+      <div className={styles.graficoEvolucao}>
+        {pontos.map((item) => (
+          <div className={styles.colunaGrafico} key={item.rotulo} title={`${formatarMoeda(item.faturamento)} · ${item.atendimentos} atendimento(s)`}>
+            <div className={styles.areaBarra}>
+              <span className={styles.barraFaturamento} style={{ height: `${item.faturamento ? Math.max((item.faturamento / maximoFaturamento) * 100, 6) : 0}%` }} />
+              <span className={styles.barraAtendimentos} style={{ height: `${item.atendimentos ? Math.max((item.atendimentos / maximoAtendimentos) * 100, 6) : 0}%` }} />
+            </div>
+            <span className={styles.rotuloGrafico}>{item.rotulo}</span>
+            <span className={styles.numeroAtendimentos}>{item.atendimentos ? `${item.atendimentos} atend.` : ""}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function EstadoVazio({ texto }) {
+  return <p className={styles.vazio}>{texto}</p>;
+}
+
+function Filtros({ filtros, setFiltros, opcoes, aoAplicar, carregando }) {
+  function alterar(evento) {
+    setFiltros((atuais) => ({ ...atuais, [evento.target.name]: evento.target.value }));
+  }
+  return (
+    <form className={styles.filtros} onSubmit={(evento) => { evento.preventDefault(); aoAplicar(); }}>
+      <label>De<input type="date" name="inicio" value={filtros.inicio} max={filtros.fim} onChange={alterar} /></label>
+      <label>Até<input type="date" name="fim" value={filtros.fim} min={filtros.inicio} onChange={alterar} /></label>
+      <label>Serviço<select name="servico_id" value={filtros.servico_id} onChange={alterar}><option value="">Todos</option>{opcoes.servicos?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
+      <label>Status<select name="status" value={filtros.status} onChange={alterar}><option value="">Todos</option><option value="realizado">Realizado</option><option value="agendado">Agendado</option><option value="cancelado">Cancelado</option><option value="faltou">Faltou</option></select></label>
+      <label>Cliente<select name="cliente_id" value={filtros.cliente_id} onChange={alterar}><option value="">Todos</option>{opcoes.clientes?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
+      <button type="submit" disabled={carregando}>{carregando ? "Atualizando…" : "Aplicar filtros"}</button>
+    </form>
+  );
 }
 
 export default function PaginaDashboard() {
   const { status: statusSessao } = useSession();
-
-  const [agendamentos, setAgendamentos] = useState([]);
-  const [retornos,     setRetornos]     = useState([]);
-  const [faturamento,  setFaturamento]  = useState(0);
-  const [carregando,   setCarregando]   = useState(true);
-  const [erro,         setErro]         = useState("");
-  const [dataHoje] = useState(() => formatarDataHoje());
+  const [filtros, setFiltros] = useState(() => ({ ...periodoInicial(), servico_id: "", status: "", cliente_id: "" }));
+  const [filtrosAplicados, setFiltrosAplicados] = useState(filtros);
+  const [dados, setDados] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
-    async function buscarDados() {
-      try {
-        setCarregando(true);
-        const dados = await buscarResumoDashboard();
-        setAgendamentos(dados.agendamentosHoje);
-        setRetornos(dados.retornosPendentes);
-        setFaturamento(dados.faturamentoDia);
-      } catch {
-        setErro("Não foi possível carregar os dados. Tente novamente.");
-      } finally {
-        setCarregando(false);
-      }
-    }
+    if (statusSessao !== "authenticated") return undefined;
+    let ativo = true;
 
-    if (statusSessao === "authenticated") buscarDados();
-  }, [statusSessao]);
+    buscarResumoDashboard(filtrosAplicados)
+      .then((resultado) => {
+        if (ativo) setDados(resultado);
+      })
+      .catch((error) => {
+        if (ativo) setErro(error.message || "Não foi possível carregar os dados.");
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
 
-  if (carregando) {
-    return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border" role="status" style={{ color: "var(--primaria)" }}>
-          <span className="visually-hidden">Carregando...</span>
-        </div>
-      </div>
-    );
+    return () => { ativo = false; };
+  }, [statusSessao, filtrosAplicados, tentativa]);
+
+  const diasSemana = useMemo(() => DIAS.map((nome, indice) => ({ nome, quantidade: dados?.diasSemana.find((item) => item.dia === indice + 1)?.quantidade || 0 })), [dados]);
+
+  if (!dados && carregando) {
+    return <div className={styles.carregando}><div className="spinner-border" role="status"><span className="visually-hidden">Carregando...</span></div><p>Preparando sua visão do negócio…</p></div>;
   }
 
+  if (!dados) {
+    return <div className={styles.erroInicial} role="alert"><strong>Não foi possível abrir a dashboard.</strong><span>{erro}</span><button type="button" onClick={() => { setCarregando(true); setErro(""); setTentativa((valor) => valor + 1); }}>Tentar novamente</button></div>;
+  }
+
+  const kpis = dados?.kpis;
+  const maiorServico = Math.max(...(dados?.servicos.map((item) => item.quantidade) || [0]));
+  const maiorFaturamentoServico = Math.max(...(dados?.servicos.map((item) => item.faturamento) || [0]));
+  const maiorDia = Math.max(...diasSemana.map((item) => item.quantidade), 0);
+  const maiorHorario = Math.max(...(dados?.horarios.map((item) => item.quantidade) || [0]));
+  const totalClientesSegmentados = (dados?.clientes.novos || 0) + (dados?.clientes.recorrentes || 0);
+
   return (
-    <div className="px-3" style={{ paddingTop: "16px" }}>
+    <div className={styles.pagina}>
+      <div className={styles.introducao}>
+        <div><span>Visão do negócio</span><h1>Como o studio está performando?</h1><p>Compare resultados, entenda o comportamento dos clientes e encontre os horários de maior movimento.</p></div>
+        <span className={styles.periodoAtual}>{dataLocal(dados.periodo.inicio).toLocaleDateString("pt-BR")} — {dataLocal(dados.periodo.fim).toLocaleDateString("pt-BR")}</span>
+      </div>
 
-      {/* Data de hoje — contexto visual discreto */}
-      {dataHoje && (
-        <p
-          className="text-capitalize"
-          style={{
-            fontSize:      "11px",
-            color:         "var(--texto-secundario)",
-            fontFamily:    "var(--fonte-corpo)",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            marginBottom:  "12px",
-          }}
-        >
-          {dataHoje}
-        </p>
-      )}
+      <Filtros filtros={filtros} setFiltros={setFiltros} opcoes={dados.opcoes} carregando={carregando} aoAplicar={() => { setCarregando(true); setErro(""); setFiltrosAplicados({ ...filtros }); }} />
+      {erro && <div className={styles.erro} role="alert">{erro}<button type="button" onClick={() => { setCarregando(true); setErro(""); setTentativa((valor) => valor + 1); }}>Tentar novamente</button></div>}
 
-      {/* Erro global */}
-      {erro && (
-        <div
-          className="rounded-3 py-2 px-3 mb-3 small"
-          role="alert"
-          style={{
-            backgroundColor: "var(--erro-fundo)",
-            color:           "var(--erro-texto)",
-            border:          "1px solid var(--erro-borda)",
-            fontFamily:      "var(--fonte-corpo)",
-          }}
-        >
-          {erro}
-        </div>
-      )}
+      <div className={styles.gradeKpis} aria-busy={carregando}>
+        <Kpi titulo="Valor dos atendimentos" valor={formatarMoeda(kpis.faturamento)} comparacao={kpis.comparacao.faturamento} destaque complemento={`Receitas lançadas no Caixa: ${formatarMoeda(kpis.receitasCaixa)}`} />
+        <Kpi titulo="Atendimentos" valor={kpis.atendimentos} comparacao={kpis.comparacao.atendimentos} complemento={`${kpis.realizados} realizados · ${kpis.agendados} agendados`} />
+        <Kpi titulo="Ticket médio" valor={formatarMoeda(kpis.ticketMedio)} comparacao={kpis.comparacao.ticketMedio} complemento="valor de serviços por atendimento realizado" />
+        <Kpi titulo="Clientes atendidos" valor={kpis.clientes} comparacao={kpis.comparacao.clientes} complemento="clientes únicos" />
+        <Kpi titulo="Cancelamentos e faltas" valor={formatarPercentual(kpis.taxaAusencias)} comparacao={kpis.comparacao.taxaAusencias} pontos melhorQuandoCresce={false} complemento={`${kpis.cancelados} cancelados · ${kpis.faltas} faltas`} />
+      </div>
 
-      <CardsResumo
-        totalAgendamentos={agendamentos.length}
-        totalRetornos={retornos.length}
-        faturamento={faturamento}
-      />
+      <Secao titulo="Evolução do período" subtitulo="Compare o valor dos serviços e os atendimentos realizados em cada data." abertaInicialmente>
+        <GraficoEvolucao dados={dados.evolucao} />
+      </Secao>
 
-      <ListaAgendamentos agendamentos={agendamentos} />
+      <div className={styles.gradeDuasColunas}>
+        <Secao titulo="Serviços mais realizados" subtitulo="Participação por quantidade de serviços concluídos.">
+          {dados.servicos.length ? dados.servicos.map((item) => <BarraRanking key={item.id} rotulo={item.nome} valor={item.quantidade} maximo={maiorServico} detalhe={`${item.quantidade} · ${formatarPercentual(item.quantidade / item.totalServicos * 100)}`} />) : <EstadoVazio texto="Nenhum serviço realizado no período." />}
+        </Secao>
+        <Secao titulo="Serviços de maior valor" subtitulo="Soma dos valores registrados nos serviços concluídos.">
+          {dados.servicos.length ? [...dados.servicos].sort((a, b) => b.faturamento - a.faturamento).map((item) => <BarraRanking key={item.id} rotulo={item.nome} valor={item.faturamento} maximo={maiorFaturamentoServico} detalhe={formatarMoeda(item.faturamento)} cor="dourada" />) : <EstadoVazio texto="Nenhum faturamento por serviço no período." />}
+        </Secao>
+      </div>
 
-      <ListaRetornos retornos={retornos} />
+      <div className={styles.gradeDuasColunas}>
+        <Secao titulo="Movimento por dia" subtitulo="Quantidade de agendamentos em cada dia da semana.">
+          <div className={styles.diasSemana}>{diasSemana.map((item) => <div key={item.nome}><span style={{ height: `${Math.max(item.quantidade / Math.max(maiorDia, 1) * 100, item.quantidade ? 8 : 0)}%` }} /><strong>{item.quantidade}</strong><small>{item.nome}</small></div>)}</div>
+        </Secao>
+        <Secao titulo="Clientes novos e recorrentes" subtitulo="Classificação pelo histórico de atendimentos realizados.">
+          <div className={styles.clientesResumo}>
+            <div className={styles.anel} style={{ "--percentual": `${totalClientesSegmentados ? dados.clientes.recorrentes / totalClientesSegmentados * 100 : 0}%` }}><strong>{totalClientesSegmentados ? Math.round(dados.clientes.recorrentes / totalClientesSegmentados * 100) : 0}%</strong><span>recorrentes</span></div>
+            <div className={styles.legendaClientes}><p><span className={styles.pontoNovo} />Novos <strong>{dados.clientes.novos}</strong></p><p><span className={styles.pontoRecorrente} />Recorrentes <strong>{dados.clientes.recorrentes}</strong></p><p className={styles.intervalo}>Intervalo médio <strong>{dados.clientes.intervaloMedio === null ? "Sem histórico" : `${Math.round(dados.clientes.intervaloMedio)} dias`}</strong></p></div>
+          </div>
+        </Secao>
+      </div>
+
+      <div className={styles.gradeDuasColunas}>
+        <Secao titulo="Horários mais procurados" subtitulo="Horário de início dos agendamentos.">
+          {dados.horarios.length ? dados.horarios.map((item) => <BarraRanking key={item.hora} rotulo={`${String(item.hora).padStart(2, "0")}:00`} valor={item.quantidade} maximo={maiorHorario} detalhe={`${item.quantidade} atendimento${item.quantidade === 1 ? "" : "s"}`} />) : <EstadoVazio texto="Nenhum horário encontrado no período." />}
+          <div className={styles.destaqueSecundario}><span>Duração média agendada</span><strong>{Math.round(kpis.duracaoMedia)} min</strong></div>
+        </Secao>
+        <Secao titulo="Clientes que mais retornam" subtitulo="Visitas de retorno realizadas no período.">
+          {dados.clientes.ranking.length ? <div className={styles.tabelaSimples}>{dados.clientes.ranking.map((item, indice) => <div key={item.id}><span>{indice + 1}</span><p>{item.nome}</p><strong>{item.retornos}</strong></div>)}</div> : <EstadoVazio texto="Ainda não há visitas de retorno no período." />}
+        </Secao>
+      </div>
+
+      <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise.">
+        {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <article key={item.id}><time>{new Date(item.inicio).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" })}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
+      </Secao>
+
+      <p className={styles.nota}>A taxa de ocupação será calculada quando os horários disponíveis do studio forem definidos.</p>
     </div>
   );
 }

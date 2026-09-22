@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import styles from "./Financeiro.module.css";
 import { formatarDataCurta } from "@/lib/formatters";
+import { CATEGORIA_RECEITA_AUTOMATICA } from "@/lib/receita-atendimento";
 
 // Calcula o primeiro e o último dia do mês/ano selecionados,
 // pois a API espera "inicio" e "fim", e não "mes"/"ano".
@@ -313,6 +314,9 @@ export default function PageFinanceiro() {
 
                     <td className={`p-3 ${styles.tdData}`}>
                       {m.descricao}
+                      {m.categoria === CATEGORIA_RECEITA_AUTOMATICA && (
+                        <span className="d-block small text-muted">Lançamento automático</span>
+                      )}
                     </td>
 
                     <td className="p-3">
@@ -340,12 +344,14 @@ export default function PageFinanceiro() {
 
                     <td className="p-3 text-end">
                       <div className="d-flex gap-2 justify-content-end">
-                        <button
-                          className={styles.btnIconePerigo}
-                          onClick={() => excluirMovimentacao(m.id)}
-                        >
-                          🗑
-                        </button>
+                        {m.categoria !== CATEGORIA_RECEITA_AUTOMATICA && (
+                          <button
+                            className={styles.btnIconePerigo}
+                            onClick={() => excluirMovimentacao(m.id)}
+                          >
+                            🗑
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -360,6 +366,10 @@ export default function PageFinanceiro() {
               <div key={m.id} className={styles.cardMobile}>
                 <div className={styles.cardCentro}>
                   <p className={styles.cardCliente}>{m.descricao}</p>
+
+                  {m.categoria === CATEGORIA_RECEITA_AUTOMATICA && (
+                    <p className={styles.cardServico}>Lançamento automático</p>
+                  )}
 
                   <p className={styles.cardServico}>
                     {formatarDataCurta(m.data_movimentacao)}
@@ -378,12 +388,14 @@ export default function PageFinanceiro() {
                   </strong>
 
                   <div className={styles.cardAcoes}>
-                    <button
-                      className={styles.btnIconePerigo}
-                      onClick={() => excluirMovimentacao(m.id)}
-                    >
-                      🗑
-                    </button>
+                    {m.categoria !== CATEGORIA_RECEITA_AUTOMATICA && (
+                      <button
+                        className={styles.btnIconePerigo}
+                        onClick={() => excluirMovimentacao(m.id)}
+                      >
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

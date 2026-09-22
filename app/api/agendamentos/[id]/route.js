@@ -1,6 +1,7 @@
 import { query, withTransaction } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
+import { sincronizarReceitaAtendimento } from "@/lib/receita-atendimento";
 
 // GET /api/agendamentos/:id
 // Expõe dados da cliente (nome, telefone, observações) -> precisa de login,
@@ -35,8 +36,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// Observação: mudar status para 'realizado' dispara o trigger do banco que
-// cria automaticamente o registro em 'retornos', quando o serviço tiver retorno_dias.
+// Concluir o atendimento cria o retorno e registra os serviços no Caixa.
 export async function PUT(request, { params }) {
   const { errorResponse } = await requireAuth();
   if (errorResponse) return errorResponse;
@@ -54,20 +54,15 @@ export async function PUT(request, { params }) {
 
   try {
     const agendamentoAtualizado = await withTransaction(async (client) => {
-      const { rows } = await client.query(
-        `UPDATE agendamentos SET
-           inicio = COALESCE($1, inicio),
-           fim = COALESCE($2, fim),
-           status = COALESCE($3, status),
-           observacoes = COALESCE($4, observacoes)
-         WHERE id = $5
-         RETURNING *`,
-        [inicio ?? null, fim ?? null, status ?? null, observacoes ?? null, id]
+      const { rows: existentes } = await client.query(
+        "SELECT id FROM agendamentos WHERE id = $1 FOR UPDATE",
+        [id]
       );
-      if (rows.length === 0) {
+      if (existentes.length === 0) {
         throw Object.assign(new Error("Agendamento não encontrado."), { code: "APP_NOT_FOUND" });
       }
 
+      // O trigger de retorno precisa encontrar os serviços finais do atendimento.
       if (Array.isArray(servicos)) {
         await client.query("DELETE FROM agendamento_servicos WHERE agendamento_id = $1", [id]);
         for (const item of servicos) {
@@ -95,6 +90,17 @@ export async function PUT(request, { params }) {
         }
       }
 
+      const { rows } = await client.query(
+        `UPDATE agendamentos SET
+           inicio = COALESCE($1, inicio),
+           fim = COALESCE($2, fim),
+           status = COALESCE($3, status),
+           observacoes = COALESCE($4, observacoes)
+         WHERE id = $5
+         RETURNING *`,
+        [inicio ?? null, fim ?? null, status ?? null, observacoes ?? null, id]
+      );
+      await sincronizarReceitaAtendimento(client, rows[0]);
       return rows[0];
     });
 
@@ -117,6 +123,13 @@ export async function DELETE(request, { params }) {
 
   const { id } = await params;
   try {
+    const { rows: lancamentos } = await query(
+      "SELECT 1 FROM movimentacoes_financeiras WHERE agendamento_id = $1 LIMIT 1",
+      [id]
+    );
+    if (lancamentos.length) {
+      return jsonError("Este atendimento tem lançamento no Caixa e não pode ser excluído.", 409);
+    }
     const { rowCount } = await query("DELETE FROM agendamentos WHERE id = $1", [id]);
     if (rowCount === 0) return jsonError("Agendamento não encontrado.", 404);
     return jsonOk({ ok: true });

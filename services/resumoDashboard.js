@@ -1,13 +1,18 @@
-async function buscarApi() {
-  const resposta = await fetch("/api/admin/resumo", { cache: "no-store" });
+export async function buscarResumoDashboard(filtros = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(filtros).forEach(([chave, valor]) => {
+    if (valor) params.set(chave, valor);
+  });
+
+  const resposta = await fetch(`/api/admin/resumo?${params.toString()}`, {
+    cache: "no-store",
+  });
 
   if (!resposta.ok) {
-    throw new Error("Erro ao buscar dados do dashboard.");
+    const erro = await resposta.json().catch(() => null);
+    throw new Error(erro?.error || "Erro ao buscar dados do dashboard.");
   }
 
   return resposta.json();
-}
-
-export async function buscarResumoDashboard() {
-  return buscarApi();
 }

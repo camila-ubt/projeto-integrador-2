@@ -42,7 +42,7 @@ export default function PageServicos() {
       setCarregando(true);
       try {
         const url = mostrarInativos
-          ? "/api/servicos?todos=true"
+          ? "/api/admin/servicos"
           : "/api/servicos";
         const res = await fetch(url);
         const data = await res.json();
@@ -122,7 +122,7 @@ export default function PageServicos() {
         ? "Serviço atualizado com sucesso."
         : "Serviço criado com sucesso.";
       const urlBusca = mostrarInativos
-        ? "/api/servicos?todos=true"
+        ? "/api/admin/servicos"
         : "/api/servicos";
       const resBusca = await fetch(urlBusca);
       const dados = await resBusca.json();

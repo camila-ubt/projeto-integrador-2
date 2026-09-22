@@ -159,27 +159,30 @@ export default function HistoricoPage() {
   const [erro, setErro] = useState(null);
 
   // ── Busca na API ──────────────────────────────────────────────────────────
-  const buscarHistorico = useCallback(async () => {
-    setCarregando(true);
-    setErro(null);
-    try {
-      const params = new URLSearchParams();
-      if (filtroStatus) params.set("status", filtroStatus);
+  const buscarHistorico = useCallback(() => {
+    const params = new URLSearchParams();
+    if (filtroStatus) params.set("status", filtroStatus);
 
-      if (filtroDataInicio)
-        params.set("inicio", `${filtroDataInicio}T00:00:00.000Z`);
-      if (filtroDataFim) params.set("fim", `${filtroDataFim}T23:59:59.999Z`);
+    if (filtroDataInicio)
+      params.set("inicio", `${filtroDataInicio}T00:00:00.000Z`);
+    if (filtroDataFim) params.set("fim", `${filtroDataFim}T23:59:59.999Z`);
 
-      const res = await fetch(`/api/agendamentos?${params.toString()}`);
-      if (!res.ok) throw new Error(`Erro ${res.status}`);
-      setAtendimentos(await res.json());
-      setPaginaAtual(1);
-    } catch (e) {
-      console.error("[Histórico]", e);
-      setErro("Não foi possível carregar o histórico. Tente novamente.");
-    } finally {
-      setCarregando(false);
-    }
+    return fetch(`/api/agendamentos?${params.toString()}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        setAtendimentos(data);
+        setPaginaAtual(1);
+      })
+      .catch((e) => {
+        console.error("[Histórico]", e);
+        setErro("Não foi possível carregar o histórico. Tente novamente.");
+      })
+      .finally(() => {
+        setCarregando(false);
+      });
   }, [filtroStatus, filtroDataInicio, filtroDataFim]);
 
   useEffect(() => {
@@ -208,6 +211,10 @@ export default function HistoricoPage() {
     filtroStatus || buscaCliente.trim() || filtroDataInicio || filtroDataFim;
 
   function limparFiltros() {
+    if (filtroStatus || filtroDataInicio || filtroDataFim) {
+      setCarregando(true);
+      setErro(null);
+    }
     setBuscaCliente("");
     setFiltroStatus("");
     setFiltroDataInicio("");
@@ -266,6 +273,8 @@ export default function HistoricoPage() {
               className={`form-select ${styles.inputFiltro}`}
               value={filtroStatus}
               onChange={(e) => {
+                setCarregando(true);
+                setErro(null);
                 setFiltroStatus(e.target.value);
                 setPaginaAtual(1);
               }}
@@ -302,6 +311,8 @@ export default function HistoricoPage() {
               className={`form-control ${styles.inputFiltro}`}
               value={filtroDataInicio}
               onChange={(e) => {
+                setCarregando(true);
+                setErro(null);
                 setFiltroDataInicio(e.target.value);
                 setPaginaAtual(1);
               }}
@@ -318,6 +329,8 @@ export default function HistoricoPage() {
               className={`form-control ${styles.inputFiltro}`}
               value={filtroDataFim}
               onChange={(e) => {
+                setCarregando(true);
+                setErro(null);
                 setFiltroDataFim(e.target.value);
                 setPaginaAtual(1);
               }}

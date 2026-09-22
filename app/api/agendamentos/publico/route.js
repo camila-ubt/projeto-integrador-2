@@ -1,27 +1,6 @@
 import { query, withTransaction } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
-
-// Rate limit simples em memória: no máximo 5 tentativas por IP a cada 10 minutos.
-// OBS: em ambiente serverless (várias instâncias), isso é uma primeira barreira
-// contra spam, não uma garantia absoluta — cada instância guarda seu próprio contador.
-const tentativasPorIp = new Map();
-const LIMITE_TENTATIVAS = 5;
-const JANELA_MS = 10 * 60 * 1000; // 10 minutos
-
-function podeTentar(ip) {
-  const agora = Date.now();
-  const registro = tentativasPorIp.get(ip);
-
-  if (!registro || agora - registro.desde > JANELA_MS) {
-    tentativasPorIp.set(ip, { tentativas: 1, desde: agora });
-    return true;
-  }
-
-  if (registro.tentativas >= LIMITE_TENTATIVAS) return false;
-
-  registro.tentativas++;
-  return true;
-}
+import { consumirLimite } from "@/lib/rate-limit";
 
 
 // Endpoint PÚBLICO (sem login/senha) para a página de agendamento consultar
@@ -104,7 +83,19 @@ export async function POST(request) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "desconhecido";
 
-  if (!podeTentar(ip)) {
+  let permitido;
+  try {
+    ({ permitido } = await consumirLimite({
+      escopo: "agendamento-publico",
+      identificador: ip,
+      limite: 5,
+      janelaMinutos: 10,
+    }));
+  } catch (error) {
+    return handleDbError(error);
+  }
+  
+  if (!permitido) {
     return jsonError(
       "Muitas tentativas de agendamento em pouco tempo. Aguarde alguns minutos e tente novamente.",
       429
@@ -177,7 +168,7 @@ export async function POST(request) {
       const indisponivel = servicosEncontrados.find((s) => !s.ativo);
       if (indisponivel) {
         throw Object.assign(
-          new Error(`O serviço "${indisponivel.nome}" não está mais disponível.`),
+          new Error("Um dos serviços selecionados não está mais disponível."),
           { code: "APP_VALIDATION" }
         );
       }
@@ -231,8 +222,9 @@ export async function POST(request) {
       }
 
       return {
-        ...novoAgendamento,
-        cliente_nome: nome,
+        id: novoAgendamento.id,
+        inicio: novoAgendamento.inicio,
+        fim: novoAgendamento.fim,
         servicos: servicosEncontrados.map((s) => ({
           servico_id: s.id,
           nome: s.nome,

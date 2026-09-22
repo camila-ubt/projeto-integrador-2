@@ -158,6 +158,16 @@ CREATE TABLE public.movimentacoes_financeiras (
     CONSTRAINT movimentacoes_financeiras_valor_check CHECK ((valor > (0)::numeric))
 );
 
+--
+-- Name: rate_limits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rate_limits (
+    chave text NOT NULL,
+    tentativas integer DEFAULT 0 NOT NULL,
+    inicio_janela timestamp with time zone DEFAULT now() NOT NULL
+);
+
 
 --
 -- Name: retornos; Type: TABLE; Schema: public; Owner: -
@@ -256,6 +266,13 @@ ALTER TABLE ONLY public.agendamentos
 
 ALTER TABLE ONLY public.movimentacoes_financeiras
     ADD CONSTRAINT movimentacoes_financeiras_pkey PRIMARY KEY (id);
+
+--
+-- Name: rate_limits rate_limits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rate_limits
+    ADD CONSTRAINT rate_limits_pkey PRIMARY KEY (chave);
 
 
 --

@@ -13,9 +13,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "E-mail", type: "email" },
         senha: { label: "Senha", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = credentials?.email?.toString().trim().toLowerCase();
         const senha = credentials?.senha?.toString();
+        const ip = request?.headers
+          ?.get("x-forwarded-for")
+          ?.split(",")[0]
+          ?.trim();
         
         if (!email || !senha) return null;
 
@@ -27,6 +31,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         
         if (!permitido) return null;
+
+        if (ip) {
+          const limiteIp = await consumirLimite({
+            escopo: "login-ip",
+            identificador: ip,
+            limite: 20,
+            janelaMinutos: 10,
+          });
+
+          if (!limiteIp.permitido) return null;
+        }
 
         const { rows } = await query(
           `SELECT id, nome, email, senha_hash, perfil, ativo
@@ -50,6 +65,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           identificador: email,
         });
 
+        if (ip) {
+          await limparLimite({
+            escopo: "login-ip",
+            identificador: ip,
+          });
+        }
+
         // Objeto retornado aqui vira 'user' no callback jwt abaixo.
         return {
           id: usuario.id,
@@ -60,7 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
   pages: {
     signIn: "/login",
   },

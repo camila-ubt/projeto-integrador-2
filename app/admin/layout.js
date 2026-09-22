@@ -1,6 +1,6 @@
 import { SessionProvider } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getActiveAdminSession } from "@/lib/auth-helpers";
 import AdminShell from "@/app/admin/components/AdminShell";
 
 export const metadata = {
@@ -9,9 +9,9 @@ export const metadata = {
 };
 
 export default async function AdminLayout({ children }) {
-  const session = await auth();
+  const session = await getActiveAdminSession();
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/login");
   }
 

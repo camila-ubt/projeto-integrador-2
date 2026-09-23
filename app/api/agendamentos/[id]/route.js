@@ -23,14 +23,19 @@ export async function GET(request, { params }) {
     if (!agendamento) return jsonError("Agendamento não encontrado.", 404);
 
     const { rows: servicos } = await query(
-      `SELECT ags.servico_id, s.nome, ags.valor
+      `SELECT ags.servico_id, s.nome, ags.valor, s.retorno_dias
          FROM agendamento_servicos ags
          JOIN servicos s ON s.id = ags.servico_id
         WHERE ags.agendamento_id = $1`,
       [id]
     );
 
-    return jsonOk({ ...agendamento, servicos });
+    const { rows: retornos } = await query(
+      `SELECT servico_id, data_recomendada FROM retornos WHERE agendamento_origem_id = $1`,
+      [id]
+    );
+
+    return jsonOk({ ...agendamento, servicos, retornos });
   } catch (error) {
     return handleDbError(error);
   }

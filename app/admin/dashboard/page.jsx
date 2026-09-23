@@ -10,6 +10,10 @@ import { dataHojeSalao, limitesDoMes } from "@/lib/periodo-filtros";
 import styles from "./Dashboard.module.css";
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const CATEGORIAS_DESPESA = {
+  produtos: "Produtos", materiais: "Materiais", estrutura: "Estrutura",
+  marketing: "Marketing", equipe: "Equipe", outros: "Outros",
+};
 
 function dataLocal(data) {
   return new Date(`${String(data).slice(0, 10)}T12:00:00`);
@@ -251,6 +255,7 @@ export default function PaginaDashboard() {
   const retorno = dados.clientes.retorno;
   const taxaRetorno = retorno.totalClientes ? retorno.clientes / retorno.totalClientes * 100 : null;
   const taxaRetornoAnterior = retorno.totalClientesAnterior ? retorno.clientesAnterior / retorno.totalClientesAnterior * 100 : null;
+  const proporcaoDespesas = kpis.receitasCaixa ? kpis.despesas / kpis.receitasCaixa * 100 : null;
 
   return (
     <div className={styles.pagina}>
@@ -269,6 +274,38 @@ export default function PaginaDashboard() {
         <Kpi titulo="Clientes atendidos" valor={kpis.clientes} comparacao={kpis.comparacao.clientes} complemento="clientes únicos" />
         <Kpi titulo="Cancelamentos e faltas" valor={formatarPercentual(kpis.taxaAusencias)} comparacao={kpis.comparacao.taxaAusencias} pontos melhorQuandoCresce={false} complemento={`${kpis.cancelados} cancelados · ${kpis.faltas} faltas`} />
       </div>
+
+      <Secao titulo="Despesas e saldo do Caixa" subtitulo="Entradas e saídas registradas no período.">
+        <div className={styles.analiseFinanceira}>
+          <div className={styles.indicadoresFinanceiros}>
+            <div>
+              <span>Despesas registradas</span>
+              <strong>{formatarMoeda(kpis.despesas)}</strong>
+              <Comparacao valor={dados.financeiro.comparacaoDespesas} melhorQuandoCresce={false} />
+            </div>
+            <div>
+              <span>Saldo do Caixa</span>
+              <strong>{formatarMoeda(kpis.saldo)}</strong>
+              <small>Receitas lançadas: {formatarMoeda(kpis.receitasCaixa)}</small>
+              <small>{proporcaoDespesas === null ? "Sem receitas lançadas no período" : `Despesas equivalem a ${formatarPercentual(proporcaoDespesas)} das receitas`}</small>
+            </div>
+          </div>
+          <div className={styles.faixasRetorno}>
+            <h3>Despesas por categoria</h3>
+            {dados.financeiro.categorias.length ? dados.financeiro.categorias.map((item) => (
+              <BarraRanking
+                key={item.categoria}
+                rotulo={CATEGORIAS_DESPESA[item.categoria] || item.categoria}
+                valor={item.total}
+                maximo={kpis.despesas}
+                detalhe={`${formatarMoeda(item.total)} · ${formatarPercentual(item.total / kpis.despesas * 100)}`}
+              />
+            )) : <EstadoVazio texto="Nenhuma despesa registrada no período." />}
+          </div>
+          <p className={styles.notaRetorno}>Os valores vêm dos lançamentos do Caixa e seguem o período selecionado. Despesas sem vínculo com atendimentos não são filtradas por cliente, serviço ou status. Saldo do Caixa não representa lucro.</p>
+          <Link className={styles.linkCaixa} href="/admin/caixa">Ver lançamentos no Caixa →</Link>
+        </div>
+      </Secao>
 
       <Secao titulo="Evolução do período" subtitulo="Compare o valor dos serviços e os atendimentos realizados em cada data.">
         <GraficoEvolucao dados={dados.evolucao} />

@@ -73,14 +73,11 @@ export async function GET(request) {
       SELECT 1 FROM agendamento_servicos filtro_ags
       WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
     ))`;
-  const filtroFinanceiro = `
-    m.data_movimentacao BETWEEN $1::date AND $2::date
-    AND ($3::text IS NULL OR a.status = $3)
-    AND ($4::uuid IS NULL OR a.cliente_id = $4)
-    AND ($5::uuid IS NULL OR EXISTS (
-      SELECT 1 FROM agendamento_servicos filtro_ags
-      WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
-    ))`;
+  const consultaCaixa = `SELECT
+      COALESCE(SUM(valor) FILTER (WHERE tipo = 'receita'), 0) AS receitas,
+      COALESCE(SUM(valor) FILTER (WHERE tipo = 'despesa'), 0) AS despesas
+    FROM movimentacoes_financeiras
+    WHERE data_movimentacao BETWEEN $1::date AND $2::date`;
   const consultaRecorrencia = `WITH realizados AS (
       SELECT a.id, a.cliente_id,
         (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date AS data,
@@ -139,12 +136,7 @@ export async function GET(request) {
           COUNT(*) FILTER (WHERE a.status = 'faltou')::int AS faltas,
           COUNT(DISTINCT a.cliente_id) FILTER (WHERE a.status = 'realizado')::int AS clientes
         FROM agendamentos a WHERE ${filtroAgenda}`, valoresComparacao),
-      query(`SELECT
-          COALESCE(SUM(m.valor) FILTER (WHERE m.tipo = 'receita'), 0) AS receitas,
-          COALESCE(SUM(m.valor) FILTER (WHERE m.tipo = 'despesa'), 0) AS despesas
-        FROM movimentacoes_financeiras m
-        LEFT JOIN agendamentos a ON a.id = m.agendamento_id
-        WHERE ${filtroFinanceiro}`, valores),
+      query(consultaCaixa, [inicio, fim]),
       query(`SELECT COALESCE(SUM(ags.valor), 0) AS total
         FROM agendamentos a
         JOIN agendamento_servicos ags ON ags.agendamento_id = a.id
@@ -243,11 +235,18 @@ export async function GET(request) {
         WHERE substring(dia_mes from 4 for 2)::int = $1::int
         ORDER BY dia, nome`, [Number(hoje.slice(5, 7))]),
       query(consultaRecorrencia, valoresComparacao),
+      query(consultaCaixa, [inicioAnterior, fimAnterior]),
+      query(`SELECT COALESCE(NULLIF(BTRIM(categoria), ''), 'Sem categoria') AS categoria,
+          SUM(valor) AS total
+        FROM movimentacoes_financeiras
+        WHERE tipo = 'despesa' AND data_movimentacao BETWEEN $1::date AND $2::date
+        GROUP BY 1 ORDER BY total DESC, categoria`, [inicio, fim]),
     ]);
 
     const atual = consultas[0].rows[0];
     const anterior = consultas[1].rows[0];
     const caixa = consultas[2].rows[0];
+    const caixaAnterior = consultas[15].rows[0];
     const servicosAnteriores = consultas[3].rows[0];
     const realizados = numero(atual.realizados);
     const realizadosAnterior = numero(anterior.realizados);
@@ -299,6 +298,13 @@ export async function GET(request) {
       })),
       diasSemana: consultas[6].rows.map((item) => ({ dia: numero(item.dia), quantidade: numero(item.quantidade) })),
       horarios: consultas[7].rows.map((item) => ({ hora: numero(item.hora), quantidade: numero(item.quantidade) })),
+      financeiro: {
+        comparacaoDespesas: percentual(numero(caixa.despesas), numero(caixaAnterior.despesas)),
+        categorias: consultas[16].rows.map((item) => ({
+          categoria: item.categoria,
+          total: numero(item.total),
+        })),
+      },
       clientes: {
         novos: numero(consultas[8].rows[0].novos),
         recorrentes: numero(consultas[8].rows[0].recorrentes),

@@ -46,6 +46,7 @@ export default function PageFinanceiro() {
     descricao: "",
     valor: "",
     tipo: "receita",
+    categoria: "",
     data: "",
   });
 
@@ -102,6 +103,7 @@ export default function PageFinanceiro() {
       descricao: "",
       valor: "",
       tipo: "receita",
+      categoria: "",
       data: new Date().toLocaleDateString("en-CA"),
     });
 
@@ -132,6 +134,7 @@ export default function PageFinanceiro() {
           descricao: form.descricao,
           valor: parseFloat(form.valor.replace(",", ".")),
           tipo: form.tipo,
+          categoria: form.tipo === "despesa" ? form.categoria || null : null,
           // A API espera "data_movimentacao", não "data".
           data_movimentacao: form.data,
         }),
@@ -451,6 +454,7 @@ export default function PageFinanceiro() {
                       setForm({
                         ...form,
                         tipo: e.target.value,
+                        categoria: "",
                       })
                     }
                   >
@@ -458,6 +462,26 @@ export default function PageFinanceiro() {
                     <option value="despesa">Despesa (Saída)</option>
                   </select>
                 </div>
+
+                {form.tipo === "despesa" && (
+                  <div>
+                    <label className={styles.labelFiltro} htmlFor="categoria-despesa">Categoria (opcional)</label>
+                    <select
+                      id="categoria-despesa"
+                      className={`form-control ${styles.inputFiltro}`}
+                      value={form.categoria}
+                      onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                    >
+                      <option value="">Sem categoria</option>
+                      <option value="produtos">Produtos</option>
+                      <option value="materiais">Materiais</option>
+                      <option value="estrutura">Estrutura</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="equipe">Equipe</option>
+                      <option value="outros">Outros</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className={styles.labelFiltro}>Descrição</label>

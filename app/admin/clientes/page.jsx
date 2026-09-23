@@ -32,6 +32,7 @@ export default function PageClientes() {
 
   const abrirDetalhes = useCallback(async (id) => {
     setDetalheAberto(true);
+    setModalAberto(false);
     setHistoricoAberto(false);
     setCarregandoDetalhe(true);
     setClienteDetalhe(null);
@@ -112,6 +113,10 @@ export default function PageClientes() {
         throw new Error(d.error ?? "Erro ao salvar cliente.");
       }
 
+      const clienteSalvo = await res.json();
+      if (detalheAberto && clienteDetalhe?.id === clienteSalvo.id) {
+        setClienteDetalhe((atual) => ({ ...atual, ...clienteSalvo }));
+      }
       setBuscaCliente(" "); 
       setTimeout(() => setBuscaCliente(""), 50);
       fecharModal();
@@ -222,13 +227,34 @@ export default function PageClientes() {
           <div className="modal-dialog modal-dialog-centered">
             <div className={`modal-content ${styles.modalContent}`}>
               <div className="modal-header border-0 pb-0">
-                <h2 className={styles.modalTitulo} id="tituloDetalheCliente">{historicoAberto ? `Histórico de ${clienteDetalhe?.nome ?? "cliente"}` : clienteDetalhe?.nome ?? "Dados da cliente"}</h2>
-                <button type="button" className="btn-close" aria-label="Fechar janela da cliente" onClick={() => setDetalheAberto(false)} />
+                <h2 className={styles.modalTitulo} id="tituloDetalheCliente">{modalAberto ? `Editar ${clienteDetalhe?.nome ?? "cliente"}` : historicoAberto ? `Histórico de ${clienteDetalhe?.nome ?? "cliente"}` : clienteDetalhe?.nome ?? "Dados da cliente"}</h2>
+                <button type="button" className="btn-close" aria-label="Fechar janela da cliente" disabled={salvando} onClick={() => { setDetalheAberto(false); setModalAberto(false); }} />
               </div>
               <div className="modal-body">
                 {carregandoDetalhe && <p>Carregando dados da cliente...</p>}
                 {erroDetalhe && <p role="alert">{erroDetalhe}</p>}
-                {clienteDetalhe && !historicoAberto && (
+                {clienteDetalhe && modalAberto && (
+                  <div className="d-flex flex-column gap-3">
+                    {erroForm && <p className="mb-0" role="alert" style={{ color: "var(--erro-texto)" }}>{erroForm}</p>}
+                    <div>
+                      <label className={styles.labelFiltro} htmlFor="nomeClienteDetalhe">Nome completo</label>
+                      <input id="nomeClienteDetalhe" type="text" className={`form-control ${styles.inputFiltro}`} value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={styles.labelFiltro} htmlFor="telefoneClienteDetalhe">Telefone</label>
+                      <input id="telefoneClienteDetalhe" type="tel" className={`form-control ${styles.inputFiltro}`} value={form.telefone} onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })} />
+                    </div>
+                    <div>
+                      <label className={styles.labelFiltro} htmlFor="aniversarioClienteDetalhe">Aniversário (dia e mês, opcional)</label>
+                      <input id="aniversarioClienteDetalhe" type="text" inputMode="numeric" maxLength={5} placeholder="DD/MM" className={`form-control ${styles.inputFiltro}`} value={form.aniversario_dia_mes} onChange={(e) => setForm({ ...form, aniversario_dia_mes: formatarDiaMesDigitado(e.target.value) })} />
+                    </div>
+                    <div className={styles.acoesCliente}>
+                      <button className={styles.btnLimpar} type="button" disabled={salvando} onClick={fecharModal}>Cancelar</button>
+                      <button className="btn-primario" type="button" disabled={salvando} onClick={salvarCliente}>{salvando ? "Salvando..." : "Salvar cliente"}</button>
+                    </div>
+                  </div>
+                )}
+                {clienteDetalhe && !historicoAberto && !modalAberto && (
                   <div className={styles.dadosCliente}>
                     <p><span>Telefone</span><strong>{formatarTelefone(clienteDetalhe.telefone)}</strong></p>
                     {clienteDetalhe.aniversario_dia_mes && <p><span>Aniversário</span><strong>{clienteDetalhe.aniversario_dia_mes}</strong></p>}
@@ -236,10 +262,11 @@ export default function PageClientes() {
                     <div className={styles.acoesCliente}>
                       {linkWhatsapp(clienteDetalhe.telefone) && <a className={styles.linkWhatsapp} href={linkWhatsapp(clienteDetalhe.telefone)} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
                       <button className={styles.botaoHistorico} type="button" onClick={() => setHistoricoAberto(true)}>Ver histórico</button>
+                      <button className={styles.botaoHistorico} type="button" onClick={() => abrirModal(clienteDetalhe)}>Editar cliente</button>
                     </div>
                   </div>
                 )}
-                {clienteDetalhe && historicoAberto && (
+                {clienteDetalhe && historicoAberto && !modalAberto && (
                   <div className={styles.historicoCliente}>
                     <button className={styles.voltarDetalhes} type="button" onClick={() => setHistoricoAberto(false)}>← Voltar aos dados da cliente</button>
                     {clienteDetalhe.historico?.length ? (
@@ -267,7 +294,7 @@ export default function PageClientes() {
       )}
 
       {/* ── Modal Novo/Editar Cliente ── */}
-      {modalAberto && (
+      {modalAberto && !detalheAberto && (
         <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} role="dialog">
           <div className="modal-dialog modal-dialog-centered">
             <div className={`modal-content ${styles.modalContent}`}>

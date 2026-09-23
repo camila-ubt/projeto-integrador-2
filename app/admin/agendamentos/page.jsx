@@ -69,6 +69,8 @@ export default function Agendamentos() {
   const [filtroStatus, setFiltroStatus] = useState("");
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [mesInicial, setMesInicial] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState("");
   const [dataHojeAplicada, setDataHojeAplicada] = useState("");
   const [ordemAsc, setOrdemAsc] = useState(false);
 
@@ -102,10 +104,14 @@ export default function Agendamentos() {
         if (!res.ok) throw new Error("Erro ao buscar agendamentos");
         const data = await res.json();
         const lista = Array.isArray(data) ? data : [];
+        const mesAtual = dataNoFusoDoSalao(Date.now()).slice(0, 7);
+        setMesInicial(mesAtual);
         setAgendamentos(lista);
         const idDoLink = new URLSearchParams(window.location.search).get("agendamento_id");
+        const agendaDoLink = lista.find((item) => item.id === idDoLink);
+        setMesSelecionado(agendaDoLink ? dataNoFusoDoSalao(agendaDoLink.inicio).slice(0, 7) : mesAtual);
         if (idDoLink) {
-          const agenda = lista.find((item) => item.id === idDoLink);
+          const agenda = agendaDoLink;
           if (agenda) {
             setFeedback(null);
             setCamposEdicao(camposDoAgendamento(agenda));
@@ -199,8 +205,9 @@ export default function Agendamentos() {
     const matchServico = !filtroServico || agenda.servicos?.some((servico) => servico.servico_id === filtroServico);
 
     let matchData = true;
-    if (filtroDataInicio || filtroDataFim) {
+    if (mesSelecionado || filtroDataInicio || filtroDataFim) {
       const dataAgenda = dataNoFusoDoSalao(agenda.inicio);
+      if (mesSelecionado && dataAgenda.slice(0, 7) !== mesSelecionado) matchData = false;
       if (filtroDataInicio && dataAgenda < filtroDataInicio) matchData = false;
       if (filtroDataFim && dataAgenda > filtroDataFim) matchData = false;
     }
@@ -224,7 +231,7 @@ export default function Agendamentos() {
   const totalPaginas = Math.ceil(agendamentosOrdenados.length / itensPorPagina);
 
   const temFiltroAtivo =
-    filtroCliente || filtroServico || filtroStatus || filtroDataInicio || filtroDataFim;
+    filtroCliente || filtroServico || filtroStatus || filtroDataInicio || filtroDataFim || mesSelecionado !== mesInicial;
   const servicoRetornoSelecionado = modalEditar.agenda?.servicos?.find(
     (item) => item.servico_id === dadosRetorno.servico_id
   );
@@ -235,6 +242,7 @@ export default function Agendamentos() {
     setFiltroStatus("");
     setFiltroDataInicio("");
     setFiltroDataFim("");
+    setMesSelecionado(dataNoFusoDoSalao(Date.now()).slice(0, 7));
     setDataHojeAplicada("");
     setPaginaAtual(1);
   };
@@ -445,6 +453,33 @@ export default function Agendamentos() {
             </button>
           </div>
 
+          <div className="col-12 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtroMesAgendamento">Mês</label>
+            <input
+              id="filtroMesAgendamento"
+              type="month"
+              className={`form-control ${styles.inputFiltro}`}
+              value={mesSelecionado}
+              onChange={(e) => {
+                setMesSelecionado(e.target.value);
+                setFiltroDataInicio("");
+                setFiltroDataFim("");
+                setDataHojeAplicada("");
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-6 col-md-2 d-flex align-items-end">
+            <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => {
+              setMesSelecionado("");
+              setFiltroDataInicio("");
+              setFiltroDataFim("");
+              setDataHojeAplicada("");
+              setPaginaAtual(1);
+            }}>Todos os meses</button>
+          </div>
+
           <div className="col-6 col-md-2">
             <label className={styles.labelFiltro}>De</label>
             <input
@@ -452,6 +487,7 @@ export default function Agendamentos() {
               className={`form-control ${styles.inputFiltro}`}
               value={filtroDataInicio}
               onChange={(e) => {
+                setMesSelecionado("");
                 setFiltroDataInicio(e.target.value);
                 setPaginaAtual(1);
               }}
@@ -465,13 +501,14 @@ export default function Agendamentos() {
               className={`form-control ${styles.inputFiltro}`}
               value={filtroDataFim}
               onChange={(e) => {
+                setMesSelecionado("");
                 setFiltroDataFim(e.target.value);
                 setPaginaAtual(1);
               }}
             />
           </div>
 
-          <div className="col-12 col-md-2 d-flex align-items-end">
+          <div className="col-6 col-md-2 d-flex align-items-end">
             <button
               type="button"
               className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`}
@@ -481,6 +518,7 @@ export default function Agendamentos() {
                 setFiltroCliente("");
                 setFiltroServico("");
                 setFiltroStatus("");
+                setMesSelecionado("");
                 setFiltroDataInicio(dataHoje);
                 setFiltroDataFim(dataHoje);
                 setDataHojeAplicada(dataHoje);

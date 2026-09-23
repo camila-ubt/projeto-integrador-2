@@ -151,7 +151,8 @@ export default function HistoricoPage() {
   const [atendimentos, setAtendimentos] = useState([]);
   const [filtroStatus, setFiltroStatus] = useState("");
   const [buscaCliente, setBuscaCliente] = useState("");
-  const [buscaServico, setBuscaServico] = useState("");
+  const [filtroServico, setFiltroServico] = useState("");
+  const [opcoesServico, setOpcoesServico] = useState([]);
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
   const [ordemAsc, setOrdemAsc] = useState(false);
@@ -190,11 +191,25 @@ export default function HistoricoPage() {
     buscarHistorico();
   }, [buscarHistorico]);
 
+  useEffect(() => {
+    let ativo = true;
+    fetch("/api/admin/servicos")
+      .then((resposta) => resposta.ok ? resposta.json() : [])
+      .then((dados) => { if (ativo && Array.isArray(dados)) setOpcoesServico(dados); })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, []);
+
   // ── Filtro client-side + ordenação ────────────────────────────────────────
+  const servicosDisponiveis = opcoesServico.length ? opcoesServico : [...new Map(
+    atendimentos.flatMap((atendimento) => atendimento.servicos ?? [])
+      .filter((servico) => servico.servico_id && servico.nome)
+      .map((servico) => [servico.servico_id, servico.nome])
+  )].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const filtrados = atendimentos
     .filter((a) =>
       (!buscaCliente.trim() || a.cliente_nome?.toLocaleLowerCase("pt-BR").includes(buscaCliente.trim().toLocaleLowerCase("pt-BR"))) &&
-      (!buscaServico.trim() || a.servicos?.some((servico) => servico.nome?.toLocaleLowerCase("pt-BR").includes(buscaServico.trim().toLocaleLowerCase("pt-BR"))))
+      (!filtroServico || a.servicos?.some((servico) => servico.servico_id === filtroServico))
     )
     .sort((a, b) =>
       ordemAsc
@@ -208,7 +223,7 @@ export default function HistoricoPage() {
   const itensPagina = filtrados.slice(inicio, inicio + ITENS_POR_PAGINA);
 
   const temFiltroAtivo =
-    filtroStatus || buscaCliente.trim() || buscaServico.trim() || filtroDataInicio || filtroDataFim;
+    filtroStatus || buscaCliente.trim() || filtroServico || filtroDataInicio || filtroDataFim;
 
   function limparFiltros() {
     if (filtroStatus || filtroDataInicio || filtroDataFim) {
@@ -216,7 +231,7 @@ export default function HistoricoPage() {
       setErro(null);
     }
     setBuscaCliente("");
-    setBuscaServico("");
+    setFiltroServico("");
     setFiltroStatus("");
     setFiltroDataInicio("");
     setFiltroDataFim("");
@@ -266,18 +281,19 @@ export default function HistoricoPage() {
           </div>
 
           <div className="col-12 col-md-4">
-            <label className={styles.labelFiltro} htmlFor="busca-servico">Serviço</label>
-            <input
-              id="busca-servico"
-              type="search"
-              className={`form-control ${styles.inputFiltro}`}
-              placeholder="Nome do serviço..."
-              value={buscaServico}
+            <label className={styles.labelFiltro} htmlFor="filtro-servico">Serviço</label>
+            <select
+              id="filtro-servico"
+              className={`form-select ${styles.inputFiltro}`}
+              value={filtroServico}
               onChange={(e) => {
-                setBuscaServico(e.target.value);
+                setFiltroServico(e.target.value);
                 setPaginaAtual(1);
               }}
-            />
+            >
+              <option value="">Todos os serviços</option>
+              {servicosDisponiveis.map((servico) => <option key={servico.id} value={servico.id}>{servico.nome}</option>)}
+            </select>
           </div>
 
           <div className="col-8 col-md-3">

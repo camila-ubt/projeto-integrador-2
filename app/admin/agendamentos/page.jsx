@@ -569,7 +569,11 @@ export default function Agendamentos() {
                 </span>
 
                 <div className={styles.cardCentro}>
-                  <p className={styles.cardCliente}>{agenda.cliente_nome}</p>
+                  <p className={styles.cardCliente}>
+                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                      {agenda.cliente_nome}
+                    </Link>
+                  </p>
                   <p className={styles.cardServico}>{exibirServicos(agenda)}</p>
                   <p className={styles.cardData}>
                     {formatarDataCurta(agenda.inicio)}
@@ -657,7 +661,9 @@ export default function Agendamentos() {
                         </span>
                       </td>
                       <td style={{ fontFamily: "var(--fonte-corpo)" }}>
-                        {agenda.cliente_nome}
+                        <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                          {agenda.cliente_nome}
+                        </Link>
                       </td>
                       <td className={styles.tdServico}>
                         {exibirServicos(agenda)}
@@ -894,7 +900,9 @@ export default function Agendamentos() {
                 {feedback?.tipo === "erro" && <p role="alert" style={{ color: "var(--erro-texto)", margin: 0 }}>{feedback.msg}</p>}
                 {/* Identificação do agendamento — somente leitura */}
                 <p className={styles.modalTexto} style={{ margin: 0 }}>
-                  <strong>{modalEditar.agenda?.cliente_nome}</strong> —{" "}
+                  <strong><Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${modalEditar.agenda?.cliente_id}`} aria-label={`Ver dados de ${modalEditar.agenda?.cliente_nome}`}>
+                    {modalEditar.agenda?.cliente_nome}
+                  </Link></strong> —{" "}
                   {formatarDataCurta(modalEditar.agenda?.inicio)} às{" "}
                   {formatarHora(modalEditar.agenda?.inicio)}
                 </p>

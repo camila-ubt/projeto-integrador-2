@@ -26,7 +26,8 @@ export default function PageRetornos() {
   const [filtroData, setFiltroData] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [buscaCliente, setBuscaCliente] = useState("");
-  const [buscaServico, setBuscaServico] = useState("");
+  const [filtroServico, setFiltroServico] = useState("");
+  const [opcoesServico, setOpcoesServico] = useState([]);
   const [origemId, setOrigemId] = useState(null);
   const [selecionado, setSelecionado] = useState(null);
   const [form, setForm] = useState({ status: "pendente", data_recomendada: "", observacoes: "" });
@@ -38,7 +39,6 @@ export default function PageRetornos() {
     async function buscarRetornos() {
       const agendamentoId = new URLSearchParams(window.location.search).get("agendamento_id");
       const params = new URLSearchParams();
-      if (filtroStatus) params.set("status", filtroStatus);
       if (agendamentoId) params.set("agendamento_id", agendamentoId);
 
       try {
@@ -58,7 +58,16 @@ export default function PageRetornos() {
     }
     buscarRetornos();
     return () => { ativo = false; };
-  }, [filtroStatus]);
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+    fetch("/api/admin/servicos")
+      .then((resposta) => resposta.ok ? resposta.json() : [])
+      .then((dados) => { if (ativo && Array.isArray(dados)) setOpcoesServico(dados); })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, []);
 
   function abrirRetorno(retorno) {
     setSelecionado(retorno);
@@ -94,11 +103,15 @@ export default function PageRetornos() {
     }
   }
 
+  const servicosDisponiveis = opcoesServico.length ? opcoesServico : [...new Map(
+    retornos.filter((retorno) => retorno.servico_id && retorno.servico_nome)
+      .map((retorno) => [retorno.servico_id, retorno.servico_nome])
+  )].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const retornosFiltrados = retornos.filter((item) =>
     (!filtroStatus || item.status === filtroStatus) &&
     (!filtroData || dataInput(item.data_recomendada) === filtroData) &&
     (!buscaCliente.trim() || item.cliente_nome?.toLocaleLowerCase("pt-BR").includes(buscaCliente.trim().toLocaleLowerCase("pt-BR"))) &&
-    (!buscaServico.trim() || item.servico_nome?.toLocaleLowerCase("pt-BR").includes(buscaServico.trim().toLocaleLowerCase("pt-BR")))
+    (!filtroServico || item.servico_id === filtroServico)
   );
 
   return (
@@ -117,8 +130,11 @@ export default function PageRetornos() {
           <input id="buscaClienteRetorno" type="search" className={`form-control ${styles.inputFiltro}`} placeholder="Nome da cliente..." value={buscaCliente} onChange={(evento) => setBuscaCliente(evento.target.value)} />
         </div>
         <div className="col-12 col-md-6 col-xl-3">
-          <label className={styles.labelFiltro} htmlFor="buscaServicoRetorno">Serviço</label>
-          <input id="buscaServicoRetorno" type="search" className={`form-control ${styles.inputFiltro}`} placeholder="Nome do serviço..." value={buscaServico} onChange={(evento) => setBuscaServico(evento.target.value)} />
+          <label className={styles.labelFiltro} htmlFor="filtroServicoRetorno">Serviço</label>
+          <select id="filtroServicoRetorno" className={`form-select ${styles.inputFiltro}`} value={filtroServico} onChange={(evento) => setFiltroServico(evento.target.value)}>
+            <option value="">Todos os serviços</option>
+            {servicosDisponiveis.map((servico) => <option key={servico.id} value={servico.id}>{servico.nome}</option>)}
+          </select>
         </div>
         <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroDataRetorno">Data recomendada</label>
@@ -132,14 +148,14 @@ export default function PageRetornos() {
           </select>
         </div>
         <div className="col-12 col-xl-2 d-flex align-items-end">
-          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); setBuscaCliente(""); setBuscaServico(""); }}>Limpar</button>
+          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); setBuscaCliente(""); setFiltroServico(""); }}>Limpar</button>
         </div>
       </section>
 
       {erroLista && <p className={styles.erro} role="alert">{erroLista}</p>}
       {carregando ? <div className={styles.loadingState}>Carregando retornos...</div> : retornosFiltrados.length === 0 ? (
         <div className={styles.estadoVazio}>
-          <p>{origemId && !filtroData && !filtroStatus && !buscaCliente && !buscaServico
+          <p>{origemId && !filtroData && !filtroStatus && !buscaCliente && !filtroServico
             ? "Nenhum retorno encontrado para este atendimento. Você pode definir um ao editar o agendamento realizado."
             : "Nenhum retorno encontrado com os filtros atuais."}</p>
           {origemId && <Link href={`/admin/agendamentos?agendamento_id=${origemId}`}>Abrir atendimento</Link>}

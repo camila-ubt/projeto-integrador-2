@@ -222,6 +222,12 @@ export async function GET(request) {
         JOIN agendamento_servicos ags ON ags.agendamento_id = a.id
         WHERE ${filtroAgenda} AND a.status = 'realizado'
           AND ($5::uuid IS NULL OR ags.servico_id = $5)`, valores),
+      query(`SELECT id, nome,
+          EXTRACT(DAY FROM aniversario)::int AS dia
+        FROM clientes
+        WHERE aniversario IS NOT NULL
+          AND EXTRACT(MONTH FROM aniversario) = $1::int
+        ORDER BY dia, nome`, [Number(hoje.slice(5, 7))]),
     ]);
 
     const atual = consultas[0].rows[0];
@@ -288,6 +294,10 @@ export async function GET(request) {
         })),
       },
       proximosAtendimentos: consultas[10].rows,
+      aniversariantes: {
+        mes: hoje.slice(0, 7),
+        clientes: consultas[13].rows,
+      },
       opcoes: consultas[11].rows[0],
       observacoes: {
         faturamentoServicos: "Calculado pelos valores registrados nos serviços de atendimentos realizados.",

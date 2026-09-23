@@ -382,6 +382,14 @@
 .tabelaSimples a:focus-visible, .proximoLink:focus-visible { border-radius: 4px; outline: 2px solid var(--primaria); outline-offset: 3px; }
 .tabelaSimples strong { color: var(--primaria); font-size: 13px; }
 
+.aniversariantes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.aniversariante { display: flex; align-items: center; min-width: 0; gap: 12px; padding: 12px; border: 1px solid var(--borda); border-radius: 12px; background: var(--fundo); color: inherit; text-decoration: none; }
+.aniversariante:hover { border-color: var(--primaria); color: inherit; }
+.aniversariante:focus-visible { outline: 2px solid var(--primaria); outline-offset: 3px; }
+.diaAniversario { display: grid; width: 38px; height: 38px; flex-shrink: 0; place-items: center; border-radius: 50%; background: var(--primaria); color: white; font-size: 15px; }
+.nomeAniversariante { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.verCliente { margin-left: auto; flex-shrink: 0; color: var(--primaria); font-size: 11px; }
+
 .proximos {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -421,6 +429,7 @@
 @media (max-width: 1200px) {
   .filtros { grid-template-columns: repeat(3, 1fr); }
   .gradeKpis { grid-template-columns: repeat(3, 1fr); }
+  .aniversariantes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .proximos { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -439,6 +448,7 @@
   .secao:not(.secaoAberta) .cabecalhoSecao { margin-bottom: 0; }
   .botaoSecao { display: grid; width: 32px; height: 32px; flex-shrink: 0; place-items: center; border: 1px solid var(--borda); border-radius: 50%; background: var(--fundo); color: var(--primaria); font-size: 20px; line-height: 1; }
   .gradeDuasColunas { grid-template-columns: 1fr; gap: 0; }
+  .aniversariantes { grid-template-columns: 1fr; }
   .proximos { grid-template-columns: 1fr; }
 }
 

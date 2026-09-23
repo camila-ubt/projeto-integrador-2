@@ -261,6 +261,24 @@ export default function PaginaDashboard() {
         </Secao>
       </div>
 
+      {dados.aniversariantes?.clientes.length > 0 && (
+        <Secao
+          titulo="Aniversariantes do mês"
+          subtitulo={`Clientes com aniversário em ${dataLocal(`${dados.aniversariantes.mes}-01`).toLocaleDateString("pt-BR", { month: "long" })}.`}
+          abertaInicialmente
+        >
+          <div className={styles.aniversariantes}>
+            {dados.aniversariantes.clientes.map((cliente) => (
+              <Link className={styles.aniversariante} href={`/admin/clientes?cliente_id=${cliente.id}`} key={cliente.id} aria-label={`Ver dados de ${cliente.nome}, aniversariante do dia ${cliente.dia}`}>
+                <span className={styles.diaAniversario}>{String(cliente.dia).padStart(2, "0")}</span>
+                <span className={styles.nomeAniversariante}>{cliente.nome}</span>
+                <span className={styles.verCliente}>Ver cliente →</span>
+              </Link>
+            ))}
+          </div>
+        </Secao>
+      )}
+
       <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise.">
         {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{new Date(item.inicio).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" })}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
       </Secao>

@@ -10,6 +10,7 @@ import {
 import { HORARIOS_ATENDIMENTO } from "@/lib/constantes"
 import { IcoFechar } from "@/app/components/icons";
 import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
+import DatePickerField from "@/app/components/DatePickerField";
 
 
 // Componente Modal
@@ -510,7 +511,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
                 <label className={styles.labelFiltro} htmlFor="dataSelecionada">
                   Data
                 </label>
-                <input
+                <DatePickerField
                   id="dataSelecionada"
                   type="date"
                   className={`form-control ${styles.inputFiltro}`}

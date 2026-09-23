@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Clientes.module.css"; 
-import { formatarTelefone } from "@/lib/formatters"; 
+import { formatarTelefone, formatarDataCurta } from "@/lib/formatters";
 import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
 
 function linkWhatsapp(telefone) {
@@ -275,7 +275,7 @@ export default function PageClientes() {
                           <li className={styles.itemHistorico} key={procedimento.id}>
                             <div className={styles.cabecalhoHistorico}>
                               <strong>{procedimento.servico_nome ?? "Procedimento sem serviço informado"}</strong>
-                              <time dateTime={String(procedimento.data_procedimento).slice(0, 10)}>{String(procedimento.data_procedimento).slice(0, 10).split("-").reverse().join("/")}</time>
+                              <time dateTime={String(procedimento.data_procedimento).slice(0, 10)}>{formatarDataCurta(procedimento.data_procedimento)}</time>
                             </div>
                             {procedimento.tecnica && <p><span>Técnica:</span> {procedimento.tecnica}</p>}
                             {procedimento.produto_utilizado && <p><span>Produto:</span> {procedimento.produto_utilizado}</p>}

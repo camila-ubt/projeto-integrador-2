@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DatePickerField from "@/app/components/DatePickerField";
+import { formatarDataCurta } from "@/lib/formatters";
 import styles from "./Retornos.module.css";
 
 const STATUS = {
@@ -16,7 +18,7 @@ function dataInput(valor) {
 }
 
 function dataExibida(valor) {
-  return dataInput(valor).split("-").reverse().join("/");
+  return formatarDataCurta(dataInput(valor));
 }
 
 export default function PageRetornos() {
@@ -138,7 +140,7 @@ export default function PageRetornos() {
         </div>
         <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroDataRetorno">Data recomendada</label>
-          <input id="filtroDataRetorno" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => setFiltroData(evento.target.value)} />
+          <DatePickerField id="filtroDataRetorno" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => setFiltroData(evento.target.value)} />
         </div>
         <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroStatusRetorno">Status</label>
@@ -194,7 +196,7 @@ export default function PageRetornos() {
                 </div>
                 <p className={styles.orientacao}>Ao marcar uma visita na agenda, atualize este acompanhamento para “Agendado”.</p>
                 <label className={styles.labelFiltro} htmlFor="dataRecomendada">Data recomendada</label>
-                <input id="dataRecomendada" type="date" className={`form-control ${styles.inputFiltro}`} value={form.data_recomendada} onChange={(evento) => setForm((atual) => ({ ...atual, data_recomendada: evento.target.value }))} />
+                <DatePickerField id="dataRecomendada" className={`form-control ${styles.inputFiltro}`} value={form.data_recomendada} onChange={(evento) => setForm((atual) => ({ ...atual, data_recomendada: evento.target.value }))} />
                 <label className={styles.labelFiltro} htmlFor="statusRetorno">Status do acompanhamento</label>
                 <select id="statusRetorno" className={`form-select ${styles.inputFiltro}`} value={form.status} onChange={(evento) => setForm((atual) => ({ ...atual, status: evento.target.value }))}>
                   {Object.entries(STATUS).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}

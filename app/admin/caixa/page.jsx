@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import styles from "./Financeiro.module.css";
 import { formatarDataCurta } from "@/lib/formatters";
+import DatePickerField from "@/app/components/DatePickerField";
 import { CATEGORIA_RECEITA_AUTOMATICA } from "@/lib/receita-atendimento";
 
 // Calcula o primeiro e o último dia do mês/ano selecionados,
@@ -101,7 +102,7 @@ export default function PageFinanceiro() {
       descricao: "",
       valor: "",
       tipo: "receita",
-      data: "",
+      data: new Date().toLocaleDateString("en-CA"),
     });
 
     setModalAberto(true);
@@ -497,11 +498,11 @@ export default function PageFinanceiro() {
                 <div>
                   <label className={styles.labelFiltro}>Data</label>
 
-                  <input
-                    type="date"
-                    className={`form-control ${styles.inputFiltro}`}
-                    value={form.data}
-                    onChange={(e) =>
+                    <DatePickerField
+                      type="date"
+                      className={`form-control ${styles.inputFiltro}`}
+                      value={form.data}
+                      onChange={(e) =>
                       setForm({
                         ...form,
                         data: e.target.value,

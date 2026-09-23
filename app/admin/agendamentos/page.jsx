@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatarDataCurta, formatarHora } from "@/lib/formatters";
+import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoAgendamentos,
   IcoEditar,
@@ -396,7 +397,7 @@ export default function Agendamentos() {
         <div className="row g-2 align-items-end">
           <div className="col-12 col-md-5">
             <label className={styles.labelFiltro} htmlFor="filtroMesAgendamento">Mês</label>
-            <input
+            <DatePickerField
               id="filtroMesAgendamento"
               type="month"
               className={`form-control ${styles.inputFiltro}`}
@@ -460,7 +461,7 @@ export default function Agendamentos() {
         </div>
 
         {!maisFiltrosAbertos && !mesSelecionado && !filtroHojeAtivo && (filtroDataInicio || filtroDataFim) && (
-          <p className={styles.resumoPeriodo}>Período: {filtroDataInicio || "início livre"} até {filtroDataFim || "fim livre"}</p>
+          <p className={styles.resumoPeriodo}>Período: {formatarDataCurta(filtroDataInicio) || "início livre"} até {formatarDataCurta(filtroDataFim) || "fim livre"}</p>
         )}
 
         <div id="filtrosAvancadosAgendamento" className={maisFiltrosAbertos ? "row g-2 mt-2" : "d-none"}>
@@ -500,12 +501,12 @@ export default function Agendamentos() {
 
           <div className="col-6 col-md-3">
             <label className={styles.labelFiltro} htmlFor="filtroDataInicioAgendamento">De</label>
-            <input id="filtroDataInicioAgendamento" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroDataInicio} onChange={(e) => { setMesSelecionado(""); setFiltroDataInicio(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
+            <DatePickerField id="filtroDataInicioAgendamento" className={`form-control ${styles.inputFiltro}`} value={filtroDataInicio} onChange={(e) => { setMesSelecionado(""); setFiltroDataInicio(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
           </div>
 
           <div className="col-6 col-md-3">
             <label className={styles.labelFiltro} htmlFor="filtroDataFimAgendamento">Até</label>
-            <input id="filtroDataFimAgendamento" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroDataFim} onChange={(e) => { setMesSelecionado(""); setFiltroDataFim(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
+            <DatePickerField id="filtroDataFimAgendamento" className={`form-control ${styles.inputFiltro}`} value={filtroDataFim} onChange={(e) => { setMesSelecionado(""); setFiltroDataFim(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
           </div>
 
           <div className="col-12 col-md-2 d-flex align-items-end">
@@ -896,7 +897,7 @@ export default function Agendamentos() {
                   <label className={styles.labelFiltro} htmlFor="editData">
                     Data
                   </label>
-                  <input
+                  <DatePickerField
                     id="editData"
                     type="date"
                     className={`form-control ${styles.inputFiltro}`}
@@ -1056,7 +1057,7 @@ export default function Agendamentos() {
                           {modalEditar.agenda.servicos.map((servico) => <option key={servico.servico_id} value={servico.servico_id}>{servico.nome}</option>)}
                         </select>
                         <label className={styles.labelFiltro} htmlFor="dataRetorno">Data recomendada</label>
-                        <input id="dataRetorno" type="date" className={`form-control ${styles.inputFiltro}`} value={dadosRetorno.data_recomendada} onChange={(e) => { setDadosRetorno((atual) => ({ ...atual, data_recomendada: e.target.value })); setRetornoDataManual(true); }} />
+                        <DatePickerField id="dataRetorno" className={`form-control ${styles.inputFiltro}`} value={dadosRetorno.data_recomendada} onChange={(e) => { setDadosRetorno((atual) => ({ ...atual, data_recomendada: e.target.value })); setRetornoDataManual(true); }} />
                         <p>{servicoRetornoSelecionado?.retorno_dias == null
                           ? "Este serviço não tem um prazo de retorno cadastrado. Escolha a data com a cliente."
                           : `Sugestão: ${servicoRetornoSelecionado.retorno_dias} dias após o atendimento. Você pode ajustar a data.`}</p>

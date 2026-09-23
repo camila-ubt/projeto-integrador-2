@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { buscarResumoDashboard } from "@/services/resumoDashboard";
-import { formatarMoeda } from "@/lib/formatters";
+import { formatarMoeda, formatarDataCurta, formatarDataSemAno } from "@/lib/formatters";
+import DatePickerField from "@/app/components/DatePickerField";
 import styles from "./Dashboard.module.css";
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -102,10 +103,10 @@ function agruparEvolucao(itens) {
       const deslocamento = (data.getDay() + 6) % 7;
       segunda.setDate(data.getDate() - deslocamento);
       chave = dataInput(segunda);
-      rotulo = `Sem. ${segunda.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`;
+      rotulo = `Sem. ${formatarDataSemAno(segunda)}`;
     } else {
       chave = String(item.data).slice(0, 10);
-      rotulo = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      rotulo = formatarDataSemAno(data);
     }
     const grupo = grupos.get(chave) || { rotulo, faturamento: 0, atendimentos: 0 };
     grupo.faturamento += item.faturamento;
@@ -154,8 +155,8 @@ function Filtros({ filtros, setFiltros, opcoes, aoAplicar, carregando }) {
   }
   return (
     <form className={styles.filtros} onSubmit={(evento) => { evento.preventDefault(); aoAplicar(); }}>
-      <label>De<input type="date" name="inicio" value={filtros.inicio} max={filtros.fim} onChange={alterar} /></label>
-      <label>Até<input type="date" name="fim" value={filtros.fim} min={filtros.inicio} onChange={alterar} /></label>
+      <label>De<DatePickerField name="inicio" value={filtros.inicio} max={filtros.fim} onChange={alterar} /></label>
+      <label>Até<DatePickerField name="fim" value={filtros.fim} min={filtros.inicio} onChange={alterar} /></label>
       <label>Serviço<select name="servico_id" value={filtros.servico_id} onChange={alterar}><option value="">Todos</option>{opcoes.servicos?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
       <label>Status<select name="status" value={filtros.status} onChange={alterar}><option value="">Todos</option><option value="realizado">Realizado</option><option value="agendado">Agendado</option><option value="cancelado">Cancelado</option><option value="faltou">Faltou</option></select></label>
       <label>Cliente<select name="cliente_id" value={filtros.cliente_id} onChange={alterar}><option value="">Todos</option>{opcoes.clientes?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
@@ -212,7 +213,7 @@ export default function PaginaDashboard() {
     <div className={styles.pagina}>
       <div className={styles.introducao}>
         <div><span>Visão do negócio</span><h1>Como o studio está performando?</h1><p>Compare resultados, entenda o comportamento dos clientes e encontre os horários de maior movimento.</p></div>
-        <span className={styles.periodoAtual}>{dataLocal(dados.periodo.inicio).toLocaleDateString("pt-BR")} — {dataLocal(dados.periodo.fim).toLocaleDateString("pt-BR")}</span>
+        <span className={styles.periodoAtual}>{formatarDataCurta(dados.periodo.inicio)} — {formatarDataCurta(dados.periodo.fim)}</span>
       </div>
 
       <Filtros filtros={filtros} setFiltros={setFiltros} opcoes={dados.opcoes} carregando={carregando} aoAplicar={() => { setCarregando(true); setErro(""); setFiltrosAplicados({ ...filtros }); }} />
@@ -280,7 +281,7 @@ export default function PaginaDashboard() {
       )}
 
       <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise.">
-        {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{new Date(item.inicio).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" })}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
+        {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{formatarDataCurta(new Date(item.inicio).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }))}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
       </Secao>
 
       <p className={styles.nota}>A taxa de ocupação será calculada quando os horários disponíveis do studio forem definidos.</p>

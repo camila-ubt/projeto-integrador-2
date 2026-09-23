@@ -8,6 +8,7 @@ import {
   somarServicos,
 } from "@/lib/formatters";
 import { IcoHistorico, IcoLixeira } from "@/app/components/icons";
+import DatePickerField from "@/app/components/DatePickerField";
 import {
   STATUS_LABELS,
   STATUS_OPCOES,
@@ -337,7 +338,7 @@ export default function HistoricoPage() {
             <label className={styles.labelFiltro} htmlFor="filtro-de">
               De
             </label>
-            <input
+            <DatePickerField
               id="filtro-de"
               type="date"
               className={`form-control ${styles.inputFiltro}`}
@@ -355,7 +356,7 @@ export default function HistoricoPage() {
             <label className={styles.labelFiltro} htmlFor="filtro-ate">
               Até
             </label>
-            <input
+            <DatePickerField
               id="filtro-ate"
               type="date"
               className={`form-control ${styles.inputFiltro}`}

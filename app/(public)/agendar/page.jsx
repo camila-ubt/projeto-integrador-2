@@ -10,6 +10,7 @@ import {
   formatarTelefone,
 } from "@/lib/formatters";
 import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
+import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoCalendario,
   IcoCheck,
@@ -635,7 +636,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
         >
           <IcoCalendario size={13} /> Data
         </label>
-        <input
+        <DatePickerField
           id="data-agendamento"
           type="date"
           value={data}

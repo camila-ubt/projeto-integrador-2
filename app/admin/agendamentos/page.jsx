@@ -72,6 +72,7 @@ export default function Agendamentos() {
   const [mesInicial, setMesInicial] = useState("");
   const [mesSelecionado, setMesSelecionado] = useState("");
   const [dataHojeAplicada, setDataHojeAplicada] = useState("");
+  const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
   const [ordemAsc, setOrdemAsc] = useState(false);
 
   // Paginação
@@ -195,6 +196,7 @@ export default function Agendamentos() {
       .map((servico) => [servico.servico_id, servico.nome])
   )].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
   const filtroHojeAtivo = Boolean(dataHojeAplicada) && filtroDataInicio === dataHojeAplicada && filtroDataFim === dataHojeAplicada && !filtroCliente && !filtroServico && !filtroStatus;
+  const filtrosExtrasAtivos = Boolean(filtroCliente || filtroServico || filtroStatus || ((filtroDataInicio || filtroDataFim) && !filtroHojeAtivo));
 
   // Filtragem
   const agendamentosFiltrados = agendamentos.filter((agenda) => {
@@ -244,6 +246,7 @@ export default function Agendamentos() {
     setFiltroDataFim("");
     setMesSelecionado(dataNoFusoDoSalao(Date.now()).slice(0, 7));
     setDataHojeAplicada("");
+    setMaisFiltrosAbertos(false);
     setPaginaAtual(1);
   };
 
@@ -390,70 +393,8 @@ export default function Agendamentos() {
       </div>
       {/* ── Filtros ─────── */}
       <div className={`${styles.cardFiltros} mb-4`}>
-        <div className="row g-2">
-          <div className="col-12 col-md-4">
-            <label className={styles.labelFiltro}>Cliente</label>
-            <input
-              type="text"
-              className={`form-control ${styles.inputFiltro}`}
-              placeholder="Nome do cliente..."
-              value={filtroCliente}
-              onChange={(e) => {
-                setFiltroCliente(e.target.value);
-                setPaginaAtual(1);
-              }}
-            />
-          </div>
-
-          <div className="col-12 col-md-4">
-            <label className={styles.labelFiltro} htmlFor="filtroServicoAgendamento">Serviço</label>
-            <select
-              id="filtroServicoAgendamento"
-              className={`form-select ${styles.inputFiltro}`}
-              value={filtroServico}
-              onChange={(e) => {
-                setFiltroServico(e.target.value);
-                setPaginaAtual(1);
-              }}
-            >
-              <option value="">Todos os serviços</option>
-              {servicosDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
-            </select>
-          </div>
-
-          <div className="col-8 col-md-3">
-            <label className={styles.labelFiltro}>Status</label>
-            <select
-              className={`form-select ${styles.inputFiltro}`}
-              value={filtroStatus}
-              onChange={(e) => {
-                setFiltroStatus(e.target.value);
-                setPaginaAtual(1);
-              }}
-            >
-              <option value="">Todos</option>
-              <option value="agendado">Agendado</option>
-              <option value="realizado">Realizado</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="faltou">Faltou</option>
-            </select>
-          </div>
-
-          <div className="col-4 col-md-1 d-flex align-items-end">
-            <button
-              className={`${styles.btnLimpar} w-100`}
-              onClick={limparFiltros}
-              disabled={!temFiltroAtivo}
-              title="Limpar filtros"
-            >
-              <span className="d-md-none">
-                <IcoLixeira />
-              </span>
-              <span className="d-none d-md-inline">Limpar</span>
-            </button>
-          </div>
-
-          <div className="col-12 col-md-3">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-5">
             <label className={styles.labelFiltro} htmlFor="filtroMesAgendamento">Mês</label>
             <input
               id="filtroMesAgendamento"
@@ -465,50 +406,13 @@ export default function Agendamentos() {
                 setFiltroDataInicio("");
                 setFiltroDataFim("");
                 setDataHojeAplicada("");
-                setPaginaAtual(1);
-              }}
-            />
-          </div>
-
-          <div className="col-6 col-md-2 d-flex align-items-end">
-            <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => {
-              setMesSelecionado("");
-              setFiltroDataInicio("");
-              setFiltroDataFim("");
-              setDataHojeAplicada("");
-              setPaginaAtual(1);
-            }}>Todos os meses</button>
-          </div>
-
-          <div className="col-6 col-md-2">
-            <label className={styles.labelFiltro}>De</label>
-            <input
-              type="date"
-              className={`form-control ${styles.inputFiltro}`}
-              value={filtroDataInicio}
-              onChange={(e) => {
-                setMesSelecionado("");
-                setFiltroDataInicio(e.target.value);
+                setMaisFiltrosAbertos(false);
                 setPaginaAtual(1);
               }}
             />
           </div>
 
           <div className="col-6 col-md-2">
-            <label className={styles.labelFiltro}>Até</label>
-            <input
-              type="date"
-              className={`form-control ${styles.inputFiltro}`}
-              value={filtroDataFim}
-              onChange={(e) => {
-                setMesSelecionado("");
-                setFiltroDataFim(e.target.value);
-                setPaginaAtual(1);
-              }}
-            />
-          </div>
-
-          <div className="col-6 col-md-2 d-flex align-items-end">
             <button
               type="button"
               className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`}
@@ -518,10 +422,11 @@ export default function Agendamentos() {
                 setFiltroCliente("");
                 setFiltroServico("");
                 setFiltroStatus("");
-                setMesSelecionado("");
+                setMesSelecionado(dataHoje.slice(0, 7));
                 setFiltroDataInicio(dataHoje);
                 setFiltroDataFim(dataHoje);
                 setDataHojeAplicada(dataHoje);
+                setMaisFiltrosAbertos(false);
                 setPaginaAtual(1);
               }}
             >
@@ -529,14 +434,82 @@ export default function Agendamentos() {
             </button>
           </div>
 
-          {/* ✅ Botão de ordenação — só aparece no mobile */}
-          <div className="col-12 d-md-none d-flex justify-content-end">
+          <div className="col-6 col-md-3">
             <button
-              className={styles.btnLimpar}
+              type="button"
+              className={`${styles.btnLimpar} w-100`}
               onClick={() => setOrdemAsc((prev) => !prev)}
+              aria-label={ordemAsc ? "Ordenação: mais antigo primeiro" : "Ordenação: mais recente primeiro"}
             >
-              {ordemAsc ? "↑ Mais antigo primeiro" : "↓ Mais recente primeiro"}
+              {ordemAsc ? "↑ Antigos primeiro" : "↓ Recentes primeiro"}
             </button>
+          </div>
+
+          <div className="col-12 col-md-2">
+            <button
+              type="button"
+              className={`${styles.btnLimpar} w-100`}
+              aria-expanded={maisFiltrosAbertos}
+              aria-controls="filtrosAvancadosAgendamento"
+              aria-label={filtrosExtrasAtivos && !maisFiltrosAbertos ? "Mais opções, filtros ativos" : undefined}
+              onClick={() => setMaisFiltrosAbertos((aberto) => !aberto)}
+            >
+              {maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}
+            </button>
+          </div>
+        </div>
+
+        {!maisFiltrosAbertos && !mesSelecionado && !filtroHojeAtivo && (filtroDataInicio || filtroDataFim) && (
+          <p className={styles.resumoPeriodo}>Período: {filtroDataInicio || "início livre"} até {filtroDataFim || "fim livre"}</p>
+        )}
+
+        <div id="filtrosAvancadosAgendamento" className={maisFiltrosAbertos ? "row g-2 mt-2" : "d-none"}>
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroClienteAgendamento">Cliente</label>
+            <input
+              id="filtroClienteAgendamento"
+              type="search"
+              className={`form-control ${styles.inputFiltro}`}
+              placeholder="Nome da cliente..."
+              value={filtroCliente}
+              onChange={(e) => {
+                setFiltroCliente(e.target.value);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroServicoAgendamento">Serviço</label>
+            <select id="filtroServicoAgendamento" className={`form-select ${styles.inputFiltro}`} value={filtroServico} onChange={(e) => { setFiltroServico(e.target.value); setPaginaAtual(1); }}>
+              <option value="">Todos os serviços</option>
+              {servicosDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+          </div>
+
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroStatusAgendamento">Status</label>
+            <select id="filtroStatusAgendamento" className={`form-select ${styles.inputFiltro}`} value={filtroStatus} onChange={(e) => { setFiltroStatus(e.target.value); setPaginaAtual(1); }}>
+              <option value="">Todos</option>
+              <option value="agendado">Agendado</option>
+              <option value="realizado">Realizado</option>
+              <option value="cancelado">Cancelado</option>
+              <option value="faltou">Faltou</option>
+            </select>
+          </div>
+
+          <div className="col-6 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtroDataInicioAgendamento">De</label>
+            <input id="filtroDataInicioAgendamento" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroDataInicio} onChange={(e) => { setMesSelecionado(""); setFiltroDataInicio(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
+          </div>
+
+          <div className="col-6 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtroDataFimAgendamento">Até</label>
+            <input id="filtroDataFimAgendamento" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroDataFim} onChange={(e) => { setMesSelecionado(""); setFiltroDataFim(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
+          </div>
+
+          <div className="col-12 col-md-2 d-flex align-items-end">
+            <button type="button" className={`${styles.btnLimpar} w-100`} onClick={limparFiltros} disabled={!temFiltroAtivo}>Limpar filtros</button>
           </div>
         </div>
       </div>
@@ -652,34 +625,7 @@ export default function Agendamentos() {
               <table className="table table-hover align-middle mb-0">
                 <thead className={styles.tableHeader}>
                   <tr>
-                    <th className="px-4 py-3 border-0">
-                      <button
-                        onClick={() => setOrdemAsc((prev) => !prev)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          fontFamily: "var(--fonte-corpo)",
-                          fontWeight: 600,
-                          fontSize: "0.8rem",
-                          color: "var(--texto-secundario)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: 0,
-                        }}
-                        title={
-                          ordemAsc
-                            ? "Ordenar: mais recente primeiro"
-                            : "Ordenar: mais antigo primeiro"
-                        }
-                      >
-                        Data/Hora
-                        <span style={{ fontSize: "12px" }}>
-                          {ordemAsc ? "↑" : "↓"}
-                        </span>
-                      </button>
-                    </th>
+                    <th className="px-4 py-3 border-0">Data/Hora</th>
                     <th className="py-3 border-0">Cliente</th>
                     <th className="py-3 border-0">Serviço</th>
                     <th className="py-3 border-0">Status</th>

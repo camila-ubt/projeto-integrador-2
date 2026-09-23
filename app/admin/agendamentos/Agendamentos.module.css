@@ -88,6 +88,12 @@
   color: white;
 }
 
+.resumoPeriodo {
+  margin: 0.75rem 0 0;
+  color: var(--texto-secundario);
+  font: 0.78rem "Jost", sans-serif;
+}
+
 /* ── Estados: loading e vazio ────────── */
 
 .loadingState {

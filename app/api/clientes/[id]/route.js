@@ -15,9 +15,11 @@ export async function GET(request, { params }) {
 
     const [{ rows: historico }, { rows: agendamentos }] = await Promise.all([
       query(
-        `SELECT * FROM historico_procedimentos
-          WHERE cliente_id = $1
-          ORDER BY data_procedimento DESC`,
+        `SELECT h.*, s.nome AS servico_nome
+          FROM historico_procedimentos h
+          LEFT JOIN servicos s ON s.id = h.servico_id
+          WHERE h.cliente_id = $1
+          ORDER BY h.data_procedimento DESC, h.criado_em DESC`,
         [id]
       ),
       query(

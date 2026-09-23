@@ -233,7 +233,7 @@
 }
 
 .linkCliente:hover { color: var(--primaria); text-decoration: underline; }
-.linkCliente:focus-visible, .linkWhatsapp:focus-visible { outline: 2px solid var(--primaria); outline-offset: 3px; }
+.linkCliente:focus-visible, .linkWhatsapp:focus-visible, .botaoHistorico:focus-visible, .voltarDetalhes:focus-visible { outline: 2px solid var(--primaria); outline-offset: 3px; }
 
 .dadosCliente { display: grid; gap: 12px; }
 .dadosCliente p { display: grid; gap: 2px; margin: 0; }
@@ -241,6 +241,16 @@
 .dadosCliente strong { color: var(--texto-principal); font-size: 0.92rem; font-weight: 500; overflow-wrap: anywhere; }
 .linkWhatsapp { display: inline-flex; justify-content: center; padding: 10px 14px; border-radius: var(--radius-medium); background: var(--primaria); color: white; text-decoration: none; }
 .linkWhatsapp:hover { color: white; filter: brightness(0.93); }
+.acoesCliente { display: flex; flex-wrap: wrap; gap: 10px; }
+.botaoHistorico { padding: 10px 14px; border: 1px solid var(--primaria); border-radius: var(--radius-medium); background: white; color: var(--primaria); }
+.botaoHistorico:hover { background: var(--fundo-principal, #faf4f0); }
+.historicoCliente { display: grid; gap: 16px; }
+.voltarDetalhes { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--primaria); }
+.listaHistorico { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.itemHistorico { padding: 14px; border: 1px solid var(--borda, #e9e0dd); border-radius: var(--radius-medium); }
+.cabecalhoHistorico { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.cabecalhoHistorico time, .itemHistorico span, .historicoVazio { color: var(--texto-secundario); }
+.itemHistorico p { margin: 8px 0 0; overflow-wrap: anywhere; }
 
 /* ── Modais ─── */
 .modalContent {

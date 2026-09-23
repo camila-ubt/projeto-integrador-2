@@ -24,12 +24,14 @@ export default function PageClientes() {
   const [form, setForm] = useState({ id: null, nome: "", telefone: "" });
   const [clienteDetalhe, setClienteDetalhe] = useState(null);
   const [detalheAberto, setDetalheAberto] = useState(false);
+  const [historicoAberto, setHistoricoAberto] = useState(false);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
   const [erroDetalhe, setErroDetalhe] = useState("");
   const linkProcessado = useRef(false);
 
   const abrirDetalhes = useCallback(async (id) => {
     setDetalheAberto(true);
+    setHistoricoAberto(false);
     setCarregandoDetalhe(true);
     setClienteDetalhe(null);
     setErroDetalhe("");
@@ -216,18 +218,42 @@ export default function PageClientes() {
           <div className="modal-dialog modal-dialog-centered">
             <div className={`modal-content ${styles.modalContent}`}>
               <div className="modal-header border-0 pb-0">
-                <h2 className={styles.modalTitulo} id="tituloDetalheCliente">{clienteDetalhe?.nome ?? "Dados da cliente"}</h2>
-                <button type="button" className="btn-close" aria-label="Fechar dados da cliente" onClick={() => setDetalheAberto(false)} />
+                <h2 className={styles.modalTitulo} id="tituloDetalheCliente">{historicoAberto ? `Histórico de ${clienteDetalhe?.nome ?? "cliente"}` : clienteDetalhe?.nome ?? "Dados da cliente"}</h2>
+                <button type="button" className="btn-close" aria-label="Fechar janela da cliente" onClick={() => setDetalheAberto(false)} />
               </div>
               <div className="modal-body">
                 {carregandoDetalhe && <p>Carregando dados da cliente...</p>}
                 {erroDetalhe && <p role="alert">{erroDetalhe}</p>}
-                {clienteDetalhe && (
+                {clienteDetalhe && !historicoAberto && (
                   <div className={styles.dadosCliente}>
                     <p><span>Telefone</span><strong>{formatarTelefone(clienteDetalhe.telefone)}</strong></p>
                     {clienteDetalhe.aniversario && <p><span>Aniversário</span><strong>{String(clienteDetalhe.aniversario).slice(0, 10).split("-").reverse().join("/")}</strong></p>}
                     {clienteDetalhe.observacoes && <p><span>Observações</span><strong>{clienteDetalhe.observacoes}</strong></p>}
-                    {linkWhatsapp(clienteDetalhe.telefone) && <a className={styles.linkWhatsapp} href={linkWhatsapp(clienteDetalhe.telefone)} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
+                    <div className={styles.acoesCliente}>
+                      {linkWhatsapp(clienteDetalhe.telefone) && <a className={styles.linkWhatsapp} href={linkWhatsapp(clienteDetalhe.telefone)} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
+                      <button className={styles.botaoHistorico} type="button" onClick={() => setHistoricoAberto(true)}>Ver histórico</button>
+                    </div>
+                  </div>
+                )}
+                {clienteDetalhe && historicoAberto && (
+                  <div className={styles.historicoCliente}>
+                    <button className={styles.voltarDetalhes} type="button" onClick={() => setHistoricoAberto(false)}>← Voltar aos dados da cliente</button>
+                    {clienteDetalhe.historico?.length ? (
+                      <ol className={styles.listaHistorico}>
+                        {clienteDetalhe.historico.map((procedimento) => (
+                          <li className={styles.itemHistorico} key={procedimento.id}>
+                            <div className={styles.cabecalhoHistorico}>
+                              <strong>{procedimento.servico_nome ?? "Procedimento sem serviço informado"}</strong>
+                              <time dateTime={String(procedimento.data_procedimento).slice(0, 10)}>{String(procedimento.data_procedimento).slice(0, 10).split("-").reverse().join("/")}</time>
+                            </div>
+                            {procedimento.tecnica && <p><span>Técnica:</span> {procedimento.tecnica}</p>}
+                            {procedimento.produto_utilizado && <p><span>Produto:</span> {procedimento.produto_utilizado}</p>}
+                            {procedimento.cor && <p><span>Cor:</span> {procedimento.cor}</p>}
+                            {procedimento.observacoes && <p><span>Observações:</span> {procedimento.observacoes}</p>}
+                          </li>
+                        ))}
+                      </ol>
+                    ) : <p className={styles.historicoVazio}>Nenhum procedimento registrado para esta cliente.</p>}
                   </div>
                 )}
               </div>

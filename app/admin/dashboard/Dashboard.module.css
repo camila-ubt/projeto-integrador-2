@@ -228,9 +228,7 @@
   margin-bottom: 18px;
 }
 
-.secao:not(.secaoAberta) .conteudoSecao { display: none; }
-.secao:not(.secaoAberta) .cabecalhoSecao { margin-bottom: 0; }
-.botaoSecao { display: grid; width: 32px; height: 32px; flex-shrink: 0; place-items: center; border: 1px solid var(--borda); border-radius: 50%; background: var(--fundo); color: var(--primaria); font-size: 20px; line-height: 1; }
+.botaoSecao { display: none; }
 
 .cabecalhoSecao h2 {
   margin: 0;
@@ -486,6 +484,9 @@
   .kpi > strong { font-size: clamp(22px, 6vw, 30px); overflow-wrap: anywhere; }
   .kpi:first-child { grid-column: 1 / -1; }
   .secao { padding: 16px; }
+  .secao:not(.secaoAberta) .conteudoSecao { display: none; }
+  .secao:not(.secaoAberta) .cabecalhoSecao { margin-bottom: 0; }
+  .botaoSecao { display: grid; width: 32px; height: 32px; flex-shrink: 0; place-items: center; border: 1px solid var(--borda); border-radius: 50%; background: var(--fundo); color: var(--primaria); font-size: 20px; line-height: 1; }
   .gradeDuasColunas { grid-template-columns: 1fr; gap: 0; }
   .indicadoresRetorno { grid-template-columns: 1fr 1fr; }
   .aniversariantes { grid-template-columns: 1fr; }

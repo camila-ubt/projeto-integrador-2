@@ -222,6 +222,26 @@
   color: var(--texto-secundario);
 }
 
+.linkCliente {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linkCliente:hover { color: var(--primaria); text-decoration: underline; }
+.linkCliente:focus-visible, .linkWhatsapp:focus-visible { outline: 2px solid var(--primaria); outline-offset: 3px; }
+
+.dadosCliente { display: grid; gap: 12px; }
+.dadosCliente p { display: grid; gap: 2px; margin: 0; }
+.dadosCliente span { color: var(--texto-secundario); font-size: 0.78rem; }
+.dadosCliente strong { color: var(--texto-principal); font-size: 0.92rem; font-weight: 500; overflow-wrap: anywhere; }
+.linkWhatsapp { display: inline-flex; justify-content: center; padding: 10px 14px; border-radius: var(--radius-medium); background: var(--primaria); color: white; text-decoration: none; }
+.linkWhatsapp:hover { color: white; filter: brightness(0.93); }
+
 /* ── Modais ─── */
 .modalContent {
   border: none;

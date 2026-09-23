@@ -377,6 +377,9 @@
 .tabelaSimples > div:last-child { border-bottom: 0; }
 .tabelaSimples span { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--fundo); color: var(--primaria); font-size: 10px; }
 .tabelaSimples p { margin: 0; font-size: 13px; }
+.tabelaSimples a { color: inherit; text-decoration: none; }
+.tabelaSimples a:hover { color: var(--primaria); text-decoration: underline; }
+.tabelaSimples a:focus-visible, .proximoLink:focus-visible { border-radius: 4px; outline: 2px solid var(--primaria); outline-offset: 3px; }
 .tabelaSimples strong { color: var(--primaria); font-size: 13px; }
 
 .proximos {
@@ -384,6 +387,9 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
+
+.proximoLink { min-width: 0; color: inherit; text-decoration: none; }
+.proximoLink:hover article { border-color: var(--primaria); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07); }
 
 .proximos article {
   display: flex;

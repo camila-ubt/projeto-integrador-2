@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { buscarResumoDashboard } from "@/services/resumoDashboard";
 import { formatarMoeda } from "@/lib/formatters";
@@ -256,12 +257,12 @@ export default function PaginaDashboard() {
           <div className={styles.destaqueSecundario}><span>Duração média agendada</span><strong>{Math.round(kpis.duracaoMedia)} min</strong></div>
         </Secao>
         <Secao titulo="Clientes que mais retornam" subtitulo="Visitas de retorno realizadas no período.">
-          {dados.clientes.ranking.length ? <div className={styles.tabelaSimples}>{dados.clientes.ranking.map((item, indice) => <div key={item.id}><span>{indice + 1}</span><p>{item.nome}</p><strong>{item.retornos}</strong></div>)}</div> : <EstadoVazio texto="Ainda não há visitas de retorno no período." />}
+          {dados.clientes.ranking.length ? <div className={styles.tabelaSimples}>{dados.clientes.ranking.map((item, indice) => <div key={item.id}><span>{indice + 1}</span><p><Link href={`/admin/clientes?cliente_id=${item.id}`} aria-label={`Ver dados de ${item.nome}`}>{item.nome}</Link></p><strong>{item.retornos}</strong></div>)}</div> : <EstadoVazio texto="Ainda não há visitas de retorno no período." />}
         </Secao>
       </div>
 
       <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise.">
-        {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <article key={item.id}><time>{new Date(item.inicio).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" })}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
+        {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{new Date(item.inicio).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" })}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
       </Secao>
 
       <p className={styles.nota}>A taxa de ocupação será calculada quando os horários disponíveis do studio forem definidos.</p>

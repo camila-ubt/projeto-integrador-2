@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Clientes.module.css"; 
 import { formatarTelefone } from "@/lib/formatters"; 
+
+function linkWhatsapp(telefone) {
+  const numero = telefone?.replace(/\D/g, "") ?? "";
+  if (numero.length < 10) return null;
+  const completo = telefone.trim().startsWith("+") || (numero.length >= 12 && numero.startsWith("55"))
+    ? numero : `55${numero}`;
+  return `https://wa.me/${completo}`;
+}
 
 export default function PageClientes() {
   const [clientes, setClientes] = useState([]);
@@ -14,6 +22,27 @@ export default function PageClientes() {
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState(null);
   const [form, setForm] = useState({ id: null, nome: "", telefone: "" });
+  const [clienteDetalhe, setClienteDetalhe] = useState(null);
+  const [detalheAberto, setDetalheAberto] = useState(false);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
+  const [erroDetalhe, setErroDetalhe] = useState("");
+  const linkProcessado = useRef(false);
+
+  const abrirDetalhes = useCallback(async (id) => {
+    setDetalheAberto(true);
+    setCarregandoDetalhe(true);
+    setClienteDetalhe(null);
+    setErroDetalhe("");
+    try {
+      const resposta = await fetch(`/api/clientes/${encodeURIComponent(id)}`);
+      if (!resposta.ok) throw new Error("Não foi possível carregar essa cliente.");
+      setClienteDetalhe(await resposta.json());
+    } catch (error) {
+      setErroDetalhe(error.message);
+    } finally {
+      setCarregandoDetalhe(false);
+    }
+  }, []);
 
   // ── Busca de Clientes  ──
   useEffect(() => {
@@ -27,11 +56,16 @@ export default function PageClientes() {
         setClientes([]);
       } finally {
         setCarregando(false);
+        if (!linkProcessado.current) {
+          linkProcessado.current = true;
+          const id = new URLSearchParams(window.location.search).get("cliente_id");
+          if (id) abrirDetalhes(id);
+        }
       }
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [buscaCliente]);
+  }, [buscaCliente, abrirDetalhes]);
 
   // ── Ações do Modal ──
   function abrirModal(cliente = null) {
@@ -144,7 +178,7 @@ export default function PageClientes() {
               <tbody>
                 {clientes.map((c) => (
                   <tr key={c.id}>
-                    <td className={`p-3 ${styles.tdData}`}>{c.nome}</td>
+                    <td className={`p-3 ${styles.tdData}`}><button className={styles.linkCliente} type="button" onClick={() => abrirDetalhes(c.id)}>{c.nome}</button></td>
                     <td className={`p-3 ${styles.tdHora}`}>{formatarTelefone(c.telefone)}</td>
                     <td className="p-3 text-end">
                       <div className="d-flex gap-2 justify-content-end">
@@ -162,7 +196,7 @@ export default function PageClientes() {
             {clientes.map((c) => (
               <div key={c.id} className={styles.cardMobile}>
                 <div className={styles.cardCentro}>
-                  <p className={styles.cardCliente}>{c.nome}</p>
+                  <p className={styles.cardCliente}><button className={styles.linkCliente} type="button" onClick={() => abrirDetalhes(c.id)}>{c.nome}</button></p>
                   <p className={styles.cardServico}>{formatarTelefone(c.telefone)}</p>
                 </div>
                 <div className={styles.cardDireita}>
@@ -175,6 +209,31 @@ export default function PageClientes() {
             ))}
           </div>
         </>
+      )}
+
+      {detalheAberto && (
+        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} role="dialog" aria-modal="true" aria-labelledby="tituloDetalheCliente">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h2 className={styles.modalTitulo} id="tituloDetalheCliente">{clienteDetalhe?.nome ?? "Dados da cliente"}</h2>
+                <button type="button" className="btn-close" aria-label="Fechar dados da cliente" onClick={() => setDetalheAberto(false)} />
+              </div>
+              <div className="modal-body">
+                {carregandoDetalhe && <p>Carregando dados da cliente...</p>}
+                {erroDetalhe && <p role="alert">{erroDetalhe}</p>}
+                {clienteDetalhe && (
+                  <div className={styles.dadosCliente}>
+                    <p><span>Telefone</span><strong>{formatarTelefone(clienteDetalhe.telefone)}</strong></p>
+                    {clienteDetalhe.aniversario && <p><span>Aniversário</span><strong>{String(clienteDetalhe.aniversario).slice(0, 10).split("-").reverse().join("/")}</strong></p>}
+                    {clienteDetalhe.observacoes && <p><span>Observações</span><strong>{clienteDetalhe.observacoes}</strong></p>}
+                    {linkWhatsapp(clienteDetalhe.telefone) && <a className={styles.linkWhatsapp} href={linkWhatsapp(clienteDetalhe.telefone)} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Modal Novo/Editar Cliente ── */}

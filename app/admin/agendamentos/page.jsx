@@ -12,6 +12,16 @@ import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
 import styles from "./Agendamentos.module.css";
 import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
+function camposDoAgendamento(agenda) {
+  const inicioDate = new Date(agenda.inicio);
+  return {
+    status: agenda.status ?? "",
+    observacoes: agenda.observacoes ?? "",
+    data: inicioDate.toISOString().split("T")[0],
+    hora: inicioDate.toTimeString().slice(0, 5),
+  };
+}
+
 export default function Agendamentos() {
   const [agendamentosDoDia, setAgendamentosDoDia] = useState([]);
   const [carregandoHorarios, setcarregandoHorarios] = useState(false);
@@ -52,7 +62,18 @@ export default function Agendamentos() {
         const res = await fetch("/api/agendamentos");
         if (!res.ok) throw new Error("Erro ao buscar agendamentos");
         const data = await res.json();
-        setAgendamentos(Array.isArray(data) ? data : []);
+        const lista = Array.isArray(data) ? data : [];
+        setAgendamentos(lista);
+        const idDoLink = new URLSearchParams(window.location.search).get("agendamento_id");
+        if (idDoLink) {
+          const agenda = lista.find((item) => item.id === idDoLink);
+          if (agenda) {
+            setCamposEdicao(camposDoAgendamento(agenda));
+            setModalEditar({ aberto: true, agenda });
+          } else {
+            setErro("O agendamento selecionado não foi encontrado.");
+          }
+        }
       } catch (err) {
         console.error("Erro ao buscar agendamentos:", err);
         setErro("Não foi possível carregar os agendamentos. Tente novamente.");
@@ -199,16 +220,7 @@ export default function Agendamentos() {
   };
 
   const handleEditar = (agenda) => {
-    const inicioDate = new Date(agenda.inicio);
-    const data = inicioDate.toISOString().split("T")[0];
-    const hora = inicioDate.toTimeString().slice(0, 5);
-
-    setCamposEdicao({
-      status: agenda.status ?? "",
-      observacoes: agenda.observacoes ?? "",
-      data,
-      hora,
-    });
+    setCamposEdicao(camposDoAgendamento(agenda));
     setModalEditar({ aberto: true, agenda });
   };
 

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { buscarResumoDashboard } from "@/services/resumoDashboard";
 import { formatarMoeda, formatarDataCurta, formatarDataSemAno } from "@/lib/formatters";
 import DatePickerField from "@/app/components/DatePickerField";
+import { dataHojeSalao, limitesDoMes } from "@/lib/periodo-filtros";
 import styles from "./Dashboard.module.css";
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -22,8 +23,8 @@ function dataInput(data) {
 }
 
 function periodoInicial() {
-  const hoje = new Date();
-  return { inicio: dataInput(new Date(hoje.getFullYear(), hoje.getMonth(), 1)), fim: dataInput(hoje) };
+  const hoje = dataHojeSalao();
+  return { inicio: limitesDoMes(hoje.slice(0, 7)).inicio, fim: hoje };
 }
 
 function formatarPercentual(valor) {
@@ -150,17 +151,45 @@ function EstadoVazio({ texto }) {
 }
 
 function Filtros({ filtros, setFiltros, opcoes, aoAplicar, carregando }) {
+  const [mesSelecionado, setMesSelecionado] = useState(() => dataHojeSalao().slice(0, 7));
+  const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
+  const hoje = dataHojeSalao();
+  const filtroHojeAtivo = filtros.inicio === hoje && filtros.fim === hoje;
+  const filtrosExtrasAtivos = Boolean(filtros.servico_id || filtros.status || filtros.cliente_id || (!mesSelecionado && !filtroHojeAtivo));
   function alterar(evento) {
+    if (evento.target.name === "inicio" || evento.target.name === "fim") setMesSelecionado("");
     setFiltros((atuais) => ({ ...atuais, [evento.target.name]: evento.target.value }));
+  }
+  function escolherMes(evento) {
+    const mes = evento.target.value;
+    setMesSelecionado(mes);
+    const periodo = mes ? limitesDoMes(mes) : { inicio: "", fim: "" };
+    const novosFiltros = { ...filtros, ...periodo };
+    setFiltros(novosFiltros);
+    aoAplicar(novosFiltros);
+  }
+  function escolherHoje() {
+    const novosFiltros = { ...filtros, inicio: hoje, fim: hoje, servico_id: "", status: "", cliente_id: "" };
+    setMesSelecionado(hoje.slice(0, 7));
+    setFiltros(novosFiltros);
+    setMaisFiltrosAbertos(false);
+    aoAplicar(novosFiltros);
   }
   return (
     <form className={styles.filtros} onSubmit={(evento) => { evento.preventDefault(); aoAplicar(); }}>
-      <label>De<DatePickerField name="inicio" value={filtros.inicio} max={filtros.fim} onChange={alterar} /></label>
-      <label>Até<DatePickerField name="fim" value={filtros.fim} min={filtros.inicio} onChange={alterar} /></label>
-      <label>Serviço<select name="servico_id" value={filtros.servico_id} onChange={alterar}><option value="">Todos</option>{opcoes.servicos?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
-      <label>Status<select name="status" value={filtros.status} onChange={alterar}><option value="">Todos</option><option value="realizado">Realizado</option><option value="agendado">Agendado</option><option value="cancelado">Cancelado</option><option value="faltou">Faltou</option></select></label>
-      <label>Cliente<select name="cliente_id" value={filtros.cliente_id} onChange={alterar}><option value="">Todos</option>{opcoes.clientes?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
-      <button type="submit" disabled={carregando}>{carregando ? "Atualizando…" : "Aplicar filtros"}</button>
+      <div className={styles.filtrosPrincipais}>
+        <label>Mês<DatePickerField type="month" value={mesSelecionado} onChange={escolherMes} /></label>
+        <button type="button" className={filtroHojeAtivo ? styles.btnHojeAtivo : ""} aria-pressed={filtroHojeAtivo} onClick={escolherHoje}>Hoje</button>
+        <button type="button" aria-expanded={maisFiltrosAbertos} aria-controls="filtrosAvancadosDashboard" onClick={() => setMaisFiltrosAbertos((valor) => !valor)}>{maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}</button>
+      </div>
+      <div id="filtrosAvancadosDashboard" className={maisFiltrosAbertos ? styles.filtrosAvancados : styles.filtrosOcultos}>
+        <label>De<DatePickerField name="inicio" value={filtros.inicio} max={filtros.fim} onChange={alterar} /></label>
+        <label>Até<DatePickerField name="fim" value={filtros.fim} min={filtros.inicio} onChange={alterar} /></label>
+        <label>Serviço<select name="servico_id" value={filtros.servico_id} onChange={alterar}><option value="">Todos</option>{opcoes.servicos?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
+        <label>Status<select name="status" value={filtros.status} onChange={alterar}><option value="">Todos</option><option value="realizado">Realizado</option><option value="agendado">Agendado</option><option value="cancelado">Cancelado</option><option value="faltou">Faltou</option></select></label>
+        <label>Cliente<select name="cliente_id" value={filtros.cliente_id} onChange={alterar}><option value="">Todos</option>{opcoes.clientes?.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
+        <button type="submit" disabled={carregando}>{carregando ? "Atualizando…" : "Aplicar filtros"}</button>
+      </div>
     </form>
   );
 }
@@ -216,7 +245,7 @@ export default function PaginaDashboard() {
         <span className={styles.periodoAtual}>{formatarDataCurta(dados.periodo.inicio)} — {formatarDataCurta(dados.periodo.fim)}</span>
       </div>
 
-      <Filtros filtros={filtros} setFiltros={setFiltros} opcoes={dados.opcoes} carregando={carregando} aoAplicar={() => { setCarregando(true); setErro(""); setFiltrosAplicados({ ...filtros }); }} />
+      <Filtros filtros={filtros} setFiltros={setFiltros} opcoes={dados.opcoes} carregando={carregando} aoAplicar={(proximos = filtros) => { setCarregando(true); setErro(""); setFiltrosAplicados({ ...proximos }); }} />
       {erro && <div className={styles.erro} role="alert">{erro}<button type="button" onClick={() => { setCarregando(true); setErro(""); setTentativa((valor) => valor + 1); }}>Tentar novamente</button></div>}
 
       <div className={styles.gradeKpis} aria-busy={carregando}>

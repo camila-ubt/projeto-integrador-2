@@ -23,9 +23,9 @@
 .introducao h1 {
   margin: 4px 0 6px;
   font-family: var(--fonte-titulo);
-  font-size: clamp(28px, 4vw, 42px);
-  font-style: italic;
-  font-weight: 600;
+  font-size: clamp(28px, 3vw, 34px);
+  font-style: normal;
+  font-weight: 500;
   line-height: 1.05;
 }
 
@@ -47,10 +47,6 @@
 }
 
 .filtros {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
-  gap: 12px;
-  align-items: end;
   margin-bottom: 20px;
   padding: 16px;
   border: 1px solid var(--borda);
@@ -59,13 +55,30 @@
   box-shadow: 0 8px 28px rgba(56, 35, 27, .04);
 }
 
+.filtrosPrincipais {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.filtrosAvancados {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.filtrosOcultos { display: none; }
+
 .filtros label {
   display: flex;
   flex-direction: column;
   gap: 6px;
   color: var(--texto-secundario);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
@@ -82,6 +95,7 @@
   color: var(--texto-principal);
   font: inherit;
   font-size: 13px;
+  font-weight: 400;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -110,6 +124,18 @@
   opacity: .65;
 }
 
+.filtrosPrincipais button {
+  border: 1px solid var(--borda-escura);
+  background: transparent;
+  color: var(--texto-secundario);
+  font-family: var(--fonte-corpo);
+  font-weight: 400;
+}
+
+.filtrosPrincipais button:hover { background: var(--fundo); color: var(--texto-principal); }
+.filtrosPrincipais .btnHojeAtivo,
+.filtrosPrincipais .btnHojeAtivo:hover { background: var(--primaria); border-color: var(--primaria); color: white; }
+
 .gradeKpis {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -136,7 +162,7 @@
   margin: 0;
   color: var(--texto-secundario);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
@@ -146,6 +172,7 @@
   margin: 4px 0 12px;
   color: var(--primaria);
   font-family: var(--fonte-titulo);
+  font-weight: 500;
   font-size: clamp(24px, 2.3vw, 34px);
   line-height: 1;
 }
@@ -207,7 +234,7 @@
   margin: 0;
   font-family: var(--fonte-titulo);
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .cabecalhoSecao p {
@@ -427,7 +454,7 @@
 .erroInicial button { margin-top: 8px; padding: 9px 16px; border: 0; border-radius: 9px; background: var(--primaria); color: white; font-weight: 600; }
 
 @media (max-width: 1200px) {
-  .filtros { grid-template-columns: repeat(3, 1fr); }
+  .filtrosAvancados { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gradeKpis { grid-template-columns: repeat(3, 1fr); }
   .aniversariantes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .proximos { grid-template-columns: repeat(2, 1fr); }
@@ -436,8 +463,10 @@
 @media (max-width: 760px) {
   .pagina { padding: 20px 14px 38px; }
   .introducao { align-items: flex-start; flex-direction: column; }
-  .filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .filtros label:nth-of-type(5), .filtros button { grid-column: span 2; }
+  .filtrosPrincipais { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filtrosPrincipais label { grid-column: 1 / -1; }
+  .filtrosAvancados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filtrosAvancados label:nth-of-type(5), .filtrosAvancados button { grid-column: 1 / -1; }
   .gradeKpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kpi { min-height: 132px; padding: 14px; }
   .kpi > p { min-height: 30px; font-size: 10px; }

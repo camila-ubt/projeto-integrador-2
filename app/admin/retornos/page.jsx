@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import DatePickerField from "@/app/components/DatePickerField";
 import { formatarDataCurta } from "@/lib/formatters";
+import { dataHojeSalao } from "@/lib/periodo-filtros";
 import styles from "./Retornos.module.css";
 
 const STATUS = {
@@ -26,6 +27,9 @@ export default function PageRetornos() {
   const [carregando, setCarregando] = useState(true);
   const [erroLista, setErroLista] = useState("");
   const [filtroData, setFiltroData] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState(() => dataHojeSalao().slice(0, 7));
+  const [ordemAsc, setOrdemAsc] = useState(false);
+  const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState("");
   const [buscaCliente, setBuscaCliente] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
@@ -50,6 +54,7 @@ export default function PageRetornos() {
         if (ativo) {
           setRetornos(Array.isArray(dados) ? dados : []);
           setOrigemId(agendamentoId);
+          if (agendamentoId) setMesSelecionado("");
           setErroLista("");
         }
       } catch (error) {
@@ -112,9 +117,14 @@ export default function PageRetornos() {
   const retornosFiltrados = retornos.filter((item) =>
     (!filtroStatus || item.status === filtroStatus) &&
     (!filtroData || dataInput(item.data_recomendada) === filtroData) &&
+    (!mesSelecionado || filtroData || dataInput(item.data_recomendada).startsWith(mesSelecionado)) &&
     (!buscaCliente.trim() || item.cliente_nome?.toLocaleLowerCase("pt-BR").includes(buscaCliente.trim().toLocaleLowerCase("pt-BR"))) &&
     (!filtroServico || item.servico_id === filtroServico)
-  );
+  ).sort((a, b) => ordemAsc
+    ? dataInput(a.data_recomendada).localeCompare(dataInput(b.data_recomendada))
+    : dataInput(b.data_recomendada).localeCompare(dataInput(a.data_recomendada)));
+  const filtroHojeAtivo = filtroData === dataHojeSalao();
+  const filtrosExtrasAtivos = Boolean(buscaCliente || filtroServico || filtroStatus || (filtroData && !filtroHojeAtivo));
 
   return (
     <div className={styles.pagina}>
@@ -126,7 +136,17 @@ export default function PageRetornos() {
         {origemId && <Link href="/admin/retornos" className={styles.linkSimples}>Ver todos os retornos</Link>}
       </header>
 
-      <section className={`${styles.cardFiltros} mb-4 row g-3`}>
+      <section className={`${styles.cardFiltros} mb-4`}>
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-5">
+            <label className={styles.labelFiltro} htmlFor="filtroMesRetorno">Mês</label>
+            <DatePickerField id="filtroMesRetorno" type="month" className={`form-control ${styles.inputFiltro}`} value={mesSelecionado} onChange={(evento) => { setMesSelecionado(evento.target.value); setFiltroData(""); }} />
+          </div>
+          <div className="col-6 col-md-2"><button type="button" className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`} aria-pressed={filtroHojeAtivo} onClick={() => { setMesSelecionado(dataHojeSalao().slice(0, 7)); setFiltroData(dataHojeSalao()); setBuscaCliente(""); setFiltroServico(""); setFiltroStatus(""); setMaisFiltrosAbertos(false); }}>Hoje</button></div>
+          <div className="col-6 col-md-3"><button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => setOrdemAsc((valor) => !valor)}>{ordemAsc ? "↑ Antigos primeiro" : "↓ Recentes primeiro"}</button></div>
+          <div className="col-12 col-md-2"><button type="button" className={`${styles.btnLimpar} w-100`} aria-expanded={maisFiltrosAbertos} aria-controls="filtrosAvancadosRetorno" onClick={() => setMaisFiltrosAbertos((valor) => !valor)}>{maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}</button></div>
+        </div>
+        <div id="filtrosAvancadosRetorno" className={maisFiltrosAbertos ? "row g-2 mt-2" : "d-none"}>
         <div className="col-12 col-md-6 col-xl-3">
           <label className={styles.labelFiltro} htmlFor="buscaClienteRetorno">Cliente</label>
           <input id="buscaClienteRetorno" type="search" className={`form-control ${styles.inputFiltro}`} placeholder="Nome da cliente..." value={buscaCliente} onChange={(evento) => setBuscaCliente(evento.target.value)} />
@@ -140,7 +160,7 @@ export default function PageRetornos() {
         </div>
         <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroDataRetorno">Data recomendada</label>
-          <DatePickerField id="filtroDataRetorno" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => setFiltroData(evento.target.value)} />
+          <DatePickerField id="filtroDataRetorno" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => { setFiltroData(evento.target.value); setMesSelecionado(""); }} />
         </div>
         <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroStatusRetorno">Status</label>
@@ -150,7 +170,8 @@ export default function PageRetornos() {
           </select>
         </div>
         <div className="col-12 col-xl-2 d-flex align-items-end">
-          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); setBuscaCliente(""); setFiltroServico(""); }}>Limpar</button>
+          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setMesSelecionado(dataHojeSalao().slice(0, 7)); setFiltroData(""); setFiltroStatus(""); setBuscaCliente(""); setFiltroServico(""); }}>Limpar filtros</button>
+        </div>
         </div>
       </section>
 

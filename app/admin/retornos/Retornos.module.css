@@ -54,6 +54,7 @@
   font-family: "Jost", sans-serif;
   cursor: pointer;
 }
+.btnHojeAtivo { background: var(--primaria); border-color: var(--primaria); color: white; }
 
 /* ── Estados ── */
 .loadingState {

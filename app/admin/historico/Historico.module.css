@@ -260,3 +260,9 @@
   font-family: var(--fonte-corpo);
   margin-top: 12px;
 }
+
+.btnHojeAtivo, .btnHojeAtivo:hover:not(:disabled) {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: white;
+}

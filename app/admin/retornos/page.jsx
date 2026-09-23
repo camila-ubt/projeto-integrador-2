@@ -25,6 +25,8 @@ export default function PageRetornos() {
   const [erroLista, setErroLista] = useState("");
   const [filtroData, setFiltroData] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const [buscaServico, setBuscaServico] = useState("");
   const [origemId, setOrigemId] = useState(null);
   const [selecionado, setSelecionado] = useState(null);
   const [form, setForm] = useState({ status: "pendente", data_recomendada: "", observacoes: "" });
@@ -92,9 +94,12 @@ export default function PageRetornos() {
     }
   }
 
-  const retornosFiltrados = filtroData
-    ? retornos.filter((item) => dataInput(item.data_recomendada) === filtroData)
-    : retornos;
+  const retornosFiltrados = retornos.filter((item) =>
+    (!filtroStatus || item.status === filtroStatus) &&
+    (!filtroData || dataInput(item.data_recomendada) === filtroData) &&
+    (!buscaCliente.trim() || item.cliente_nome?.toLocaleLowerCase("pt-BR").includes(buscaCliente.trim().toLocaleLowerCase("pt-BR"))) &&
+    (!buscaServico.trim() || item.servico_nome?.toLocaleLowerCase("pt-BR").includes(buscaServico.trim().toLocaleLowerCase("pt-BR")))
+  );
 
   return (
     <div className={styles.pagina}>
@@ -107,26 +112,36 @@ export default function PageRetornos() {
       </header>
 
       <section className={`${styles.cardFiltros} mb-4 row g-3`}>
-        <div className="col-12 col-sm-5">
+        <div className="col-12 col-md-6 col-xl-3">
+          <label className={styles.labelFiltro} htmlFor="buscaClienteRetorno">Cliente</label>
+          <input id="buscaClienteRetorno" type="search" className={`form-control ${styles.inputFiltro}`} placeholder="Nome da cliente..." value={buscaCliente} onChange={(evento) => setBuscaCliente(evento.target.value)} />
+        </div>
+        <div className="col-12 col-md-6 col-xl-3">
+          <label className={styles.labelFiltro} htmlFor="buscaServicoRetorno">Serviço</label>
+          <input id="buscaServicoRetorno" type="search" className={`form-control ${styles.inputFiltro}`} placeholder="Nome do serviço..." value={buscaServico} onChange={(evento) => setBuscaServico(evento.target.value)} />
+        </div>
+        <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroDataRetorno">Data recomendada</label>
           <input id="filtroDataRetorno" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => setFiltroData(evento.target.value)} />
         </div>
-        <div className="col-12 col-sm-5">
+        <div className="col-12 col-md-6 col-xl-2">
           <label className={styles.labelFiltro} htmlFor="filtroStatusRetorno">Status</label>
           <select id="filtroStatusRetorno" className={`form-select ${styles.inputFiltro}`} value={filtroStatus} onChange={(evento) => setFiltroStatus(evento.target.value)}>
             <option value="">Todos</option>
             {Object.entries(STATUS).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
           </select>
         </div>
-        <div className="col-12 col-sm-2 d-flex align-items-end">
-          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); }}>Limpar</button>
+        <div className="col-12 col-xl-2 d-flex align-items-end">
+          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); setBuscaCliente(""); setBuscaServico(""); }}>Limpar</button>
         </div>
       </section>
 
       {erroLista && <p className={styles.erro} role="alert">{erroLista}</p>}
       {carregando ? <div className={styles.loadingState}>Carregando retornos...</div> : retornosFiltrados.length === 0 ? (
         <div className={styles.estadoVazio}>
-          <p>{origemId ? "Nenhum retorno encontrado para este atendimento. Você pode definir um ao editar o agendamento realizado." : "Nenhum retorno encontrado com os filtros atuais."}</p>
+          <p>{origemId && !filtroData && !filtroStatus && !buscaCliente && !buscaServico
+            ? "Nenhum retorno encontrado para este atendimento. Você pode definir um ao editar o agendamento realizado."
+            : "Nenhum retorno encontrado com os filtros atuais."}</p>
           {origemId && <Link href={`/admin/agendamentos?agendamento_id=${origemId}`}>Abrir atendimento</Link>}
         </div>
       ) : (

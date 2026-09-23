@@ -81,6 +81,13 @@
   cursor: not-allowed;
 }
 
+.btnHojeAtivo,
+.btnHojeAtivo:hover:not(:disabled) {
+  background-color: var(--primaria);
+  border-color: var(--primaria);
+  color: white;
+}
+
 /* ── Estados: loading e vazio ────────── */
 
 .loadingState {

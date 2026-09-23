@@ -13,6 +13,18 @@ import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
 import styles from "./Agendamentos.module.css";
 import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
+function dataNoFusoDoSalao(valor) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(valor)).map(({ type, value }) => [type, value])
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
 function camposDoAgendamento(agenda) {
   const inicioDate = new Date(agenda.inicio);
   return {
@@ -53,9 +65,11 @@ export default function Agendamentos() {
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState("");
+  const [filtroServico, setFiltroServico] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [dataHojeAplicada, setDataHojeAplicada] = useState("");
   const [ordemAsc, setOrdemAsc] = useState(false);
 
   // Paginação
@@ -169,21 +183,29 @@ export default function Agendamentos() {
     return labels[status?.toLowerCase()] || status;
   };
 
+  const servicosDisponiveis = [...new Map(
+    agendamentos.flatMap((agenda) => agenda.servicos ?? [])
+      .filter((servico) => servico.servico_id && servico.nome)
+      .map((servico) => [servico.servico_id, servico.nome])
+  )].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  const filtroHojeAtivo = Boolean(dataHojeAplicada) && filtroDataInicio === dataHojeAplicada && filtroDataFim === dataHojeAplicada && !filtroCliente && !filtroServico && !filtroStatus;
+
   // Filtragem
   const agendamentosFiltrados = agendamentos.filter((agenda) => {
     const matchCliente = agenda.cliente_nome
       ?.toLowerCase()
       .includes(filtroCliente.toLowerCase());
     const matchStatus = filtroStatus === "" || agenda.status === filtroStatus;
+    const matchServico = !filtroServico || agenda.servicos?.some((servico) => servico.servico_id === filtroServico);
 
     let matchData = true;
     if (filtroDataInicio || filtroDataFim) {
-      const dataAgenda = agenda.inicio.split("T")[0];
+      const dataAgenda = dataNoFusoDoSalao(agenda.inicio);
       if (filtroDataInicio && dataAgenda < filtroDataInicio) matchData = false;
       if (filtroDataFim && dataAgenda > filtroDataFim) matchData = false;
     }
 
-    return matchCliente && matchStatus && matchData;
+    return matchCliente && matchServico && matchStatus && matchData;
   });
 
   const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) =>
@@ -202,16 +224,18 @@ export default function Agendamentos() {
   const totalPaginas = Math.ceil(agendamentosOrdenados.length / itensPorPagina);
 
   const temFiltroAtivo =
-    filtroCliente || filtroStatus || filtroDataInicio || filtroDataFim;
+    filtroCliente || filtroServico || filtroStatus || filtroDataInicio || filtroDataFim;
   const servicoRetornoSelecionado = modalEditar.agenda?.servicos?.find(
     (item) => item.servico_id === dadosRetorno.servico_id
   );
 
   const limparFiltros = () => {
     setFiltroCliente("");
+    setFiltroServico("");
     setFiltroStatus("");
     setFiltroDataInicio("");
     setFiltroDataFim("");
+    setDataHojeAplicada("");
     setPaginaAtual(1);
   };
 
@@ -373,6 +397,22 @@ export default function Agendamentos() {
             />
           </div>
 
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroServicoAgendamento">Serviço</label>
+            <select
+              id="filtroServicoAgendamento"
+              className={`form-select ${styles.inputFiltro}`}
+              value={filtroServico}
+              onChange={(e) => {
+                setFiltroServico(e.target.value);
+                setPaginaAtual(1);
+              }}
+            >
+              <option value="">Todos os serviços</option>
+              {servicosDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+          </div>
+
           <div className="col-8 col-md-3">
             <label className={styles.labelFiltro}>Status</label>
             <select
@@ -429,6 +469,26 @@ export default function Agendamentos() {
                 setPaginaAtual(1);
               }}
             />
+          </div>
+
+          <div className="col-12 col-md-2 d-flex align-items-end">
+            <button
+              type="button"
+              className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`}
+              aria-pressed={filtroHojeAtivo}
+              onClick={() => {
+                const dataHoje = dataNoFusoDoSalao(Date.now());
+                setFiltroCliente("");
+                setFiltroServico("");
+                setFiltroStatus("");
+                setFiltroDataInicio(dataHoje);
+                setFiltroDataFim(dataHoje);
+                setDataHojeAplicada(dataHoje);
+                setPaginaAtual(1);
+              }}
+            >
+              Hoje
+            </button>
           </div>
 
           {/* ✅ Botão de ordenação — só aparece no mobile */}

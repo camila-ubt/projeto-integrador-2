@@ -155,6 +155,9 @@ function Filtros({ filtros, setFiltros, opcoes, aoAplicar, carregando }) {
   const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
   const hoje = dataHojeSalao();
   const filtroHojeAtivo = filtros.inicio === hoje && filtros.fim === hoje;
+  const mesAtual = hoje.slice(0, 7);
+  const periodoMesAtual = limitesDoMes(mesAtual);
+  const filtroMesAtualAtivo = filtros.inicio === periodoMesAtual.inicio && filtros.fim === periodoMesAtual.fim;
   const filtrosExtrasAtivos = Boolean(filtros.servico_id || filtros.status || filtros.cliente_id || (!mesSelecionado && !filtroHojeAtivo));
   function alterar(evento) {
     if (evento.target.name === "inicio" || evento.target.name === "fim") setMesSelecionado("");
@@ -175,10 +178,18 @@ function Filtros({ filtros, setFiltros, opcoes, aoAplicar, carregando }) {
     setMaisFiltrosAbertos(false);
     aoAplicar(novosFiltros);
   }
+  function escolherMesAtual() {
+    const novosFiltros = { ...filtros, ...periodoMesAtual, servico_id: "", status: "", cliente_id: "" };
+    setMesSelecionado(mesAtual);
+    setFiltros(novosFiltros);
+    setMaisFiltrosAbertos(false);
+    aoAplicar(novosFiltros);
+  }
   return (
     <form className={styles.filtros} onSubmit={(evento) => { evento.preventDefault(); aoAplicar(); }}>
       <div className={styles.filtrosPrincipais}>
         <label>Mês<DatePickerField type="month" value={mesSelecionado} onChange={escolherMes} /></label>
+        <button type="button" className={filtroMesAtualAtivo ? styles.btnHojeAtivo : ""} aria-pressed={filtroMesAtualAtivo} onClick={escolherMesAtual}>Mês atual</button>
         <button type="button" className={filtroHojeAtivo ? styles.btnHojeAtivo : ""} aria-pressed={filtroHojeAtivo} onClick={escolherHoje}>Hoje</button>
         <button type="button" aria-expanded={maisFiltrosAbertos} aria-controls="filtrosAvancadosDashboard" onClick={() => setMaisFiltrosAbertos((valor) => !valor)}>{maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}</button>
       </div>
@@ -259,7 +270,7 @@ export default function PaginaDashboard() {
         <Kpi titulo="Cancelamentos e faltas" valor={formatarPercentual(kpis.taxaAusencias)} comparacao={kpis.comparacao.taxaAusencias} pontos melhorQuandoCresce={false} complemento={`${kpis.cancelados} cancelados · ${kpis.faltas} faltas`} />
       </div>
 
-      <Secao titulo="Evolução do período" subtitulo="Compare o valor dos serviços e os atendimentos realizados em cada data." abertaInicialmente>
+      <Secao titulo="Evolução do período" subtitulo="Compare o valor dos serviços e os atendimentos realizados em cada data.">
         <GraficoEvolucao dados={dados.evolucao} />
       </Secao>
 
@@ -284,7 +295,7 @@ export default function PaginaDashboard() {
         </Secao>
       </div>
 
-      <Secao titulo="Retorno de clientes" subtitulo="Novas visitas em dias diferentes, considerando atendimentos realizados." abertaInicialmente>
+      <Secao titulo="Retorno de clientes" subtitulo="Novas visitas em dias diferentes, considerando atendimentos realizados.">
         {retorno.totalClientes ? (
           <div className={styles.analiseRetorno}>
             <div className={styles.indicadoresRetorno}>
@@ -324,7 +335,6 @@ export default function PaginaDashboard() {
         <Secao
           titulo="Aniversariantes do mês"
           subtitulo={`Clientes com aniversário em ${dataLocal(`${dados.aniversariantes.mes}-01`).toLocaleDateString("pt-BR", { month: "long" })}.`}
-          abertaInicialmente
         >
           <div className={styles.aniversariantes}>
             {dados.aniversariantes.clientes.map((cliente) => (
@@ -338,7 +348,7 @@ export default function PaginaDashboard() {
         </Secao>
       )}
 
-      <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise.">
+      <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise." abertaInicialmente>
         {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{formatarDataCurta(new Date(item.inicio).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }))}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
       </Secao>
 

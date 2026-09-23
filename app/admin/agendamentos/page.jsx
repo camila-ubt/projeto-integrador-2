@@ -99,6 +99,7 @@ export default function Agendamentos() {
   const [sucessoStatusRapido, setSucessoStatusRapido] = useState("");
   const [servicosEdicao, setServicosEdicao] = useState([]);
   const [erroServicosEdicao, setErroServicosEdicao] = useState("");
+  const [procedimentosAbertos, setProcedimentosAbertos] = useState(false);
   const [retornoPlanejado, setRetornoPlanejado] = useState(false);
   const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
   const [retornoDataManual, setRetornoDataManual] = useState(false);
@@ -318,6 +319,7 @@ export default function Agendamentos() {
     setErroServicosEdicao("");
     setCamposEdicao(camposDoAgendamento(agenda));
     setServicosEdicao((agenda.servicos ?? []).map((servico) => ({ ...servico })));
+    setProcedimentosAbertos((agenda.servicos ?? []).length === 0);
     setRetornoPlanejado(false);
     setErroRetorno("");
     setDadosRetorno(dadosIniciaisRetorno(agenda));
@@ -1067,41 +1069,62 @@ export default function Agendamentos() {
                 </p>
 
                 <section className={styles.edicaoServicos} aria-labelledby="editServicosTitulo">
-                  <div>
-                    <h3 className={styles.tituloEdicaoServicos} id="editServicosTitulo">Procedimentos</h3>
-                    <p className={styles.ajudaEdicaoServicos}>Selecione os procedimentos deste atendimento. Você pode adicionar mais de um.</p>
-                  </div>
-                  {erroCatalogoServicos && <p className={styles.erroServicos} role="alert">{erroCatalogoServicos}</p>}
-                  {erroServicosEdicao && <p className={styles.erroServicos} role="alert">{erroServicosEdicao}</p>}
-                  {carregandoCatalogoServicos ? (
-                    <p className={styles.semServicosEdicao}>Carregando procedimentos…</p>
-                  ) : opcoesServicosEdicao.length > 0 ? (
-                    <div className={styles.listaServicosEdicao}>
-                      {opcoesServicosEdicao.map((servico) => {
-                        const id = servico.servico_id ?? servico.id;
-                        const selecionado = servicosEdicao.some((item) => item.servico_id === id);
-                        const valor = servicosEdicao.find((item) => item.servico_id === id)?.valor ?? servico.preco_padrao ?? servico.valor;
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            className={`${styles.opcaoServicoEdicao} ${selecionado ? styles.opcaoServicoSelecionada : ""}`}
-                            aria-pressed={selecionado}
-                            onClick={() => alternarServicoEdicao(servico)}
-                          >
-                            <span className={styles.checkboxServicoEdicao} aria-hidden="true">{selecionado ? "✓" : "+"}</span>
-                            <span className={styles.dadosServicoEdicao}>
-                              <strong>{servico.nome}{servico.ativo === false ? " · inativo" : ""}</strong>
-                              <small>{formatarMoeda(Number(valor ?? 0))}{servico.duracao_minutos ? ` · ${servico.duracao_minutos} min` : ""}</small>
-                            </span>
-                          </button>
-                        );
-                      })}
+                  <div className={styles.cabecalhoEdicaoServicos}>
+                    <div>
+                      <h3 className={styles.tituloEdicaoServicos} id="editServicosTitulo">Procedimentos</h3>
+                      <p className={styles.ajudaEdicaoServicos}>
+                        {servicosEdicao.length
+                          ? servicosEdicao.map((servico) => servico.nome).join(", ")
+                          : "Nenhum procedimento selecionado"}
+                      </p>
                     </div>
-                  ) : (
-                    <p className={styles.semServicosEdicao}>Nenhum procedimento disponível para selecionar.</p>
-                  )}
+                    <button
+                      type="button"
+                      className={styles.abrirEdicaoServicos}
+                      aria-expanded={procedimentosAbertos}
+                      aria-controls="listaProcedimentosEditar"
+                      onClick={() => setProcedimentosAbertos((abertos) => !abertos)}
+                    >
+                      {procedimentosAbertos ? "Fechar" : servicosEdicao.length ? "Alterar" : "Selecionar"}
+                      <span aria-hidden="true">{procedimentosAbertos ? "−" : "+"}</span>
+                    </button>
+                  </div>
                   {servicosEdicao.length === 0 && <p className={styles.alertaSemServico} role="status">Este atendimento está sem procedimento. Selecione ao menos um antes de salvar.</p>}
+                  {procedimentosAbertos && (
+                    <div className={styles.conteudoEdicaoServicos} id="listaProcedimentosEditar">
+                      <p className={styles.ajudaEdicaoServicos}>Selecione um ou mais procedimentos para este atendimento.</p>
+                      {erroCatalogoServicos && <p className={styles.erroServicos} role="alert">{erroCatalogoServicos}</p>}
+                      {erroServicosEdicao && <p className={styles.erroServicos} role="alert">{erroServicosEdicao}</p>}
+                      {carregandoCatalogoServicos ? (
+                        <p className={styles.semServicosEdicao}>Carregando procedimentos…</p>
+                      ) : opcoesServicosEdicao.length > 0 ? (
+                        <div className={styles.listaServicosEdicao}>
+                          {opcoesServicosEdicao.map((servico) => {
+                            const id = servico.servico_id ?? servico.id;
+                            const selecionado = servicosEdicao.some((item) => item.servico_id === id);
+                            const valor = servicosEdicao.find((item) => item.servico_id === id)?.valor ?? servico.preco_padrao ?? servico.valor;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                className={`${styles.opcaoServicoEdicao} ${selecionado ? styles.opcaoServicoSelecionada : ""}`}
+                                aria-pressed={selecionado}
+                                onClick={() => alternarServicoEdicao(servico)}
+                              >
+                                <span className={styles.checkboxServicoEdicao} aria-hidden="true">{selecionado ? "✓" : "+"}</span>
+                                <span className={styles.dadosServicoEdicao}>
+                                  <strong>{servico.nome}{servico.ativo === false ? " · inativo" : ""}</strong>
+                                  <small>{formatarMoeda(Number(valor ?? 0))}{servico.duracao_minutos ? ` · ${servico.duracao_minutos} min` : ""}</small>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className={styles.semServicosEdicao}>Nenhum procedimento disponível para selecionar.</p>
+                      )}
+                    </div>
+                  )}
                 </section>
 
                 {/* Data */}
@@ -1228,25 +1251,26 @@ export default function Agendamentos() {
 
                 {/* Status */}
                 <div>
-                  <label className={styles.labelFiltro} htmlFor="editStatus">
-                    Status
-                  </label>
-                  <select
-                    id="editStatus"
-                    className={`form-select ${styles.inputFiltro}`}
-                    value={camposEdicao.status}
-                    onChange={(e) =>
-                      setCamposEdicao((prev) => ({
-                        ...prev,
-                        status: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="agendado">Agendado</option>
-                    <option value="realizado">Realizado</option>
-                    <option value="cancelado">Cancelado</option>
-                    <option value="faltou">Faltou</option>
-                  </select>
+                  <span className={styles.labelFiltro}>Status</span>
+                  <div className={styles.acoesStatusRapido} role="group" aria-label="Status do agendamento">
+                    {[
+                      { valor: "agendado", rotulo: "Agendado" },
+                      { valor: "realizado", rotulo: "Realizado" },
+                      { valor: "cancelado", rotulo: "Cancelado" },
+                      { valor: "faltou", rotulo: "Faltou" },
+                    ].map((opcao) => (
+                      <button
+                        key={opcao.valor}
+                        type="button"
+                        className={`${styles.botaoStatusRapido} ${camposEdicao.status === opcao.valor ? styles.statusRapidoAtivo : ""}`}
+                        aria-pressed={camposEdicao.status === opcao.valor}
+                        disabled={editando}
+                        onClick={() => setCamposEdicao((atual) => ({ ...atual, status: opcao.valor }))}
+                      >
+                        {opcao.rotulo}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Observações */}

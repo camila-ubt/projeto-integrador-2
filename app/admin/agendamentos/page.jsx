@@ -100,6 +100,7 @@ export default function Agendamentos() {
   const [servicosEdicao, setServicosEdicao] = useState([]);
   const [erroServicosEdicao, setErroServicosEdicao] = useState("");
   const [procedimentosAbertos, setProcedimentosAbertos] = useState(false);
+  const [horariosAbertos, setHorariosAbertos] = useState(false);
   const [retornoPlanejado, setRetornoPlanejado] = useState(false);
   const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
   const [retornoDataManual, setRetornoDataManual] = useState(false);
@@ -318,6 +319,7 @@ export default function Agendamentos() {
     setFeedback(null);
     setErroServicosEdicao("");
     setCamposEdicao(camposDoAgendamento(agenda));
+    setHorariosAbertos(false);
     setServicosEdicao((agenda.servicos ?? []).map((servico) => ({ ...servico })));
     setProcedimentosAbertos((agenda.servicos ?? []).length === 0);
     setRetornoPlanejado(false);
@@ -404,6 +406,10 @@ export default function Agendamentos() {
   };
 
   const confirmarEdicao = async () => {
+    if (!camposEdicao.hora) {
+      setHorariosAbertos(true);
+      return;
+    }
     if (servicosEdicao.length === 0) {
       setErroServicosEdicao("Selecione pelo menos um procedimento para este atendimento.");
       return;
@@ -1145,6 +1151,7 @@ export default function Agendamentos() {
                         data: novaData,
                         hora: "", // limpa hora ao trocar data
                       }));
+                      setHorariosAbertos(true);
                       if (!retornoDataManual) {
                         const servico = servicosEdicao.find((item) => item.servico_id === dadosRetorno.servico_id);
                         setDadosRetorno((atual) => ({ ...atual, data_recomendada: dataSugeridaRetorno(modalEditar.agenda, servico, novaData) }));
@@ -1156,25 +1163,28 @@ export default function Agendamentos() {
                 {/* Grade de horários */}
                 {camposEdicao.data && (
                   <div>
-                    <label className={styles.labelFiltro}>Horário</label>
-                    {carregandoHorarios ? (
-                      <p
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "var(--texto-secundario)",
-                          fontFamily: "var(--fonte-corpo)",
-                        }}
+                    <div className={styles.cabecalhoHorario}>
+                      <div>
+                        <label className={styles.labelFiltro}>Horário</label>
+                        <p className={styles.resumoHorario}>
+                          {camposEdicao.hora || "Escolha um horário disponível"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.abrirEdicaoServicos}
+                        aria-expanded={horariosAbertos}
+                        aria-controls="listaHorariosEditar"
+                        onClick={() => setHorariosAbertos((abertos) => !abertos)}
                       >
-                        Verificando disponibilidade...
-                      </p>
+                        {horariosAbertos ? "Fechar" : camposEdicao.hora ? "Alterar horário" : "Escolher horário"}
+                        <span aria-hidden="true">{horariosAbertos ? "−" : "+"}</span>
+                      </button>
+                    </div>
+                    {horariosAbertos && (carregandoHorarios ? (
+                      <p className={styles.semServicosEdicao}>Verificando disponibilidade…</p>
                     ) : (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(4, 1fr)",
-                          gap: "8px",
-                        }}
-                      >
+                      <div id="listaHorariosEditar" className={styles.listaHorariosEdicao}>
                         {HORARIOS_ATENDIMENTO.map((h) => {
                           const [hH, hM] = h.split(":").map(Number);
                           const [ano, mes, dia] = camposEdicao.data
@@ -1209,12 +1219,13 @@ export default function Agendamentos() {
                               key={h}
                               type="button"
                               disabled={ocupado}
-                              onClick={() =>
+                              onClick={() => {
                                 setCamposEdicao((prev) => ({
                                   ...prev,
                                   hora: h,
-                                }))
-                              }
+                                }));
+                                setHorariosAbertos(false);
+                              }}
                               className={styles.slotHorario}
                               style={{
                                 borderColor: ocupado
@@ -1245,7 +1256,7 @@ export default function Agendamentos() {
                           );
                         })}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
 
@@ -1338,8 +1349,8 @@ export default function Agendamentos() {
                 </button>
                 <button
                   className="btn-primario"
-                  disabled={editando || servicosEdicao.length === 0}
-                  style={{ opacity: editando || servicosEdicao.length === 0 ? 0.6 : 1 }}
+                  disabled={editando || servicosEdicao.length === 0 || !camposEdicao.hora}
+                  style={{ opacity: editando || servicosEdicao.length === 0 || !camposEdicao.hora ? 0.6 : 1 }}
                   onClick={confirmarEdicao}
                 >
                   {editando ? "Salvando..." : "Salvar alterações"}

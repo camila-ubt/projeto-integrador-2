@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Clientes.module.css"; 
 import { formatarTelefone } from "@/lib/formatters"; 
+import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
 
 function linkWhatsapp(telefone) {
   const numero = telefone?.replace(/\D/g, "") ?? "";
@@ -21,7 +22,7 @@ export default function PageClientes() {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState(null);
-  const [form, setForm] = useState({ id: null, nome: "", telefone: "" });
+  const [form, setForm] = useState({ id: null, nome: "", telefone: "", aniversario_dia_mes: "" });
   const [clienteDetalhe, setClienteDetalhe] = useState(null);
   const [detalheAberto, setDetalheAberto] = useState(false);
   const [historicoAberto, setHistoricoAberto] = useState(false);
@@ -73,9 +74,9 @@ export default function PageClientes() {
   function abrirModal(cliente = null) {
     setErroForm(null);
     if (cliente) {
-      setForm({ id: cliente.id, nome: cliente.nome, telefone: cliente.telefone });
+      setForm({ id: cliente.id, nome: cliente.nome, telefone: cliente.telefone, aniversario_dia_mes: cliente.aniversario_dia_mes || "" });
     } else {
-      setForm({ id: null, nome: "", telefone: "" });
+      setForm({ id: null, nome: "", telefone: "", aniversario_dia_mes: "" });
     }
     setModalAberto(true);
   }
@@ -90,6 +91,9 @@ export default function PageClientes() {
 
     if (!form.nome.trim() || !form.telefone.trim()) {
       return setErroForm("Preencha todos os campos obrigatórios.");
+    }
+    if (!aniversarioValido(form.aniversario_dia_mes)) {
+      return setErroForm("Informe um dia e mês de aniversário válidos.");
     }
 
     setSalvando(true);
@@ -227,7 +231,7 @@ export default function PageClientes() {
                 {clienteDetalhe && !historicoAberto && (
                   <div className={styles.dadosCliente}>
                     <p><span>Telefone</span><strong>{formatarTelefone(clienteDetalhe.telefone)}</strong></p>
-                    {clienteDetalhe.aniversario && <p><span>Aniversário</span><strong>{String(clienteDetalhe.aniversario).slice(0, 10).split("-").reverse().join("/")}</strong></p>}
+                    {clienteDetalhe.aniversario_dia_mes && <p><span>Aniversário</span><strong>{clienteDetalhe.aniversario_dia_mes}</strong></p>}
                     {clienteDetalhe.observacoes && <p><span>Observações</span><strong>{clienteDetalhe.observacoes}</strong></p>}
                     <div className={styles.acoesCliente}>
                       {linkWhatsapp(clienteDetalhe.telefone) && <a className={styles.linkWhatsapp} href={linkWhatsapp(clienteDetalhe.telefone)} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
@@ -286,6 +290,10 @@ export default function PageClientes() {
                 <div>
                   <label className={styles.labelFiltro}>Telefone</label>
                   <input type="tel" className={`form-control ${styles.inputFiltro}`} value={form.telefone} onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })} />
+                </div>
+                <div>
+                  <label className={styles.labelFiltro} htmlFor="aniversarioCliente">Aniversário (dia e mês, opcional)</label>
+                  <input id="aniversarioCliente" type="text" inputMode="numeric" maxLength={5} placeholder="DD/MM" className={`form-control ${styles.inputFiltro}`} value={form.aniversario_dia_mes} onChange={(e) => setForm({ ...form, aniversario_dia_mes: formatarDiaMesDigitado(e.target.value) })} />
                 </div>
               </div>
 

@@ -222,11 +222,14 @@ export async function GET(request) {
         JOIN agendamento_servicos ags ON ags.agendamento_id = a.id
         WHERE ${filtroAgenda} AND a.status = 'realizado'
           AND ($5::uuid IS NULL OR ags.servico_id = $5)`, valores),
-      query(`SELECT id, nome,
-          EXTRACT(DAY FROM aniversario)::int AS dia
-        FROM clientes
-        WHERE aniversario IS NOT NULL
-          AND EXTRACT(MONTH FROM aniversario) = $1::int
+      query(`WITH datas AS (
+          SELECT id, nome,
+            COALESCE(aniversario_dia_mes, to_char(aniversario, 'DD/MM')) AS dia_mes
+          FROM clientes
+        )
+        SELECT id, nome, substring(dia_mes from 1 for 2)::int AS dia
+        FROM datas
+        WHERE substring(dia_mes from 4 for 2)::int = $1::int
         ORDER BY dia, nome`, [Number(hoje.slice(5, 7))]),
     ]);
 

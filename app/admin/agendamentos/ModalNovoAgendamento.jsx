@@ -9,6 +9,7 @@ import {
 } from "@/lib/formatters";
 import { HORARIOS_ATENDIMENTO } from "@/lib/constantes"
 import { IcoFechar } from "@/app/components/icons";
+import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
 
 
 // Componente Modal
@@ -24,6 +25,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
   const [novoCliente, setNovoCliente] = useState(false);
   const [nomeNovo, setNomeNovo] = useState("");
   const [telefoneNovo, setTelefoneNovo] = useState("");
+  const [aniversarioNovo, setAniversarioNovo] = useState("");
 
   // ── Serviços ───
   const [servicos, setServicos] = useState([]);
@@ -142,6 +144,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
   function ativarNovoCliente() {
     setNomeNovo(buscaCliente); // pré-preenche com o que foi digitado
     setTelefoneNovo("");
+    setAniversarioNovo("");
     setNovoCliente(true);
     setClienteSelecionado(null);
     setMostrarDropdown(false);
@@ -154,6 +157,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
     setBuscaCliente("");
     setNomeNovo("");
     setTelefoneNovo("");
+    setAniversarioNovo("");
     setTimeout(() => buscaRef.current?.focus(), 50);
   }
 
@@ -175,6 +179,9 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
     if (novoCliente && (!nomeNovo.trim() || !telefoneNovo.trim())) {
       return setErroForm("Preencha nome e telefone do novo cliente.");
     }
+    if (novoCliente && !aniversarioValido(aniversarioNovo)) {
+      return setErroForm("Informe um dia e mês de aniversário válidos.");
+    }
     if (servicosSelecionados.length === 0) {
       return setErroForm("Selecione ao menos um serviço.");
     }
@@ -194,6 +201,7 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
           body: JSON.stringify({
             nome: nomeNovo.trim(),
             telefone: telefoneNovo.trim(),
+            aniversario_dia_mes: aniversarioNovo || null,
           }),
         });
         if (!resCliente.ok) {
@@ -343,6 +351,17 @@ export default function ModalNovoAgendamento({ aoFechar, aoSalvar }) {
                     onChange={(e) =>
                       setTelefoneNovo(formatarTelefone(e.target.value))
                     }
+                  />
+                  <label className={styles.labelFiltro} htmlFor="aniversarioNovo">Aniversário (dia e mês, opcional)</label>
+                  <input
+                    id="aniversarioNovo"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    placeholder="DD/MM"
+                    className={`form-control ${styles.inputFiltro}`}
+                    value={aniversarioNovo}
+                    onChange={(e) => setAniversarioNovo(formatarDiaMesDigitado(e.target.value))}
                   />
                 </div>
               ) : (

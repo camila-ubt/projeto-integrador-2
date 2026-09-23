@@ -1,6 +1,7 @@
 import { query, withTransaction } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { consumirLimite } from "@/lib/rate-limit";
+import { aniversarioValido } from "@/lib/aniversario";
 
 
 // Endpoint PÚBLICO (sem login/senha) para a página de agendamento consultar
@@ -72,7 +73,7 @@ export async function GET(request) {
 // (agendamento feito pelo estúdio via POST /api/agendamentos, autenticado).
 //
 // body: {
-//   cliente: { nome, telefone },        // usados para localizar ou cadastrar a cliente
+//   cliente: { nome, telefone, aniversario_dia_mes? }, // usados para localizar ou cadastrar a cliente
 //   servicos: [servico_id, ...],        // ids dos serviços desejados (nenhum pode exigir avaliação)
 //   inicio, fim,                        // ISO 8601
 //   observacoes?
@@ -110,6 +111,7 @@ export async function POST(request) {
   // ---- validação dos dados da cliente ---
   const nome = cliente?.nome?.toString().trim();
   const telefone = cliente?.telefone?.toString().trim();
+  const aniversarioDiaMes = cliente?.aniversario_dia_mes || null;
 
   if (!nome || !telefone) {
     return jsonError(
@@ -121,6 +123,9 @@ export async function POST(request) {
   const telefoneDigitos = telefone.replace(/\D/g, "");
   if (telefoneDigitos.length < 8) {
     return jsonError("Informe um telefone válido para contato.", 400);
+  }
+  if (!aniversarioValido(aniversarioDiaMes)) {
+    return jsonError("Informe um dia e mês de aniversário válidos.", 400);
   }
 
   // ---- validação dos serviços ---
@@ -188,7 +193,7 @@ export async function POST(request) {
       // Localiza cliente existente pelo telefone (compara só os dígitos, para
       // não depender de formatação exata) ou cadastra uma nova, sem senha/login.
       const { rows: clienteExistente } = await client.query(
-        `SELECT id FROM clientes
+        `SELECT id, aniversario, aniversario_dia_mes FROM clientes
           WHERE regexp_replace(telefone, '\\D', '', 'g') = $1
           LIMIT 1`,
         [telefoneDigitos]
@@ -197,10 +202,16 @@ export async function POST(request) {
       let clienteId = clienteExistente[0]?.id;
       if (!clienteId) {
         const { rows: novoCliente } = await client.query(
-          `INSERT INTO clientes (nome, telefone) VALUES ($1, $2) RETURNING id`,
-          [nome, telefone]
+          `INSERT INTO clientes (nome, telefone, aniversario_dia_mes) VALUES ($1, $2, $3) RETURNING id`,
+          [nome, telefone, aniversarioDiaMes]
         );
         clienteId = novoCliente[0].id;
+      } else if (aniversarioDiaMes && !clienteExistente[0].aniversario && !clienteExistente[0].aniversario_dia_mes) {
+        await client.query(
+          `UPDATE clientes SET aniversario_dia_mes = $1, atualizado_em = now()
+           WHERE id = $2 AND aniversario IS NULL AND aniversario_dia_mes IS NULL`,
+          [aniversarioDiaMes, clienteId]
+        );
       }
 
       // Cria o agendamento e vincula os serviços, sempre pelo preco_padrao

@@ -115,6 +115,7 @@ CREATE TABLE public.clientes (
     nome character varying(120) NOT NULL,
     telefone character varying(20) NOT NULL,
     aniversario date,
+    aniversario_dia_mes character varying(5),
     observacoes text,
     criado_em timestamp with time zone DEFAULT now(),
     atualizado_em timestamp with time zone DEFAULT now()

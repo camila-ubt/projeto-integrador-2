@@ -260,6 +260,8 @@
 .notaRetorno { margin: 0; color: var(--texto-secundario); font-size: 11px; line-height: 1.5; }
 .linkCaixa { width: fit-content; color: var(--primaria); font-size: 12px; text-decoration: none; }
 .linkCaixa:hover, .linkCaixa:focus-visible { text-decoration: underline; }
+.linkAgenda { display: block; width: fit-content; margin-top: 12px; color: var(--primaria); font-size: 12px; text-decoration: none; }
+.linkAgenda:hover, .linkAgenda:focus-visible { text-decoration: underline; }
 
 .graficoEvolucao {
   display: flex;

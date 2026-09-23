@@ -587,3 +587,68 @@
   color: var(--texto-principal);
   text-align: right;
 }
+
+.detalheAgendamento {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--fundo);
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.9rem;
+}
+
+.detalheAgendamento > strong {
+  color: var(--texto-principal);
+  font-size: 1rem;
+}
+
+.detalheAgendamento small {
+  white-space: pre-wrap;
+}
+
+.acoesStatusRapido {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.botaoStatusRapido {
+  min-height: 42px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  font: 0.88rem "Jost", sans-serif;
+  cursor: pointer;
+}
+
+.botaoStatusRapido:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.statusRapidoAtivo {
+  background: var(--primaria-clara);
+  border-color: var(--primaria);
+  color: var(--primaria);
+}
+
+.feedbackStatusRapido,
+.erroStatusRapido,
+.dicaStatusRapido {
+  margin: 0.5rem 0 0;
+  font: 0.8rem "Jost", sans-serif;
+}
+
+.feedbackStatusRapido { color: var(--sucesso-texto); }
+.erroStatusRapido { color: var(--erro-texto); }
+.dicaStatusRapido { color: var(--texto-secundario); }
+
+@media (max-width: 575.98px) {
+  .acoesStatusRapido { gap: 0.4rem; }
+  .botaoStatusRapido { min-height: 40px; font-size: 0.82rem; }
+}

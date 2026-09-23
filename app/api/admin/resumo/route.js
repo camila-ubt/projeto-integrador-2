@@ -233,7 +233,7 @@ export async function GET(request) {
         SELECT id, nome, substring(dia_mes from 1 for 2)::int AS dia
         FROM datas
         WHERE substring(dia_mes from 4 for 2)::int = $1::int
-        ORDER BY dia, nome`, [Number(hoje.slice(5, 7))]),
+        ORDER BY dia, nome`, [Number(inicio.slice(5, 7))]),
       query(consultaRecorrencia, valoresComparacao),
       query(consultaCaixa, [inicioAnterior, fimAnterior]),
       query(`SELECT COALESCE(NULLIF(BTRIM(categoria), ''), 'Sem categoria') AS categoria,
@@ -330,7 +330,7 @@ export async function GET(request) {
       },
       proximosAtendimentos: consultas[10].rows,
       aniversariantes: {
-        mes: hoje.slice(0, 7),
+        mes: inicio.slice(0, 7),
         clientes: consultas[13].rows,
       },
       opcoes: consultas[11].rows[0],

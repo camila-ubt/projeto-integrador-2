@@ -387,6 +387,7 @@ export default function PaginaDashboard() {
 
       <Secao titulo="Próximos atendimentos" subtitulo="A agenda operacional continua por perto, sem competir com a análise." abertaInicialmente>
         {dados.proximosAtendimentos.length ? <div className={styles.proximos}>{dados.proximosAtendimentos.map((item) => <Link className={styles.proximoLink} href={`/admin/agendamentos?agendamento_id=${item.id}`} key={item.id} aria-label={`Ver agendamento de ${item.cliente_nome}`}><article><time>{formatarDataCurta(new Date(item.inicio).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }))}<strong>{new Date(item.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{item.cliente_nome}</strong><span>{item.servicos}</span></div></article></Link>)}</div> : <EstadoVazio texto="Nenhum próximo atendimento encontrado." />}
+        <Link className={styles.linkAgenda} href="/admin/agendamentos">Abrir agenda completa →</Link>
       </Secao>
 
       <p className={styles.nota}>A taxa de ocupação será calculada quando os horários disponíveis do studio forem definidos.</p>

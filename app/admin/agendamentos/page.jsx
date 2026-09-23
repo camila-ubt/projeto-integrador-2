@@ -89,7 +89,11 @@ export default function Agendamentos() {
     aberto: false,
     agenda: null,
   });
+  const [modalDetalhe, setModalDetalhe] = useState({ aberto: false, agenda: null });
   const [editando, setEditando] = useState(false);
+  const [atualizandoStatusRapido, setAtualizandoStatusRapido] = useState(false);
+  const [erroStatusRapido, setErroStatusRapido] = useState("");
+  const [sucessoStatusRapido, setSucessoStatusRapido] = useState("");
   const [retornoPlanejado, setRetornoPlanejado] = useState(false);
   const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
   const [retornoDataManual, setRetornoDataManual] = useState(false);
@@ -116,12 +120,9 @@ export default function Agendamentos() {
           const agenda = agendaDoLink;
           if (agenda) {
             setFeedback(null);
-            setCamposEdicao(camposDoAgendamento(agenda));
-            setRetornoPlanejado(false);
-            setErroRetorno("");
-            setDadosRetorno(dadosIniciaisRetorno(agenda));
-            setRetornoDataManual(false);
-            setModalEditar({ aberto: true, agenda });
+            setErroStatusRapido("");
+            setSucessoStatusRapido("");
+            setModalDetalhe({ aberto: true, agenda });
           } else {
             setErro("O agendamento selecionado não foi encontrado.");
           }
@@ -295,6 +296,50 @@ export default function Agendamentos() {
     setDadosRetorno(dadosIniciaisRetorno(agenda));
     setRetornoDataManual(false);
     setModalEditar({ aberto: true, agenda });
+  };
+
+  const fecharDetalhe = () => {
+    setModalDetalhe({ aberto: false, agenda: null });
+    const params = new URLSearchParams(window.location.search);
+    params.delete("agendamento_id");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  };
+
+  const atualizarStatusRapido = async (status) => {
+    const agenda = modalDetalhe.agenda;
+    if (!agenda || agenda.status === status || atualizandoStatusRapido) return;
+    setAtualizandoStatusRapido(true);
+    setErroStatusRapido("");
+    setSucessoStatusRapido("");
+    try {
+      const resposta = await fetch(`/api/agendamentos/${agenda.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!resposta.ok) {
+        const dados = await resposta.json();
+        throw new Error(dados.error || "Não foi possível atualizar o status.");
+      }
+      const atualizado = await resposta.json();
+      const agendaAtualizada = { ...agenda, status: atualizado.status ?? status };
+      setAgendamentos((atuais) => atuais.map((item) => item.id === agenda.id ? { ...item, status } : item));
+      setModalDetalhe((atual) => ({ ...atual, agenda: agendaAtualizada }));
+      setSucessoStatusRapido(status === "realizado"
+        ? "Atendimento concluído; o Caixa foi atualizado automaticamente."
+        : "Status atualizado.");
+    } catch (error) {
+      setErroStatusRapido(error.message || "Não foi possível atualizar o status.");
+    } finally {
+      setAtualizandoStatusRapido(false);
+    }
+  };
+
+  const editarDoDetalhe = () => {
+    const agenda = modalDetalhe.agenda;
+    fecharDetalhe();
+    if (agenda) handleEditar(agenda);
   };
 
   const confirmarEdicao = async () => {
@@ -794,6 +839,67 @@ export default function Agendamentos() {
             </div>
           )}
         </>
+      )}
+      {modalDetalhe.aberto && modalDetalhe.agenda && (
+        <div
+          className="modal fade show d-block"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalDetalheTitulo"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h2 className={styles.modalTitulo} id="modalDetalheTitulo">Resumo do agendamento</h2>
+                <button type="button" className="btn-close" aria-label="Fechar resumo" onClick={fecharDetalhe} />
+              </div>
+              <div className="modal-body d-flex flex-column gap-3">
+                <div className={styles.detalheAgendamento}>
+                  <strong>
+                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${modalDetalhe.agenda.cliente_id}`}>
+                      {modalDetalhe.agenda.cliente_nome}
+                    </Link>
+                  </strong>
+                  <span>{formatarDataCurta(modalDetalhe.agenda.inicio)} às {formatarHora(modalDetalhe.agenda.inicio)}</span>
+                  <span>{exibirServicos(modalDetalhe.agenda)}</span>
+                  {modalDetalhe.agenda.observacoes && <small>{modalDetalhe.agenda.observacoes}</small>}
+                  <span className={getBadgeClass(modalDetalhe.agenda.status)}>{getLabelStatus(modalDetalhe.agenda.status)}</span>
+                </div>
+                <div>
+                  <p className={styles.labelFiltro}>Atualizar status</p>
+                  <div className={styles.acoesStatusRapido}>
+                    {[
+                      { valor: "agendado", rotulo: "Agendado" },
+                      { valor: "realizado", rotulo: "Realizado" },
+                      { valor: "cancelado", rotulo: "Cancelado" },
+                      { valor: "faltou", rotulo: "Faltou" },
+                    ].map((opcao) => (
+                      <button
+                        key={opcao.valor}
+                        type="button"
+                        className={`${styles.botaoStatusRapido} ${modalDetalhe.agenda.status === opcao.valor ? styles.statusRapidoAtivo : ""}`}
+                        aria-pressed={modalDetalhe.agenda.status === opcao.valor}
+                        disabled={atualizandoStatusRapido || modalDetalhe.agenda.status === opcao.valor}
+                        onClick={() => atualizarStatusRapido(opcao.valor)}
+                      >
+                        {opcao.rotulo}
+                      </button>
+                    ))}
+                  </div>
+                  {atualizandoStatusRapido && <p className={styles.feedbackStatusRapido} role="status">Salvando status…</p>}
+                  {erroStatusRapido && <p className={styles.erroStatusRapido} role="alert">{erroStatusRapido}</p>}
+                  {sucessoStatusRapido && <p className={styles.feedbackStatusRapido} role="status">{sucessoStatusRapido}</p>}
+                  <p className={styles.dicaStatusRapido}>Ao marcar como realizado, o Caixa é atualizado automaticamente.</p>
+                </div>
+              </div>
+              <div className="modal-footer border-0 pt-0 gap-2">
+                <button type="button" className={styles.btnLimpar} onClick={fecharDetalhe}>Fechar</button>
+                <button type="button" className="btn-primario" onClick={editarDoDetalhe}>Editar agendamento</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       {/* ── Modal de confirmação de cancelamento ─────────────────── */}
       {modalDeletar.aberto && (

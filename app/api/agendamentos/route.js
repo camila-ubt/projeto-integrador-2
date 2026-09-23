@@ -47,6 +47,7 @@ export async function GET(request) {
                 'servico_id', s.id,
                 'nome', s.nome,
                 'valor', ags.valor,
+                'duracao_minutos', s.duracao_minutos,
                 'retorno_dias', s.retorno_dias
               )
             ) FILTER (WHERE s.id IS NOT NULL),

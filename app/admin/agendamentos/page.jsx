@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { formatarDataCurta, formatarHora } from "@/lib/formatters";
+import { formatarDataCurta, formatarHora, formatarMoeda } from "@/lib/formatters";
 import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoAgendamentos,
@@ -63,6 +63,9 @@ export default function Agendamentos() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [catalogoServicos, setCatalogoServicos] = useState([]);
+  const [erroCatalogoServicos, setErroCatalogoServicos] = useState("");
+  const [carregandoCatalogoServicos, setCarregandoCatalogoServicos] = useState(true);
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState("");
@@ -94,6 +97,8 @@ export default function Agendamentos() {
   const [atualizandoStatusRapido, setAtualizandoStatusRapido] = useState(false);
   const [erroStatusRapido, setErroStatusRapido] = useState("");
   const [sucessoStatusRapido, setSucessoStatusRapido] = useState("");
+  const [servicosEdicao, setServicosEdicao] = useState([]);
+  const [erroServicosEdicao, setErroServicosEdicao] = useState("");
   const [retornoPlanejado, setRetornoPlanejado] = useState(false);
   const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
   const [retornoDataManual, setRetornoDataManual] = useState(false);
@@ -135,6 +140,22 @@ export default function Agendamentos() {
       }
     };
     fetchAgendamentos();
+  }, []);
+
+  useEffect(() => {
+    const carregarServicos = async () => {
+      try {
+        const resposta = await fetch("/api/admin/servicos");
+        if (!resposta.ok) throw new Error("Não foi possível carregar os procedimentos.");
+        const dados = await resposta.json();
+        setCatalogoServicos(Array.isArray(dados) ? dados : []);
+      } catch (error) {
+        setErroCatalogoServicos(error.message || "Não foi possível carregar os procedimentos.");
+      } finally {
+        setCarregandoCatalogoServicos(false);
+      }
+    };
+    carregarServicos();
   }, []);
 
   useEffect(() => {
@@ -236,9 +257,13 @@ export default function Agendamentos() {
 
   const temFiltroAtivo =
     filtroCliente || filtroServico || filtroStatus || filtroDataInicio || filtroDataFim || mesSelecionado !== mesInicial;
-  const servicoRetornoSelecionado = modalEditar.agenda?.servicos?.find(
+  const servicoRetornoSelecionado = servicosEdicao.find(
     (item) => item.servico_id === dadosRetorno.servico_id
   );
+  const opcoesServicosEdicao = [
+    ...catalogoServicos,
+    ...servicosEdicao.filter((selecionado) => !catalogoServicos.some((servico) => servico.id === selecionado.servico_id)),
+  ].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   const limparFiltros = () => {
     setFiltroCliente("");
@@ -290,12 +315,46 @@ export default function Agendamentos() {
 
   const handleEditar = (agenda) => {
     setFeedback(null);
+    setErroServicosEdicao("");
     setCamposEdicao(camposDoAgendamento(agenda));
+    setServicosEdicao((agenda.servicos ?? []).map((servico) => ({ ...servico })));
     setRetornoPlanejado(false);
     setErroRetorno("");
     setDadosRetorno(dadosIniciaisRetorno(agenda));
     setRetornoDataManual(false);
     setModalEditar({ aberto: true, agenda });
+  };
+
+  const alternarServicoEdicao = (servico) => {
+    setErroServicosEdicao("");
+    const id = servico.servico_id ?? servico.id;
+    const removendo = servicosEdicao.some((item) => item.servico_id === id);
+    const servicosRestantes = removendo
+      ? servicosEdicao.filter((item) => item.servico_id !== id)
+      : [...servicosEdicao, {
+        servico_id: id,
+        nome: servico.nome,
+        valor: Number(servico.preco_padrao ?? servico.valor ?? 0),
+        retorno_dias: servico.retorno_dias ?? null,
+        duracao_minutos: servico.duracao_minutos ?? null,
+      }];
+    const servicoRetornoNovo = servicosRestantes.find((item) => item.servico_id === dadosRetorno.servico_id);
+    if (!servicoRetornoNovo) {
+      const novoServicoRetorno = servicosRestantes[0];
+      setDadosRetorno((atual) => ({
+        ...atual,
+        servico_id: novoServicoRetorno?.servico_id ?? "",
+        data_recomendada: novoServicoRetorno
+          ? dataSugeridaRetorno(modalEditar.agenda, novoServicoRetorno, camposEdicao.data)
+          : "",
+      }));
+      setRetornoDataManual(false);
+    }
+    setServicosEdicao((atuais) => {
+      return removendo
+        ? atuais.filter((item) => item.servico_id !== id)
+        : [...atuais, servicosRestantes[servicosRestantes.length - 1]];
+    });
   };
 
   const fecharDetalhe = () => {
@@ -343,6 +402,10 @@ export default function Agendamentos() {
   };
 
   const confirmarEdicao = async () => {
+    if (servicosEdicao.length === 0) {
+      setErroServicosEdicao("Selecione pelo menos um procedimento para este atendimento.");
+      return;
+    }
     if (retornoPlanejado && (!dadosRetorno.servico_id || !dadosRetorno.data_recomendada)) {
       setErroRetorno("Escolha o serviço e a data do retorno.");
       return;
@@ -352,6 +415,8 @@ export default function Agendamentos() {
     const [ano, mes, dia] = camposEdicao.data.split("-").map(Number);
     const [hH, hM] = camposEdicao.hora.split(":").map(Number);
     const inicioDate = new Date(ano, mes - 1, dia, hH, hM);
+    const duracaoTotal = servicosEdicao.reduce((total, servico) => total + Number(servico.duracao_minutos ?? 0), 0);
+    const fimDate = duracaoTotal > 0 ? new Date(inicioDate.getTime() + duracaoTotal * 60_000) : null;
 
     try {
       const res = await fetch(`/api/agendamentos/${modalEditar.agenda.id}`, {
@@ -359,8 +424,10 @@ export default function Agendamentos() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inicio: inicioDate.toISOString(),
+          fim: fimDate?.toISOString(),
           status: camposEdicao.status || undefined,
           observacoes: camposEdicao.observacoes || undefined,
+          servicos: servicosEdicao.map(({ servico_id, valor }) => ({ servico_id, valor })),
           retorno: retornoPlanejado ? dadosRetorno : undefined,
         }),
       });
@@ -371,6 +438,7 @@ export default function Agendamentos() {
       }
 
       const atualizado = await res.json();
+      if (fimDate) atualizado.fim = fimDate.toISOString();
 
       try {
         const res = await fetch("/api/agendamentos");
@@ -998,6 +1066,44 @@ export default function Agendamentos() {
                   {formatarHora(modalEditar.agenda?.inicio)}
                 </p>
 
+                <section className={styles.edicaoServicos} aria-labelledby="editServicosTitulo">
+                  <div>
+                    <h3 className={styles.tituloEdicaoServicos} id="editServicosTitulo">Procedimentos</h3>
+                    <p className={styles.ajudaEdicaoServicos}>Selecione os procedimentos deste atendimento. Você pode adicionar mais de um.</p>
+                  </div>
+                  {erroCatalogoServicos && <p className={styles.erroServicos} role="alert">{erroCatalogoServicos}</p>}
+                  {erroServicosEdicao && <p className={styles.erroServicos} role="alert">{erroServicosEdicao}</p>}
+                  {carregandoCatalogoServicos ? (
+                    <p className={styles.semServicosEdicao}>Carregando procedimentos…</p>
+                  ) : opcoesServicosEdicao.length > 0 ? (
+                    <div className={styles.listaServicosEdicao}>
+                      {opcoesServicosEdicao.map((servico) => {
+                        const id = servico.servico_id ?? servico.id;
+                        const selecionado = servicosEdicao.some((item) => item.servico_id === id);
+                        const valor = servicosEdicao.find((item) => item.servico_id === id)?.valor ?? servico.preco_padrao ?? servico.valor;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`${styles.opcaoServicoEdicao} ${selecionado ? styles.opcaoServicoSelecionada : ""}`}
+                            aria-pressed={selecionado}
+                            onClick={() => alternarServicoEdicao(servico)}
+                          >
+                            <span className={styles.checkboxServicoEdicao} aria-hidden="true">{selecionado ? "✓" : "+"}</span>
+                            <span className={styles.dadosServicoEdicao}>
+                              <strong>{servico.nome}{servico.ativo === false ? " · inativo" : ""}</strong>
+                              <small>{formatarMoeda(Number(valor ?? 0))}{servico.duracao_minutos ? ` · ${servico.duracao_minutos} min` : ""}</small>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className={styles.semServicosEdicao}>Nenhum procedimento disponível para selecionar.</p>
+                  )}
+                  {servicosEdicao.length === 0 && <p className={styles.alertaSemServico} role="status">Este atendimento está sem procedimento. Selecione ao menos um antes de salvar.</p>}
+                </section>
+
                 {/* Data */}
                 <div>
                   <label className={styles.labelFiltro} htmlFor="editData">
@@ -1017,7 +1123,7 @@ export default function Agendamentos() {
                         hora: "", // limpa hora ao trocar data
                       }));
                       if (!retornoDataManual) {
-                        const servico = modalEditar.agenda.servicos?.find((item) => item.servico_id === dadosRetorno.servico_id);
+                        const servico = servicosEdicao.find((item) => item.servico_id === dadosRetorno.servico_id);
                         setDadosRetorno((atual) => ({ ...atual, data_recomendada: dataSugeridaRetorno(modalEditar.agenda, servico, novaData) }));
                       }
                     }}
@@ -1144,7 +1250,7 @@ export default function Agendamentos() {
                 </div>
 
                 {/* Observações */}
-                {camposEdicao.status === "realizado" && modalEditar.agenda?.servicos?.length > 0 && (
+                {camposEdicao.status === "realizado" && servicosEdicao.length > 0 && (
                   <div className={styles.retornoPlanejado}>
                     <label className="d-flex align-items-center gap-2" htmlFor="planejarRetorno">
                       <input id="planejarRetorno" type="checkbox" checked={retornoPlanejado} onChange={(e) => setRetornoPlanejado(e.target.checked)} />
@@ -1156,11 +1262,11 @@ export default function Agendamentos() {
                         {erroRetorno && <p role="alert" style={{ color: "var(--erro-texto)" }}>{erroRetorno}</p>}
                         <label className={styles.labelFiltro} htmlFor="servicoRetorno">Serviço</label>
                         <select id="servicoRetorno" className={`form-select ${styles.inputFiltro}`} value={dadosRetorno.servico_id} onChange={(e) => {
-                          const servico = modalEditar.agenda.servicos.find((item) => item.servico_id === e.target.value);
+                          const servico = servicosEdicao.find((item) => item.servico_id === e.target.value);
                           setDadosRetorno((atual) => ({ ...atual, servico_id: e.target.value, data_recomendada: dataSugeridaRetorno(modalEditar.agenda, servico, camposEdicao.data) }));
                           setRetornoDataManual(false);
                         }}>
-                          {modalEditar.agenda.servicos.map((servico) => <option key={servico.servico_id} value={servico.servico_id}>{servico.nome}</option>)}
+                          {servicosEdicao.map((servico) => <option key={servico.servico_id} value={servico.servico_id}>{servico.nome}</option>)}
                         </select>
                         <label className={styles.labelFiltro} htmlFor="dataRetorno">Data recomendada</label>
                         <DatePickerField id="dataRetorno" className={`form-control ${styles.inputFiltro}`} value={dadosRetorno.data_recomendada} onChange={(e) => { setDadosRetorno((atual) => ({ ...atual, data_recomendada: e.target.value })); setRetornoDataManual(true); }} />
@@ -1208,8 +1314,8 @@ export default function Agendamentos() {
                 </button>
                 <button
                   className="btn-primario"
-                  disabled={editando}
-                  style={{ opacity: editando ? 0.6 : 1 }}
+                  disabled={editando || servicosEdicao.length === 0}
+                  style={{ opacity: editando || servicosEdicao.length === 0 ? 0.6 : 1 }}
                   onClick={confirmarEdicao}
                 >
                   {editando ? "Salvando..." : "Salvar alterações"}

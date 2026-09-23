@@ -355,6 +355,95 @@
 .retornoPlanejado { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--borda); border-radius: var(--radius-medium); background: var(--fundo); font-family: "Jost", sans-serif; font-size: 0.88rem; }
 .retornoPlanejado p { margin: 0; color: var(--texto-secundario); font-size: 0.78rem; }
 
+.edicaoServicos {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+}
+
+.tituloEdicaoServicos {
+  margin: 0 0 0.2rem;
+  color: var(--texto-principal);
+  font: 500 0.95rem "Jost", sans-serif;
+}
+
+.ajudaEdicaoServicos,
+.semServicosEdicao,
+.alertaSemServico,
+.erroServicos {
+  margin: 0;
+  font: 0.78rem/1.45 "Jost", sans-serif;
+}
+
+.ajudaEdicaoServicos,
+.semServicosEdicao { color: var(--texto-secundario); }
+.alertaSemServico { color: var(--alerta-texto); }
+.erroServicos { color: var(--erro-texto); }
+
+.listaServicosEdicao {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.opcaoServicoEdicao {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  font-family: "Jost", sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcaoServicoEdicao:hover,
+.opcaoServicoSelecionada {
+  border-color: var(--primaria);
+  background: var(--primaria-clara);
+}
+
+.checkboxServicoEdicao {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--borda-escura);
+  border-radius: 50%;
+  color: var(--primaria);
+  font-size: 0.85rem;
+}
+
+.dadosServicoEdicao {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.dadosServicoEdicao strong,
+.dadosServicoEdicao small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dadosServicoEdicao strong { font-size: 0.82rem; font-weight: 500; }
+.dadosServicoEdicao small { color: var(--texto-secundario); font-size: 0.72rem; }
+
+@media (max-width: 575.98px) {
+  .listaServicosEdicao { grid-template-columns: 1fr; }
+}
+
 
 /* ── Busca de cliente — dropdown ─────────────────────────────── */
 

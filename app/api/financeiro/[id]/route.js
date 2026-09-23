@@ -1,6 +1,7 @@
 import { query } from "@/lib/db";
 import { jsonOk, jsonError, handleDbError, readJson } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
+import { CATEGORIA_RECEITA_AUTOMATICA } from "@/lib/receita-atendimento";
 
 export async function GET(request, { params }) {
   const { errorResponse } = await requireAuth();
@@ -30,6 +31,13 @@ export async function PUT(request, { params }) {
   }
 
   try {
+    const { rows: existentes } = await query(
+      "SELECT categoria FROM movimentacoes_financeiras WHERE id = $1",
+      [id]
+    );
+    if (existentes[0]?.categoria === CATEGORIA_RECEITA_AUTOMATICA) {
+      return jsonError("Esta receita acompanha o atendimento. Altere o agendamento para corrigir o valor.", 409);
+    }
     const { rows } = await query(
       `UPDATE movimentacoes_financeiras SET
          tipo = COALESCE($1, tipo),
@@ -63,6 +71,13 @@ export async function DELETE(request, { params }) {
 
   const { id } = await params;
   try {
+    const { rows: existentes } = await query(
+      "SELECT categoria FROM movimentacoes_financeiras WHERE id = $1",
+      [id]
+    );
+    if (existentes[0]?.categoria === CATEGORIA_RECEITA_AUTOMATICA) {
+      return jsonError("Esta receita acompanha o atendimento. Altere o status do agendamento para removê-la.", 409);
+    }
     const { rowCount } = await query("DELETE FROM movimentacoes_financeiras WHERE id = $1", [id]);
     if (rowCount === 0) return jsonError("Movimentação não encontrada.", 404);
     return jsonOk({ ok: true });

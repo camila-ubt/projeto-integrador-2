@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatarDataCurta, formatarHora } from "@/lib/formatters";
+import Link from "next/link";
+import { formatarDataCurta, formatarHora, formatarMoeda } from "@/lib/formatters";
+import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoAgendamentos,
   IcoEditar,
@@ -12,6 +14,47 @@ import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
 import styles from "./Agendamentos.module.css";
 import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
+function dataNoFusoDoSalao(valor) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(valor)).map(({ type, value }) => [type, value])
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
+function camposDoAgendamento(agenda) {
+  const inicioDate = new Date(agenda.inicio);
+  return {
+    status: agenda.status ?? "",
+    observacoes: agenda.observacoes ?? "",
+    data: inicioDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }),
+    hora: inicioDate.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+  };
+}
+
+function dataSugeridaRetorno(agenda, servico, dataAtendimento) {
+  const existente = agenda.retornos?.find((retorno) => retorno.servico_id === servico?.servico_id);
+  if (existente) return String(existente.data_recomendada).slice(0, 10);
+  if (servico?.retorno_dias == null || !dataAtendimento) return "";
+
+  const data = new Date(`${dataAtendimento}T12:00:00Z`);
+  data.setUTCDate(data.getUTCDate() + Number(servico.retorno_dias));
+  return data.toISOString().slice(0, 10);
+}
+
+function dadosIniciaisRetorno(agenda) {
+  const servico = agenda.servicos?.find((item) => item.retorno_dias != null) || agenda.servicos?.[0];
+  return {
+    servico_id: servico?.servico_id || "",
+    data_recomendada: dataSugeridaRetorno(agenda, servico, camposDoAgendamento(agenda).data),
+    observacoes: "",
+  };
+}
+
 export default function Agendamentos() {
   const [agendamentosDoDia, setAgendamentosDoDia] = useState([]);
   const [carregandoHorarios, setcarregandoHorarios] = useState(false);
@@ -19,12 +62,21 @@ export default function Agendamentos() {
   const [modalNovo, setModalNovo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [catalogoServicos, setCatalogoServicos] = useState([]);
+  const [erroCatalogoServicos, setErroCatalogoServicos] = useState("");
+  const [carregandoCatalogoServicos, setCarregandoCatalogoServicos] = useState(true);
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState("");
+  const [filtroServico, setFiltroServico] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [mesInicial, setMesInicial] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState("");
+  const [dataHojeAplicada, setDataHojeAplicada] = useState("");
+  const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
   const [ordemAsc, setOrdemAsc] = useState(false);
 
   // Paginação
@@ -40,7 +92,17 @@ export default function Agendamentos() {
     aberto: false,
     agenda: null,
   });
+  const [modalDetalhe, setModalDetalhe] = useState({ aberto: false, agenda: null });
   const [editando, setEditando] = useState(false);
+  const [atualizandoStatusRapido, setAtualizandoStatusRapido] = useState(false);
+  const [erroStatusRapido, setErroStatusRapido] = useState("");
+  const [sucessoStatusRapido, setSucessoStatusRapido] = useState("");
+  const [servicosEdicao, setServicosEdicao] = useState([]);
+  const [erroServicosEdicao, setErroServicosEdicao] = useState("");
+  const [retornoPlanejado, setRetornoPlanejado] = useState(false);
+  const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
+  const [retornoDataManual, setRetornoDataManual] = useState(false);
+  const [erroRetorno, setErroRetorno] = useState("");
   const [camposEdicao, setCamposEdicao] = useState({
     status: "",
     observacoes: "",
@@ -52,7 +114,24 @@ export default function Agendamentos() {
         const res = await fetch("/api/agendamentos");
         if (!res.ok) throw new Error("Erro ao buscar agendamentos");
         const data = await res.json();
-        setAgendamentos(Array.isArray(data) ? data : []);
+        const lista = Array.isArray(data) ? data : [];
+        const mesAtual = dataNoFusoDoSalao(Date.now()).slice(0, 7);
+        setMesInicial(mesAtual);
+        setAgendamentos(lista);
+        const idDoLink = new URLSearchParams(window.location.search).get("agendamento_id");
+        const agendaDoLink = lista.find((item) => item.id === idDoLink);
+        setMesSelecionado(agendaDoLink ? dataNoFusoDoSalao(agendaDoLink.inicio).slice(0, 7) : mesAtual);
+        if (idDoLink) {
+          const agenda = agendaDoLink;
+          if (agenda) {
+            setFeedback(null);
+            setErroStatusRapido("");
+            setSucessoStatusRapido("");
+            setModalDetalhe({ aberto: true, agenda });
+          } else {
+            setErro("O agendamento selecionado não foi encontrado.");
+          }
+        }
       } catch (err) {
         console.error("Erro ao buscar agendamentos:", err);
         setErro("Não foi possível carregar os agendamentos. Tente novamente.");
@@ -61,6 +140,22 @@ export default function Agendamentos() {
       }
     };
     fetchAgendamentos();
+  }, []);
+
+  useEffect(() => {
+    const carregarServicos = async () => {
+      try {
+        const resposta = await fetch("/api/admin/servicos");
+        if (!resposta.ok) throw new Error("Não foi possível carregar os procedimentos.");
+        const dados = await resposta.json();
+        setCatalogoServicos(Array.isArray(dados) ? dados : []);
+      } catch (error) {
+        setErroCatalogoServicos(error.message || "Não foi possível carregar os procedimentos.");
+      } finally {
+        setCarregandoCatalogoServicos(false);
+      }
+    };
+    carregarServicos();
   }, []);
 
   useEffect(() => {
@@ -118,21 +213,31 @@ export default function Agendamentos() {
     return labels[status?.toLowerCase()] || status;
   };
 
+  const servicosDisponiveis = [...new Map(
+    agendamentos.flatMap((agenda) => agenda.servicos ?? [])
+      .filter((servico) => servico.servico_id && servico.nome)
+      .map((servico) => [servico.servico_id, servico.nome])
+  )].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  const filtroHojeAtivo = Boolean(dataHojeAplicada) && filtroDataInicio === dataHojeAplicada && filtroDataFim === dataHojeAplicada && !filtroCliente && !filtroServico && !filtroStatus;
+  const filtrosExtrasAtivos = Boolean(filtroCliente || filtroServico || filtroStatus || ((filtroDataInicio || filtroDataFim) && !filtroHojeAtivo));
+
   // Filtragem
   const agendamentosFiltrados = agendamentos.filter((agenda) => {
     const matchCliente = agenda.cliente_nome
       ?.toLowerCase()
       .includes(filtroCliente.toLowerCase());
     const matchStatus = filtroStatus === "" || agenda.status === filtroStatus;
+    const matchServico = !filtroServico || agenda.servicos?.some((servico) => servico.servico_id === filtroServico);
 
     let matchData = true;
-    if (filtroDataInicio || filtroDataFim) {
-      const dataAgenda = agenda.inicio.split("T")[0];
+    if (mesSelecionado || filtroDataInicio || filtroDataFim) {
+      const dataAgenda = dataNoFusoDoSalao(agenda.inicio);
+      if (mesSelecionado && dataAgenda.slice(0, 7) !== mesSelecionado) matchData = false;
       if (filtroDataInicio && dataAgenda < filtroDataInicio) matchData = false;
       if (filtroDataFim && dataAgenda > filtroDataFim) matchData = false;
     }
 
-    return matchCliente && matchStatus && matchData;
+    return matchCliente && matchServico && matchStatus && matchData;
   });
 
   const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) =>
@@ -151,18 +256,28 @@ export default function Agendamentos() {
   const totalPaginas = Math.ceil(agendamentosOrdenados.length / itensPorPagina);
 
   const temFiltroAtivo =
-    filtroCliente || filtroStatus || filtroDataInicio || filtroDataFim;
+    filtroCliente || filtroServico || filtroStatus || filtroDataInicio || filtroDataFim || mesSelecionado !== mesInicial;
+  const servicoRetornoSelecionado = servicosEdicao.find(
+    (item) => item.servico_id === dadosRetorno.servico_id
+  );
+  const opcoesServicosEdicao = [
+    ...catalogoServicos,
+    ...servicosEdicao.filter((selecionado) => !catalogoServicos.some((servico) => servico.id === selecionado.servico_id)),
+  ].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   const limparFiltros = () => {
     setFiltroCliente("");
+    setFiltroServico("");
     setFiltroStatus("");
     setFiltroDataInicio("");
     setFiltroDataFim("");
+    setMesSelecionado(dataNoFusoDoSalao(Date.now()).slice(0, 7));
+    setDataHojeAplicada("");
+    setMaisFiltrosAbertos(false);
     setPaginaAtual(1);
   };
 
   const [deletando, setDeletando] = useState(false);
-  const [feedback, setFeedback] = useState(null);
 
   const handleDeletar = (agenda) => {
     setModalDeletar({ aberto: true, agenda });
@@ -199,24 +314,109 @@ export default function Agendamentos() {
   };
 
   const handleEditar = (agenda) => {
-    const inicioDate = new Date(agenda.inicio);
-    const data = inicioDate.toISOString().split("T")[0];
-    const hora = inicioDate.toTimeString().slice(0, 5);
-
-    setCamposEdicao({
-      status: agenda.status ?? "",
-      observacoes: agenda.observacoes ?? "",
-      data,
-      hora,
-    });
+    setFeedback(null);
+    setErroServicosEdicao("");
+    setCamposEdicao(camposDoAgendamento(agenda));
+    setServicosEdicao((agenda.servicos ?? []).map((servico) => ({ ...servico })));
+    setRetornoPlanejado(false);
+    setErroRetorno("");
+    setDadosRetorno(dadosIniciaisRetorno(agenda));
+    setRetornoDataManual(false);
     setModalEditar({ aberto: true, agenda });
   };
 
+  const alternarServicoEdicao = (servico) => {
+    setErroServicosEdicao("");
+    const id = servico.servico_id ?? servico.id;
+    const removendo = servicosEdicao.some((item) => item.servico_id === id);
+    const servicosRestantes = removendo
+      ? servicosEdicao.filter((item) => item.servico_id !== id)
+      : [...servicosEdicao, {
+        servico_id: id,
+        nome: servico.nome,
+        valor: Number(servico.preco_padrao ?? servico.valor ?? 0),
+        retorno_dias: servico.retorno_dias ?? null,
+        duracao_minutos: servico.duracao_minutos ?? null,
+      }];
+    const servicoRetornoNovo = servicosRestantes.find((item) => item.servico_id === dadosRetorno.servico_id);
+    if (!servicoRetornoNovo) {
+      const novoServicoRetorno = servicosRestantes[0];
+      setDadosRetorno((atual) => ({
+        ...atual,
+        servico_id: novoServicoRetorno?.servico_id ?? "",
+        data_recomendada: novoServicoRetorno
+          ? dataSugeridaRetorno(modalEditar.agenda, novoServicoRetorno, camposEdicao.data)
+          : "",
+      }));
+      setRetornoDataManual(false);
+    }
+    setServicosEdicao((atuais) => {
+      return removendo
+        ? atuais.filter((item) => item.servico_id !== id)
+        : [...atuais, servicosRestantes[servicosRestantes.length - 1]];
+    });
+  };
+
+  const fecharDetalhe = () => {
+    setModalDetalhe({ aberto: false, agenda: null });
+    const params = new URLSearchParams(window.location.search);
+    params.delete("agendamento_id");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  };
+
+  const atualizarStatusRapido = async (status) => {
+    const agenda = modalDetalhe.agenda;
+    if (!agenda || agenda.status === status || atualizandoStatusRapido) return;
+    setAtualizandoStatusRapido(true);
+    setErroStatusRapido("");
+    setSucessoStatusRapido("");
+    try {
+      const resposta = await fetch(`/api/agendamentos/${agenda.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!resposta.ok) {
+        const dados = await resposta.json();
+        throw new Error(dados.error || "Não foi possível atualizar o status.");
+      }
+      const atualizado = await resposta.json();
+      const agendaAtualizada = { ...agenda, status: atualizado.status ?? status };
+      setAgendamentos((atuais) => atuais.map((item) => item.id === agenda.id ? { ...item, status } : item));
+      setModalDetalhe((atual) => ({ ...atual, agenda: agendaAtualizada }));
+      setSucessoStatusRapido(status === "realizado"
+        ? "Atendimento concluído; o Caixa foi atualizado automaticamente."
+        : "Status atualizado.");
+    } catch (error) {
+      setErroStatusRapido(error.message || "Não foi possível atualizar o status.");
+    } finally {
+      setAtualizandoStatusRapido(false);
+    }
+  };
+
+  const editarDoDetalhe = () => {
+    const agenda = modalDetalhe.agenda;
+    fecharDetalhe();
+    if (agenda) handleEditar(agenda);
+  };
+
   const confirmarEdicao = async () => {
+    if (servicosEdicao.length === 0) {
+      setErroServicosEdicao("Selecione pelo menos um procedimento para este atendimento.");
+      return;
+    }
+    if (retornoPlanejado && (!dadosRetorno.servico_id || !dadosRetorno.data_recomendada)) {
+      setErroRetorno("Escolha o serviço e a data do retorno.");
+      return;
+    }
+    setErroRetorno("");
     setEditando(true);
     const [ano, mes, dia] = camposEdicao.data.split("-").map(Number);
     const [hH, hM] = camposEdicao.hora.split(":").map(Number);
     const inicioDate = new Date(ano, mes - 1, dia, hH, hM);
+    const duracaoTotal = servicosEdicao.reduce((total, servico) => total + Number(servico.duracao_minutos ?? 0), 0);
+    const fimDate = duracaoTotal > 0 ? new Date(inicioDate.getTime() + duracaoTotal * 60_000) : null;
 
     try {
       const res = await fetch(`/api/agendamentos/${modalEditar.agenda.id}`, {
@@ -224,8 +424,11 @@ export default function Agendamentos() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inicio: inicioDate.toISOString(),
+          fim: fimDate?.toISOString(),
           status: camposEdicao.status || undefined,
           observacoes: camposEdicao.observacoes || undefined,
+          servicos: servicosEdicao.map(({ servico_id, valor }) => ({ servico_id, valor })),
+          retorno: retornoPlanejado ? dadosRetorno : undefined,
         }),
       });
 
@@ -234,7 +437,8 @@ export default function Agendamentos() {
         throw new Error(data.error ?? "Erro ao atualizar agendamento.");
       }
 
-      await res.json();
+      const atualizado = await res.json();
+      if (fimDate) atualizado.fim = fimDate.toISOString();
 
       try {
         const res = await fetch("/api/agendamentos");
@@ -246,14 +450,19 @@ export default function Agendamentos() {
 
       setFeedback({
         tipo: "sucesso",
-        msg: "Agendamento atualizado com sucesso.",
+        msg: camposEdicao.status === "realizado"
+          ? atualizado.retornos?.length
+            ? `Atendimento realizado. ${atualizado.retornos.length} retorno(s) para acompanhar.`
+            : "Atendimento realizado. Nenhum retorno automático foi criado; você pode planejar um ao editar o atendimento."
+          : "Agendamento atualizado com sucesso.",
+        agendamentoId: camposEdicao.status === "realizado" ? modalEditar.agenda.id : null,
       });
+      setModalEditar({ aberto: false, agenda: null });
     } catch (err) {
       setFeedback({ tipo: "erro", msg: err.message });
     } finally {
       setEditando(false);
-      setModalEditar({ aberto: false, agenda: null });
-      setTimeout(() => setFeedback(null), 4000);
+      setTimeout(() => setFeedback(null), camposEdicao.status === "realizado" ? 12000 : 4000);
     }
   };
 
@@ -298,13 +507,84 @@ export default function Agendamentos() {
       </div>
       {/* ── Filtros ─────── */}
       <div className={`${styles.cardFiltros} mb-4`}>
-        <div className="row g-2">
-          <div className="col-12 col-md-4">
-            <label className={styles.labelFiltro}>Cliente</label>
-            <input
-              type="text"
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-5">
+            <label className={styles.labelFiltro} htmlFor="filtroMesAgendamento">Mês</label>
+            <DatePickerField
+              id="filtroMesAgendamento"
+              type="month"
               className={`form-control ${styles.inputFiltro}`}
-              placeholder="Nome do cliente..."
+              value={mesSelecionado}
+              onChange={(e) => {
+                setMesSelecionado(e.target.value);
+                setFiltroDataInicio("");
+                setFiltroDataFim("");
+                setDataHojeAplicada("");
+                setMaisFiltrosAbertos(false);
+                setPaginaAtual(1);
+              }}
+            />
+          </div>
+
+          <div className="col-6 col-md-2">
+            <button
+              type="button"
+              className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`}
+              aria-pressed={filtroHojeAtivo}
+              onClick={() => {
+                const dataHoje = dataNoFusoDoSalao(Date.now());
+                setFiltroCliente("");
+                setFiltroServico("");
+                setFiltroStatus("");
+                setMesSelecionado(dataHoje.slice(0, 7));
+                setFiltroDataInicio(dataHoje);
+                setFiltroDataFim(dataHoje);
+                setDataHojeAplicada(dataHoje);
+                setMaisFiltrosAbertos(false);
+                setPaginaAtual(1);
+              }}
+            >
+              Hoje
+            </button>
+          </div>
+
+          <div className="col-6 col-md-3">
+            <button
+              type="button"
+              className={`${styles.btnLimpar} w-100`}
+              onClick={() => setOrdemAsc((prev) => !prev)}
+              aria-label={ordemAsc ? "Ordenação: mais antigo primeiro" : "Ordenação: mais recente primeiro"}
+            >
+              {ordemAsc ? "↑ Antigos primeiro" : "↓ Recentes primeiro"}
+            </button>
+          </div>
+
+          <div className="col-12 col-md-2">
+            <button
+              type="button"
+              className={`${styles.btnLimpar} w-100`}
+              aria-expanded={maisFiltrosAbertos}
+              aria-controls="filtrosAvancadosAgendamento"
+              aria-label={filtrosExtrasAtivos && !maisFiltrosAbertos ? "Mais opções, filtros ativos" : undefined}
+              onClick={() => setMaisFiltrosAbertos((aberto) => !aberto)}
+            >
+              {maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}
+            </button>
+          </div>
+        </div>
+
+        {!maisFiltrosAbertos && !mesSelecionado && !filtroHojeAtivo && (filtroDataInicio || filtroDataFim) && (
+          <p className={styles.resumoPeriodo}>Período: {formatarDataCurta(filtroDataInicio) || "início livre"} até {formatarDataCurta(filtroDataFim) || "fim livre"}</p>
+        )}
+
+        <div id="filtrosAvancadosAgendamento" className={maisFiltrosAbertos ? "row g-2 mt-2" : "d-none"}>
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroClienteAgendamento">Cliente</label>
+            <input
+              id="filtroClienteAgendamento"
+              type="search"
+              className={`form-control ${styles.inputFiltro}`}
+              placeholder="Nome da cliente..."
               value={filtroCliente}
               onChange={(e) => {
                 setFiltroCliente(e.target.value);
@@ -313,16 +593,17 @@ export default function Agendamentos() {
             />
           </div>
 
-          <div className="col-8 col-md-3">
-            <label className={styles.labelFiltro}>Status</label>
-            <select
-              className={`form-select ${styles.inputFiltro}`}
-              value={filtroStatus}
-              onChange={(e) => {
-                setFiltroStatus(e.target.value);
-                setPaginaAtual(1);
-              }}
-            >
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroServicoAgendamento">Serviço</label>
+            <select id="filtroServicoAgendamento" className={`form-select ${styles.inputFiltro}`} value={filtroServico} onChange={(e) => { setFiltroServico(e.target.value); setPaginaAtual(1); }}>
+              <option value="">Todos os serviços</option>
+              {servicosDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+          </div>
+
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtroStatusAgendamento">Status</label>
+            <select id="filtroStatusAgendamento" className={`form-select ${styles.inputFiltro}`} value={filtroStatus} onChange={(e) => { setFiltroStatus(e.target.value); setPaginaAtual(1); }}>
               <option value="">Todos</option>
               <option value="agendado">Agendado</option>
               <option value="realizado">Realizado</option>
@@ -331,54 +612,18 @@ export default function Agendamentos() {
             </select>
           </div>
 
-          <div className="col-4 col-md-1 d-flex align-items-end">
-            <button
-              className={`${styles.btnLimpar} w-100`}
-              onClick={limparFiltros}
-              disabled={!temFiltroAtivo}
-              title="Limpar filtros"
-            >
-              <span className="d-md-none">
-                <IcoLixeira />
-              </span>
-              <span className="d-none d-md-inline">Limpar</span>
-            </button>
+          <div className="col-6 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtroDataInicioAgendamento">De</label>
+            <DatePickerField id="filtroDataInicioAgendamento" className={`form-control ${styles.inputFiltro}`} value={filtroDataInicio} onChange={(e) => { setMesSelecionado(""); setFiltroDataInicio(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
           </div>
 
-          <div className="col-6 col-md-2">
-            <label className={styles.labelFiltro}>De</label>
-            <input
-              type="date"
-              className={`form-control ${styles.inputFiltro}`}
-              value={filtroDataInicio}
-              onChange={(e) => {
-                setFiltroDataInicio(e.target.value);
-                setPaginaAtual(1);
-              }}
-            />
+          <div className="col-6 col-md-3">
+            <label className={styles.labelFiltro} htmlFor="filtroDataFimAgendamento">Até</label>
+            <DatePickerField id="filtroDataFimAgendamento" className={`form-control ${styles.inputFiltro}`} value={filtroDataFim} onChange={(e) => { setMesSelecionado(""); setFiltroDataFim(e.target.value); setDataHojeAplicada(""); setPaginaAtual(1); }} />
           </div>
 
-          <div className="col-6 col-md-2">
-            <label className={styles.labelFiltro}>Até</label>
-            <input
-              type="date"
-              className={`form-control ${styles.inputFiltro}`}
-              value={filtroDataFim}
-              onChange={(e) => {
-                setFiltroDataFim(e.target.value);
-                setPaginaAtual(1);
-              }}
-            />
-          </div>
-
-          {/* ✅ Botão de ordenação — só aparece no mobile */}
-          <div className="col-12 d-md-none d-flex justify-content-end">
-            <button
-              className={styles.btnLimpar}
-              onClick={() => setOrdemAsc((prev) => !prev)}
-            >
-              {ordemAsc ? "↑ Mais antigo primeiro" : "↓ Mais recente primeiro"}
-            </button>
+          <div className="col-12 col-md-2 d-flex align-items-end">
+            <button type="button" className={`${styles.btnLimpar} w-100`} onClick={limparFiltros} disabled={!temFiltroAtivo}>Limpar filtros</button>
           </div>
         </div>
       </div>
@@ -416,6 +661,7 @@ export default function Agendamentos() {
           }}
         >
           {feedback.msg}
+          {feedback.agendamentoId && <Link className="ms-2" href={`/admin/retornos?agendamento_id=${feedback.agendamentoId}`}>Ver retornos</Link>}
         </div>
       )}
       {/* ── Loading ───────── */}
@@ -448,7 +694,11 @@ export default function Agendamentos() {
                 </span>
 
                 <div className={styles.cardCentro}>
-                  <p className={styles.cardCliente}>{agenda.cliente_nome}</p>
+                  <p className={styles.cardCliente}>
+                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                      {agenda.cliente_nome}
+                    </Link>
+                  </p>
                   <p className={styles.cardServico}>{exibirServicos(agenda)}</p>
                   <p className={styles.cardData}>
                     {formatarDataCurta(agenda.inicio)}
@@ -489,34 +739,7 @@ export default function Agendamentos() {
               <table className="table table-hover align-middle mb-0">
                 <thead className={styles.tableHeader}>
                   <tr>
-                    <th className="px-4 py-3 border-0">
-                      <button
-                        onClick={() => setOrdemAsc((prev) => !prev)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          fontFamily: "var(--fonte-corpo)",
-                          fontWeight: 600,
-                          fontSize: "0.8rem",
-                          color: "var(--texto-secundario)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: 0,
-                        }}
-                        title={
-                          ordemAsc
-                            ? "Ordenar: mais recente primeiro"
-                            : "Ordenar: mais antigo primeiro"
-                        }
-                      >
-                        Data/Hora
-                        <span style={{ fontSize: "12px" }}>
-                          {ordemAsc ? "↑" : "↓"}
-                        </span>
-                      </button>
-                    </th>
+                    <th className="px-4 py-3 border-0">Data/Hora</th>
                     <th className="py-3 border-0">Cliente</th>
                     <th className="py-3 border-0">Serviço</th>
                     <th className="py-3 border-0">Status</th>
@@ -536,7 +759,9 @@ export default function Agendamentos() {
                         </span>
                       </td>
                       <td style={{ fontFamily: "var(--fonte-corpo)" }}>
-                        {agenda.cliente_nome}
+                        <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                          {agenda.cliente_nome}
+                        </Link>
                       </td>
                       <td className={styles.tdServico}>
                         {exibirServicos(agenda)}
@@ -683,6 +908,67 @@ export default function Agendamentos() {
           )}
         </>
       )}
+      {modalDetalhe.aberto && modalDetalhe.agenda && (
+        <div
+          className="modal fade show d-block"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalDetalheTitulo"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h2 className={styles.modalTitulo} id="modalDetalheTitulo">Resumo do agendamento</h2>
+                <button type="button" className="btn-close" aria-label="Fechar resumo" onClick={fecharDetalhe} />
+              </div>
+              <div className="modal-body d-flex flex-column gap-3">
+                <div className={styles.detalheAgendamento}>
+                  <strong>
+                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${modalDetalhe.agenda.cliente_id}`}>
+                      {modalDetalhe.agenda.cliente_nome}
+                    </Link>
+                  </strong>
+                  <span>{formatarDataCurta(modalDetalhe.agenda.inicio)} às {formatarHora(modalDetalhe.agenda.inicio)}</span>
+                  <span>{exibirServicos(modalDetalhe.agenda)}</span>
+                  {modalDetalhe.agenda.observacoes && <small>{modalDetalhe.agenda.observacoes}</small>}
+                  <span className={getBadgeClass(modalDetalhe.agenda.status)}>{getLabelStatus(modalDetalhe.agenda.status)}</span>
+                </div>
+                <div>
+                  <p className={styles.labelFiltro}>Atualizar status</p>
+                  <div className={styles.acoesStatusRapido}>
+                    {[
+                      { valor: "agendado", rotulo: "Agendado" },
+                      { valor: "realizado", rotulo: "Realizado" },
+                      { valor: "cancelado", rotulo: "Cancelado" },
+                      { valor: "faltou", rotulo: "Faltou" },
+                    ].map((opcao) => (
+                      <button
+                        key={opcao.valor}
+                        type="button"
+                        className={`${styles.botaoStatusRapido} ${modalDetalhe.agenda.status === opcao.valor ? styles.statusRapidoAtivo : ""}`}
+                        aria-pressed={modalDetalhe.agenda.status === opcao.valor}
+                        disabled={atualizandoStatusRapido || modalDetalhe.agenda.status === opcao.valor}
+                        onClick={() => atualizarStatusRapido(opcao.valor)}
+                      >
+                        {opcao.rotulo}
+                      </button>
+                    ))}
+                  </div>
+                  {atualizandoStatusRapido && <p className={styles.feedbackStatusRapido} role="status">Salvando status…</p>}
+                  {erroStatusRapido && <p className={styles.erroStatusRapido} role="alert">{erroStatusRapido}</p>}
+                  {sucessoStatusRapido && <p className={styles.feedbackStatusRapido} role="status">{sucessoStatusRapido}</p>}
+                  <p className={styles.dicaStatusRapido}>Ao marcar como realizado, o Caixa é atualizado automaticamente.</p>
+                </div>
+              </div>
+              <div className="modal-footer border-0 pt-0 gap-2">
+                <button type="button" className={styles.btnLimpar} onClick={fecharDetalhe}>Fechar</button>
+                <button type="button" className="btn-primario" onClick={editarDoDetalhe}>Editar agendamento</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ── Modal de confirmação de cancelamento ─────────────────── */}
       {modalDeletar.aberto && (
         <div
@@ -770,31 +1056,77 @@ export default function Agendamentos() {
               </div>
 
               <div className="modal-body d-flex flex-column gap-3" style={{ overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
+                {feedback?.tipo === "erro" && <p role="alert" style={{ color: "var(--erro-texto)", margin: 0 }}>{feedback.msg}</p>}
                 {/* Identificação do agendamento — somente leitura */}
                 <p className={styles.modalTexto} style={{ margin: 0 }}>
-                  <strong>{modalEditar.agenda?.cliente_nome}</strong> —{" "}
+                  <strong><Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${modalEditar.agenda?.cliente_id}`} aria-label={`Ver dados de ${modalEditar.agenda?.cliente_nome}`}>
+                    {modalEditar.agenda?.cliente_nome}
+                  </Link></strong> —{" "}
                   {formatarDataCurta(modalEditar.agenda?.inicio)} às{" "}
                   {formatarHora(modalEditar.agenda?.inicio)}
                 </p>
+
+                <section className={styles.edicaoServicos} aria-labelledby="editServicosTitulo">
+                  <div>
+                    <h3 className={styles.tituloEdicaoServicos} id="editServicosTitulo">Procedimentos</h3>
+                    <p className={styles.ajudaEdicaoServicos}>Selecione os procedimentos deste atendimento. Você pode adicionar mais de um.</p>
+                  </div>
+                  {erroCatalogoServicos && <p className={styles.erroServicos} role="alert">{erroCatalogoServicos}</p>}
+                  {erroServicosEdicao && <p className={styles.erroServicos} role="alert">{erroServicosEdicao}</p>}
+                  {carregandoCatalogoServicos ? (
+                    <p className={styles.semServicosEdicao}>Carregando procedimentos…</p>
+                  ) : opcoesServicosEdicao.length > 0 ? (
+                    <div className={styles.listaServicosEdicao}>
+                      {opcoesServicosEdicao.map((servico) => {
+                        const id = servico.servico_id ?? servico.id;
+                        const selecionado = servicosEdicao.some((item) => item.servico_id === id);
+                        const valor = servicosEdicao.find((item) => item.servico_id === id)?.valor ?? servico.preco_padrao ?? servico.valor;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`${styles.opcaoServicoEdicao} ${selecionado ? styles.opcaoServicoSelecionada : ""}`}
+                            aria-pressed={selecionado}
+                            onClick={() => alternarServicoEdicao(servico)}
+                          >
+                            <span className={styles.checkboxServicoEdicao} aria-hidden="true">{selecionado ? "✓" : "+"}</span>
+                            <span className={styles.dadosServicoEdicao}>
+                              <strong>{servico.nome}{servico.ativo === false ? " · inativo" : ""}</strong>
+                              <small>{formatarMoeda(Number(valor ?? 0))}{servico.duracao_minutos ? ` · ${servico.duracao_minutos} min` : ""}</small>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className={styles.semServicosEdicao}>Nenhum procedimento disponível para selecionar.</p>
+                  )}
+                  {servicosEdicao.length === 0 && <p className={styles.alertaSemServico} role="status">Este atendimento está sem procedimento. Selecione ao menos um antes de salvar.</p>}
+                </section>
 
                 {/* Data */}
                 <div>
                   <label className={styles.labelFiltro} htmlFor="editData">
                     Data
                   </label>
-                  <input
+                  <DatePickerField
                     id="editData"
                     type="date"
                     className={`form-control ${styles.inputFiltro}`}
                     value={camposEdicao.data ?? ""}
                     min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const novaData = e.target.value;
                       setCamposEdicao((prev) => ({
                         ...prev,
-                        data: e.target.value,
+                        data: novaData,
                         hora: "", // limpa hora ao trocar data
-                      }))
-                    }
+                      }));
+                      if (!retornoDataManual) {
+                        const servico = servicosEdicao.find((item) => item.servico_id === dadosRetorno.servico_id);
+                        setDadosRetorno((atual) => ({ ...atual, data_recomendada: dataSugeridaRetorno(modalEditar.agenda, servico, novaData) }));
+                      }
+                    }}
                   />
                 </div>
 
@@ -918,6 +1250,35 @@ export default function Agendamentos() {
                 </div>
 
                 {/* Observações */}
+                {camposEdicao.status === "realizado" && servicosEdicao.length > 0 && (
+                  <div className={styles.retornoPlanejado}>
+                    <label className="d-flex align-items-center gap-2" htmlFor="planejarRetorno">
+                      <input id="planejarRetorno" type="checkbox" checked={retornoPlanejado} onChange={(e) => setRetornoPlanejado(e.target.checked)} />
+                      Definir retorno para este atendimento
+                    </label>
+                    <p>Serviços com prazo configurado já geram um retorno ao concluir. Aqui você pode definir uma data ou incluir um retorno para outro serviço.</p>
+                    {retornoPlanejado && (
+                      <div className="d-flex flex-column gap-2">
+                        {erroRetorno && <p role="alert" style={{ color: "var(--erro-texto)" }}>{erroRetorno}</p>}
+                        <label className={styles.labelFiltro} htmlFor="servicoRetorno">Serviço</label>
+                        <select id="servicoRetorno" className={`form-select ${styles.inputFiltro}`} value={dadosRetorno.servico_id} onChange={(e) => {
+                          const servico = servicosEdicao.find((item) => item.servico_id === e.target.value);
+                          setDadosRetorno((atual) => ({ ...atual, servico_id: e.target.value, data_recomendada: dataSugeridaRetorno(modalEditar.agenda, servico, camposEdicao.data) }));
+                          setRetornoDataManual(false);
+                        }}>
+                          {servicosEdicao.map((servico) => <option key={servico.servico_id} value={servico.servico_id}>{servico.nome}</option>)}
+                        </select>
+                        <label className={styles.labelFiltro} htmlFor="dataRetorno">Data recomendada</label>
+                        <DatePickerField id="dataRetorno" className={`form-control ${styles.inputFiltro}`} value={dadosRetorno.data_recomendada} onChange={(e) => { setDadosRetorno((atual) => ({ ...atual, data_recomendada: e.target.value })); setRetornoDataManual(true); }} />
+                        <p>{servicoRetornoSelecionado?.retorno_dias == null
+                          ? "Este serviço não tem um prazo de retorno cadastrado. Escolha a data com a cliente."
+                          : `Sugestão: ${servicoRetornoSelecionado.retorno_dias} dias após o atendimento. Você pode ajustar a data.`}</p>
+                        <label className={styles.labelFiltro} htmlFor="observacoesRetorno">Observações do retorno (opcional)</label>
+                        <textarea id="observacoesRetorno" className={`form-control ${styles.inputFiltro}`} rows={2} value={dadosRetorno.observacoes} onChange={(e) => setDadosRetorno((atual) => ({ ...atual, observacoes: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label
                     className={styles.labelFiltro}
@@ -953,8 +1314,8 @@ export default function Agendamentos() {
                 </button>
                 <button
                   className="btn-primario"
-                  disabled={editando}
-                  style={{ opacity: editando ? 0.6 : 1 }}
+                  disabled={editando || servicosEdicao.length === 0}
+                  style={{ opacity: editando || servicosEdicao.length === 0 ? 0.6 : 1 }}
                   onClick={confirmarEdicao}
                 >
                   {editando ? "Salvando..." : "Salvar alterações"}

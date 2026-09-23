@@ -260,3 +260,24 @@
   font-family: var(--fonte-corpo);
   margin-top: 12px;
 }
+
+.linkCliente {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--texto-principal);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linkCliente:hover, .linkCliente:focus-visible {
+  color: var(--primaria);
+  text-decoration: underline;
+}
+
+.btnHojeAtivo, .btnHojeAtivo:hover:not(:disabled) {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: white;
+}

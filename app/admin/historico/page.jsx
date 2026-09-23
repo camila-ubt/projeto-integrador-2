@@ -8,6 +8,8 @@ import {
   somarServicos,
 } from "@/lib/formatters";
 import { IcoHistorico, IcoLixeira } from "@/app/components/icons";
+import DatePickerField from "@/app/components/DatePickerField";
+import { dataHojeSalao, limitesDoMes } from "@/lib/periodo-filtros";
 import {
   STATUS_LABELS,
   STATUS_OPCOES,
@@ -61,7 +63,7 @@ function SkeletonCard() {
 
 // ─── Card mobile ──────────────────────────────────────────────────────────────
 
-function CardMobile({ atendimento }) {
+function CardMobile({ atendimento, onSelecionarCliente }) {
   const servicos = atendimento.servicos ?? [];
   const total = somarServicos(servicos);
   const cancelado = atendimento.status === "cancelado";
@@ -69,7 +71,7 @@ function CardMobile({ atendimento }) {
   return (
     <div className={styles.cardMobile}>
       <div className={styles.cardCentro}>
-        <p className={styles.cardCliente}>{atendimento.cliente_nome}</p>
+        <p className={styles.cardCliente}><button className={styles.linkCliente} type="button" onClick={() => onSelecionarCliente(atendimento)} aria-label={`Ver histórico de ${atendimento.cliente_nome}`}>{atendimento.cliente_nome}</button></p>
         <p className={styles.cardServico}>{exibirServicos(atendimento)}</p>
         <p className={styles.cardData}>
           {formatarDataCurta(atendimento.inicio)} ·{" "}
@@ -151,23 +153,31 @@ export default function HistoricoPage() {
   const [atendimentos, setAtendimentos] = useState([]);
   const [filtroStatus, setFiltroStatus] = useState("");
   const [buscaCliente, setBuscaCliente] = useState("");
+  const [clienteSelecionada, setClienteSelecionada] = useState(null);
+  const [filtroServico, setFiltroServico] = useState("");
+  const [opcoesServico, setOpcoesServico] = useState([]);
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState(() => dataHojeSalao().slice(0, 7));
+  const [maisFiltrosAbertos, setMaisFiltrosAbertos] = useState(false);
   const [ordemAsc, setOrdemAsc] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
   // ── Busca na API ──────────────────────────────────────────────────────────
-  const buscarHistorico = useCallback(() => {
+  const buscarHistorico = useCallback((signal) => {
     const params = new URLSearchParams();
     if (filtroStatus) params.set("status", filtroStatus);
+    if (clienteSelecionada) params.set("cliente_id", clienteSelecionada.id);
 
-    if (filtroDataInicio)
-      params.set("inicio", `${filtroDataInicio}T00:00:00.000Z`);
-    if (filtroDataFim) params.set("fim", `${filtroDataFim}T23:59:59.999Z`);
+    const periodoMes = limitesDoMes(mesSelecionado);
+    const dataInicio = filtroDataInicio || periodoMes.inicio;
+    const dataFim = filtroDataFim || periodoMes.fim;
+    if (dataInicio) params.set("inicio", `${dataInicio}T00:00:00.000-03:00`);
+    if (dataFim) params.set("fim", `${dataFim}T23:59:59.999-03:00`);
 
-    return fetch(`/api/agendamentos?${params.toString()}`)
+    return fetch(`/api/agendamentos?${params.toString()}`, { signal })
       .then((res) => {
         if (!res.ok) throw new Error(`Erro ${res.status}`);
         return res.json();
@@ -177,24 +187,40 @@ export default function HistoricoPage() {
         setPaginaAtual(1);
       })
       .catch((e) => {
+        if (e.name === "AbortError") return;
         console.error("[Histórico]", e);
         setErro("Não foi possível carregar o histórico. Tente novamente.");
       })
       .finally(() => {
-        setCarregando(false);
+        if (!signal.aborted) setCarregando(false);
       });
-  }, [filtroStatus, filtroDataInicio, filtroDataFim]);
+  }, [filtroStatus, filtroDataInicio, filtroDataFim, mesSelecionado, clienteSelecionada]);
 
   useEffect(() => {
-    buscarHistorico();
+    const controlador = new AbortController();
+    buscarHistorico(controlador.signal);
+    return () => controlador.abort();
   }, [buscarHistorico]);
 
+  useEffect(() => {
+    let ativo = true;
+    fetch("/api/admin/servicos")
+      .then((resposta) => resposta.ok ? resposta.json() : [])
+      .then((dados) => { if (ativo && Array.isArray(dados)) setOpcoesServico(dados); })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, []);
+
   // ── Filtro client-side + ordenação ────────────────────────────────────────
+  const servicosDisponiveis = opcoesServico.length ? opcoesServico : [...new Map(
+    atendimentos.flatMap((atendimento) => atendimento.servicos ?? [])
+      .filter((servico) => servico.servico_id && servico.nome)
+      .map((servico) => [servico.servico_id, servico.nome])
+  )].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const filtrados = atendimentos
     .filter((a) =>
-      buscaCliente.trim()
-        ? a.cliente_nome?.toLowerCase().includes(buscaCliente.toLowerCase())
-        : true,
+      (!buscaCliente.trim() || a.cliente_nome?.toLocaleLowerCase("pt-BR").includes(buscaCliente.trim().toLocaleLowerCase("pt-BR"))) &&
+      (!filtroServico || a.servicos?.some((servico) => servico.servico_id === filtroServico))
     )
     .sort((a, b) =>
       ordemAsc
@@ -208,45 +234,61 @@ export default function HistoricoPage() {
   const itensPagina = filtrados.slice(inicio, inicio + ITENS_POR_PAGINA);
 
   const temFiltroAtivo =
-    filtroStatus || buscaCliente.trim() || filtroDataInicio || filtroDataFim;
+    clienteSelecionada || filtroStatus || buscaCliente.trim() || filtroServico || filtroDataInicio || filtroDataFim || mesSelecionado !== dataHojeSalao().slice(0, 7);
+
+  function selecionarCliente(atendimento) {
+    setCarregando(true);
+    setErro(null);
+    setClienteSelecionada({ id: atendimento.cliente_id, nome: atendimento.cliente_nome });
+    setBuscaCliente("");
+    setFiltroServico("");
+    setFiltroStatus("");
+    setFiltroDataInicio("");
+    setFiltroDataFim("");
+    setMesSelecionado("");
+    setPaginaAtual(1);
+  }
 
   function limparFiltros() {
-    if (filtroStatus || filtroDataInicio || filtroDataFim) {
+    if (clienteSelecionada || filtroStatus || filtroDataInicio || filtroDataFim || mesSelecionado !== dataHojeSalao().slice(0, 7)) {
       setCarregando(true);
       setErro(null);
     }
     setBuscaCliente("");
+    setClienteSelecionada(null);
+    setFiltroServico("");
     setFiltroStatus("");
     setFiltroDataInicio("");
     setFiltroDataFim("");
+    setMesSelecionado(dataHojeSalao().slice(0, 7));
     setPaginaAtual(1);
   }
+
+  const filtroHojeAtivo = filtroDataInicio === dataHojeSalao() && filtroDataFim === dataHojeSalao();
+  const filtrosExtrasAtivos = Boolean(clienteSelecionada || filtroStatus || buscaCliente || filtroServico || ((filtroDataInicio || filtroDataFim) && !filtroHojeAtivo));
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="container-fluid py-4 px-3 px-md-4">
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className={styles.tituloPagina}>Histórico</h1>
-        <button
-          className={`${styles.btnOrdem} d-none d-md-inline-flex`}
-          onClick={() => {
-            setOrdemAsc((p) => !p);
-            setPaginaAtual(1);
-          }}
-          title={
-            ordemAsc
-              ? "Ordenar: mais recente primeiro"
-              : "Ordenar: mais antigo primeiro"
-          }
-        >
-          {ordemAsc ? "↑ Mais antigo" : "↓ Mais recente"}
-        </button>
+        <h1 className={styles.tituloPagina}>{clienteSelecionada ? `Histórico de ${clienteSelecionada.nome}` : "Histórico"}</h1>
       </div>
+
+      {clienteSelecionada && <button type="button" className={`${styles.btnLimpar} mb-3`} onClick={limparFiltros}>← Voltar ao histórico geral</button>}
 
       {/* ── Filtros ───────────────────────────────────────────────────────── */}
       <div className={`${styles.cardFiltros} mb-4`}>
-        <div className="row g-2">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-5">
+            <label className={styles.labelFiltro} htmlFor="filtro-mes-historico">Mês</label>
+            <DatePickerField id="filtro-mes-historico" type="month" className={`form-control ${styles.inputFiltro}`} value={mesSelecionado} onChange={(e) => { setCarregando(true); setErro(null); setMesSelecionado(e.target.value); setFiltroDataInicio(""); setFiltroDataFim(""); setPaginaAtual(1); }} />
+          </div>
+          <div className="col-6 col-md-2"><button type="button" className={`${styles.btnLimpar} ${filtroHojeAtivo ? styles.btnHojeAtivo : ""} w-100`} aria-pressed={filtroHojeAtivo} onClick={() => { const hoje = dataHojeSalao(); setCarregando(true); setErro(null); setMesSelecionado(hoje.slice(0, 7)); setFiltroDataInicio(hoje); setFiltroDataFim(hoje); setBuscaCliente(""); setClienteSelecionada(null); setFiltroServico(""); setFiltroStatus(""); setPaginaAtual(1); setMaisFiltrosAbertos(false); }}>Hoje</button></div>
+          <div className="col-6 col-md-3"><button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setOrdemAsc((p) => !p); setPaginaAtual(1); }}>{ordemAsc ? "↑ Antigos primeiro" : "↓ Recentes primeiro"}</button></div>
+          <div className="col-12 col-md-2"><button type="button" className={`${styles.btnLimpar} w-100`} aria-expanded={maisFiltrosAbertos} aria-controls="filtrosAvancadosHistorico" onClick={() => setMaisFiltrosAbertos((valor) => !valor)}>{maisFiltrosAbertos ? "Menos opções" : filtrosExtrasAtivos ? "Mais opções •" : "Mais opções"}</button></div>
+        </div>
+        <div id="filtrosAvancadosHistorico" className={maisFiltrosAbertos ? "row g-2 mt-2" : "d-none"}>
           <div className="col-12 col-md-4">
             <label className={styles.labelFiltro} htmlFor="busca-cliente">
               Cliente
@@ -256,12 +298,29 @@ export default function HistoricoPage() {
               type="search"
               className={`form-control ${styles.inputFiltro}`}
               placeholder="Nome do cliente..."
+              disabled={Boolean(clienteSelecionada)}
               value={buscaCliente}
               onChange={(e) => {
                 setBuscaCliente(e.target.value);
                 setPaginaAtual(1);
               }}
             />
+          </div>
+
+          <div className="col-12 col-md-4">
+            <label className={styles.labelFiltro} htmlFor="filtro-servico">Serviço</label>
+            <select
+              id="filtro-servico"
+              className={`form-select ${styles.inputFiltro}`}
+              value={filtroServico}
+              onChange={(e) => {
+                setFiltroServico(e.target.value);
+                setPaginaAtual(1);
+              }}
+            >
+              <option value="">Todos os serviços</option>
+              {servicosDisponiveis.map((servico) => <option key={servico.id} value={servico.id}>{servico.nome}</option>)}
+            </select>
           </div>
 
           <div className="col-8 col-md-3">
@@ -305,7 +364,7 @@ export default function HistoricoPage() {
             <label className={styles.labelFiltro} htmlFor="filtro-de">
               De
             </label>
-            <input
+            <DatePickerField
               id="filtro-de"
               type="date"
               className={`form-control ${styles.inputFiltro}`}
@@ -313,6 +372,7 @@ export default function HistoricoPage() {
               onChange={(e) => {
                 setCarregando(true);
                 setErro(null);
+                setMesSelecionado("");
                 setFiltroDataInicio(e.target.value);
                 setPaginaAtual(1);
               }}
@@ -323,7 +383,7 @@ export default function HistoricoPage() {
             <label className={styles.labelFiltro} htmlFor="filtro-ate">
               Até
             </label>
-            <input
+            <DatePickerField
               id="filtro-ate"
               type="date"
               className={`form-control ${styles.inputFiltro}`}
@@ -331,24 +391,13 @@ export default function HistoricoPage() {
               onChange={(e) => {
                 setCarregando(true);
                 setErro(null);
+                setMesSelecionado("");
                 setFiltroDataFim(e.target.value);
                 setPaginaAtual(1);
               }}
             />
           </div>
 
-          {/* Ordenação só aparece no mobile (no desktop fica no cabeçalho) */}
-          <div className="col-12 d-md-none d-flex justify-content-end">
-            <button
-              className={styles.btnLimpar}
-              onClick={() => {
-                setOrdemAsc((p) => !p);
-                setPaginaAtual(1);
-              }}
-            >
-              {ordemAsc ? "↑ Mais antigo primeiro" : "↓ Mais recente primeiro"}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -396,7 +445,7 @@ export default function HistoricoPage() {
           {/* MOBILE: cards */}
           <div className="d-md-none">
             {itensPagina.map((a) => (
-              <CardMobile key={a.id} atendimento={a} />
+              <CardMobile key={a.id} atendimento={a} onSelecionarCliente={selecionarCliente} />
             ))}
           </div>
 
@@ -460,7 +509,7 @@ export default function HistoricoPage() {
                           </span>
                         </td>
                         <td style={{ fontFamily: "var(--fonte-corpo)" }}>
-                          {a.cliente_nome}
+                          <button className={styles.linkCliente} type="button" onClick={() => selecionarCliente(a)} aria-label={`Ver histórico de ${a.cliente_nome}`}>{a.cliente_nome}</button>
                         </td>
                         <td className={styles.tdServico}>
                           {exibirServicos(a)}

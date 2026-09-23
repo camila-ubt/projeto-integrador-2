@@ -2,11 +2,13 @@
 -- Compativel com database/schema.sql (PostgreSQL/Neon).
 --
 -- Execucao com psql:
---   psql "$DATABASE_URL" -f database/seed.sql
+--   psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
 --
 -- O script pode ser executado novamente. Os UUIDs abaixo usam prefixos reservados
 -- por tabela; somente agendamentos e registros dependentes desse conjunto de teste
 -- sao recriados para que as datas relativas a CURRENT_DATE continuem atuais.
+-- Execute apenas em um banco de demonstracao: a nova execucao substitui os
+-- agendamentos ficticios anteriores e seus registros vinculados.
 
 BEGIN;
 
@@ -34,6 +36,16 @@ WHERE id::text LIKE '40000000-0000-4000-8000-%'
 
 DELETE FROM public.agendamentos
 WHERE id::text LIKE '30000000-0000-4000-8000-%';
+
+-- A demonstracao ocupa dias posteriores ao ultimo agendamento real. Assim a
+-- agenda ficticia nao disputa um horario que ja esteja reservado no banco.
+CREATE TEMP TABLE seed_primeiro_dia_livre ON COMMIT DROP AS
+SELECT GREATEST(
+    CURRENT_DATE,
+    COALESCE(MAX((fim AT TIME ZONE 'America/Sao_Paulo')::date), CURRENT_DATE)
+) + 1 AS dia
+FROM public.agendamentos
+WHERE status = 'agendado';
 
 -- Clientes ficticios. Datas de nascimento sao fixas por representarem dados
 -- pessoais; datas operacionais e de criacao permanecem relativas ao dia atual.
@@ -117,17 +129,17 @@ VALUES
     ('30000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', CURRENT_DATE - 14 + TIME '09:00', CURRENT_DATE - 14 + TIME '09:45', 'realizado',  NULL,                                           NULL, CURRENT_TIMESTAMP - INTERVAL '18 days'),
     ('30000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000006', CURRENT_DATE -  7 + TIME '11:00', CURRENT_DATE -  7 + TIME '12:00', 'cancelado',  'Cancelado pela cliente com antecedencia.',   NULL, CURRENT_TIMESTAMP - INTERVAL '12 days'),
     ('30000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000007', CURRENT_DATE -  3 + TIME '15:00', CURRENT_DATE -  3 + TIME '16:00', 'faltou',     'Cliente nao compareceu.',                    NULL, CURRENT_TIMESTAMP - INTERVAL '8 days'),
-    ('30000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000008', CURRENT_DATE      + TIME '09:00', CURRENT_DATE      + TIME '11:00', 'agendado',   'Confirmado por mensagem.',                   NULL, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+    ('30000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000008', (SELECT dia FROM seed_primeiro_dia_livre) + TIME '09:00', (SELECT dia FROM seed_primeiro_dia_livre) + TIME '11:00', 'agendado', 'Confirmado por mensagem.', NULL, CURRENT_TIMESTAMP - INTERVAL '5 days'),
     ('30000000-0000-4000-8000-000000000009', '10000000-0000-4000-8000-000000000009', CURRENT_DATE      + TIME '11:30', CURRENT_DATE      + TIME '12:30', 'realizado',  'Atendimento concluido hoje.',                NULL, CURRENT_TIMESTAMP - INTERVAL '4 days'),
-    ('30000000-0000-4000-8000-000000000010', '10000000-0000-4000-8000-000000000010', CURRENT_DATE      + TIME '14:00', CURRENT_DATE      + TIME '15:30', 'agendado',   'Corte e escova para evento.',                NULL, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-    ('30000000-0000-4000-8000-000000000011', '10000000-0000-4000-8000-000000000011', CURRENT_DATE      + TIME '16:00', CURRENT_DATE      + TIME '17:00', 'agendado',   NULL,                                           NULL, CURRENT_TIMESTAMP - INTERVAL '2 days'),
+    ('30000000-0000-4000-8000-000000000010', '10000000-0000-4000-8000-000000000010', (SELECT dia FROM seed_primeiro_dia_livre) + 1 + TIME '14:00', (SELECT dia FROM seed_primeiro_dia_livre) + 1 + TIME '15:30', 'agendado', 'Corte e escova para evento.', NULL, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+    ('30000000-0000-4000-8000-000000000011', '10000000-0000-4000-8000-000000000011', (SELECT dia FROM seed_primeiro_dia_livre) + 2 + TIME '16:00', (SELECT dia FROM seed_primeiro_dia_livre) + 2 + TIME '17:00', 'agendado', NULL, NULL, CURRENT_TIMESTAMP - INTERVAL '2 days'),
     ('30000000-0000-4000-8000-000000000012', '10000000-0000-4000-8000-000000000012', CURRENT_DATE      + TIME '17:30', CURRENT_DATE      + TIME '18:15', 'cancelado',  'Cancelado por indisponibilidade da cliente.',NULL, CURRENT_TIMESTAMP - INTERVAL '4 days'),
-    ('30000000-0000-4000-8000-000000000013', '10000000-0000-4000-8000-000000000013', CURRENT_DATE +  1 + TIME '10:00', CURRENT_DATE +  1 + TIME '10:45', 'agendado',   'Escova para compromisso profissional.',      NULL, CURRENT_TIMESTAMP - INTERVAL '2 days'),
-    ('30000000-0000-4000-8000-000000000014', '10000000-0000-4000-8000-000000000014', CURRENT_DATE +  2 + TIME '13:00', CURRENT_DATE +  2 + TIME '16:00', 'agendado',   'Realizar avaliacao antes do procedimento.',  NULL, CURRENT_TIMESTAMP - INTERVAL '6 days'),
-    ('30000000-0000-4000-8000-000000000015', '10000000-0000-4000-8000-000000000015', CURRENT_DATE +  4 + TIME '09:00', CURRENT_DATE +  4 + TIME '09:45', 'agendado',   NULL,                                           NULL, CURRENT_TIMESTAMP - INTERVAL '1 day'),
-    ('30000000-0000-4000-8000-000000000016', '10000000-0000-4000-8000-000000000001', CURRENT_DATE +  7 + TIME '14:00', CURRENT_DATE +  7 + TIME '16:00', 'agendado',   'Retoque de raiz.',                            NULL, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-    ('30000000-0000-4000-8000-000000000017', '10000000-0000-4000-8000-000000000002', CURRENT_DATE + 10 + TIME '10:00', CURRENT_DATE + 10 + TIME '11:00', 'agendado',   'Aparar pontas.',                              NULL, CURRENT_TIMESTAMP - INTERVAL '1 day'),
-    ('30000000-0000-4000-8000-000000000018', '10000000-0000-4000-8000-000000000003', CURRENT_DATE + 14 + TIME '15:00', CURRENT_DATE + 14 + TIME '16:00', 'agendado',   NULL,                                           NULL, CURRENT_TIMESTAMP - INTERVAL '12 hours'),
+    ('30000000-0000-4000-8000-000000000013', '10000000-0000-4000-8000-000000000013', (SELECT dia FROM seed_primeiro_dia_livre) + 3 + TIME '10:00', (SELECT dia FROM seed_primeiro_dia_livre) + 3 + TIME '10:45', 'agendado', 'Escova para compromisso profissional.', NULL, CURRENT_TIMESTAMP - INTERVAL '2 days'),
+    ('30000000-0000-4000-8000-000000000014', '10000000-0000-4000-8000-000000000014', (SELECT dia FROM seed_primeiro_dia_livre) + 4 + TIME '13:00', (SELECT dia FROM seed_primeiro_dia_livre) + 4 + TIME '16:00', 'agendado', 'Realizar avaliacao antes do procedimento.', NULL, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+    ('30000000-0000-4000-8000-000000000015', '10000000-0000-4000-8000-000000000015', (SELECT dia FROM seed_primeiro_dia_livre) + 5 + TIME '09:00', (SELECT dia FROM seed_primeiro_dia_livre) + 5 + TIME '09:45', 'agendado', NULL, NULL, CURRENT_TIMESTAMP - INTERVAL '1 day'),
+    ('30000000-0000-4000-8000-000000000016', '10000000-0000-4000-8000-000000000001', (SELECT dia FROM seed_primeiro_dia_livre) + 6 + TIME '14:00', (SELECT dia FROM seed_primeiro_dia_livre) + 6 + TIME '16:00', 'agendado', 'Retoque de raiz.', NULL, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+    ('30000000-0000-4000-8000-000000000017', '10000000-0000-4000-8000-000000000002', (SELECT dia FROM seed_primeiro_dia_livre) + 7 + TIME '10:00', (SELECT dia FROM seed_primeiro_dia_livre) + 7 + TIME '11:00', 'agendado', 'Aparar pontas.', NULL, CURRENT_TIMESTAMP - INTERVAL '1 day'),
+    ('30000000-0000-4000-8000-000000000018', '10000000-0000-4000-8000-000000000003', (SELECT dia FROM seed_primeiro_dia_livre) + 8 + TIME '15:00', (SELECT dia FROM seed_primeiro_dia_livre) + 8 + TIME '16:00', 'agendado', NULL, NULL, CURRENT_TIMESTAMP - INTERVAL '12 hours'),
     ('30000000-0000-4000-8000-000000000019', '10000000-0000-4000-8000-000000000013', CURRENT_DATE -  1 + TIME '09:00', CURRENT_DATE -  1 + TIME '09:45', 'realizado',  'Esmaltacao em tom neutro.',                   NULL, CURRENT_TIMESTAMP - INTERVAL '5 days'),
     ('30000000-0000-4000-8000-000000000020', '10000000-0000-4000-8000-000000000015', CURRENT_DATE - 90 + TIME '13:00', CURRENT_DATE - 90 + TIME '14:00', 'realizado',  'Primeiro atendimento da cliente.',           NULL, CURRENT_TIMESTAMP - INTERVAL '95 days');
 
@@ -240,6 +252,131 @@ VALUES
     ('70000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000013', '30000000-0000-4000-8000-000000000019', '20000000-0000-4000-8000-000000000006', 'Esmalte hipoalergenico',            'Nude',         'Esmaltacao tradicional','Cliente satisfeita com a cor.',                 CURRENT_DATE -  1, CURRENT_TIMESTAMP - INTERVAL '1 day'),
     ('70000000-0000-4000-8000-000000000009', '10000000-0000-4000-8000-000000000015', '30000000-0000-4000-8000-000000000020', '20000000-0000-4000-8000-000000000001', NULL,                              NULL,           'Corte em U',             'Primeiro registro no historico da cliente.', CURRENT_DATE - 90, CURRENT_TIMESTAMP - INTERVAL '90 days');
 
+-- A serie amplia a demonstracao com visitas distribuidas pelos ultimos 90 dias
+-- e horarios futuros. O mesmo agendamento liga agenda, servicos, Caixa, historico
+-- e retornos. Apenas um atendimento realizado recebe receita e procedimento.
+CREATE TEMP TABLE seed_agenda_analitica ON COMMIT DROP AS
+SELECT
+    eventos.numero,
+    ('30000000-0000-4000-8000-' || lpad(eventos.numero::text, 12, '0'))::uuid AS agendamento_id,
+    ('10000000-0000-4000-8000-' || lpad((1 + (eventos.numero - 101) % 15)::text, 12, '0'))::uuid AS cliente_id,
+    ('20000000-0000-4000-8000-' || lpad((1 + (eventos.numero - 101) % 6)::text, 12, '0'))::uuid AS servico_id,
+    (eventos.dia + (ARRAY[TIME '09:00', TIME '10:30', TIME '13:00', TIME '15:00', TIME '17:00'])[1 + (eventos.numero - 101) % 5])::timestamptz AS inicio,
+    eventos.status
+FROM (
+    SELECT numero, CURRENT_DATE - (190 - numero) AS dia,
+        CASE WHEN numero % 17 = 0 THEN 'faltou'
+             WHEN numero % 11 = 0 THEN 'cancelado'
+             ELSE 'realizado' END AS status
+    FROM generate_series(101, 190) AS serie(numero)
+    UNION ALL
+    SELECT numero, (SELECT dia FROM seed_primeiro_dia_livre) + (numero - 192) AS dia, 'agendado' AS status
+    FROM generate_series(201, 212) AS serie(numero)
+) AS eventos;
+
+INSERT INTO public.agendamentos (id, cliente_id, inicio, fim, status, observacoes, criado_em)
+SELECT d.agendamento_id, d.cliente_id, d.inicio,
+       d.inicio + make_interval(mins => s.duracao_minutos),
+       d.status, 'Atendimento ficticio para demonstracao.',
+       d.inicio - INTERVAL '10 days'
+FROM seed_agenda_analitica d
+JOIN public.servicos s ON s.id = d.servico_id;
+
+INSERT INTO public.agendamento_servicos (id, agendamento_id, servico_id, valor, criado_em)
+SELECT ('40000000-0000-4000-8000-' || lpad(d.numero::text, 12, '0'))::uuid,
+       d.agendamento_id, d.servico_id, s.preco_padrao, d.inicio - INTERVAL '10 days'
+FROM seed_agenda_analitica d
+JOIN public.servicos s ON s.id = d.servico_id;
+
+-- Alguns atendimentos combinam dois servicos; o recibo abaixo soma ambos.
+INSERT INTO public.agendamento_servicos (id, agendamento_id, servico_id, valor, criado_em)
+SELECT ('40000000-0000-4000-8000-' || lpad((d.numero + 1000)::text, 12, '0'))::uuid,
+       d.agendamento_id, s.id, s.preco_padrao, d.inicio - INTERVAL '10 days'
+FROM seed_agenda_analitica d
+JOIN public.servicos s ON s.id =
+    ('20000000-0000-4000-8000-' || lpad((1 + (d.numero - 100) % 6)::text, 12, '0'))::uuid
+WHERE d.numero % 7 = 0;
+
+INSERT INTO public.movimentacoes_financeiras
+    (id, agendamento_id, tipo, descricao, categoria, valor, forma_pagamento, data_movimentacao, criado_em)
+SELECT ('50000000-0000-4000-8000-' || lpad(d.numero::text, 12, '0'))::uuid,
+       d.agendamento_id, 'receita', 'Servicos realizados - demonstracao',
+       'servicos', SUM(ags.valor),
+       (ARRAY['pix', 'dinheiro', 'debito', 'credito'])[1 + d.numero % 4],
+       (d.inicio AT TIME ZONE 'America/Sao_Paulo')::date,
+       d.inicio + INTERVAL '1 hour'
+FROM seed_agenda_analitica d
+JOIN public.agendamento_servicos ags ON ags.agendamento_id = d.agendamento_id
+WHERE d.status = 'realizado'
+GROUP BY d.numero, d.agendamento_id, d.inicio;
+
+INSERT INTO public.historico_procedimentos
+    (id, cliente_id, agendamento_id, servico_id, tecnica, observacoes, data_procedimento, criado_em)
+SELECT ('70000000-0000-4000-8000-' || right(ags.id::text, 12))::uuid,
+       d.cliente_id, d.agendamento_id, ags.servico_id,
+       'Procedimento demonstrativo', 'Servico concluido na demonstracao.',
+       (d.inicio AT TIME ZONE 'America/Sao_Paulo')::date, d.inicio
+FROM seed_agenda_analitica d
+JOIN public.agendamento_servicos ags ON ags.agendamento_id = d.agendamento_id
+WHERE d.status = 'realizado';
+
+INSERT INTO public.retornos
+    (id, cliente_id, servico_id, agendamento_origem_id, data_recomendada, status, observacoes, criado_em)
+SELECT ('60000000-0000-4000-8000-' || right(ags.id::text, 12))::uuid,
+       d.cliente_id, ags.servico_id, d.agendamento_id,
+       (d.inicio AT TIME ZONE 'America/Sao_Paulo')::date + s.retorno_dias,
+       CASE WHEN EXISTS (
+           SELECT 1 FROM seed_agenda_analitica posterior
+           JOIN public.agendamento_servicos servico_posterior
+             ON servico_posterior.agendamento_id = posterior.agendamento_id
+           WHERE posterior.cliente_id = d.cliente_id
+             AND posterior.inicio > d.inicio
+             AND posterior.status = 'realizado'
+             AND servico_posterior.servico_id = ags.servico_id
+       ) THEN 'realizado' ELSE 'pendente' END,
+       'Retorno calculado a partir do atendimento demonstrativo.', d.inicio
+FROM seed_agenda_analitica d
+JOIN public.agendamento_servicos ags ON ags.agendamento_id = d.agendamento_id
+JOIN public.servicos s ON s.id = ags.servico_id
+WHERE d.status = 'realizado';
+
+-- Uma divergencia cancela toda a transacao, inclusive a limpeza inicial.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM public.agendamentos a
+        LEFT JOIN LATERAL (
+            SELECT SUM(valor) AS total FROM public.agendamento_servicos
+            WHERE agendamento_id = a.id
+        ) servicos ON true
+        LEFT JOIN LATERAL (
+            SELECT SUM(valor) AS total FROM public.movimentacoes_financeiras
+            WHERE agendamento_id = a.id AND tipo = 'receita'
+        ) caixa ON true
+        WHERE a.id::text LIKE '30000000-0000-4000-8000-%'
+          AND (servicos.total IS NULL
+            OR (a.status = 'realizado' AND caixa.total IS DISTINCT FROM servicos.total)
+            OR (a.status <> 'realizado' AND caixa.total IS NOT NULL))
+    ) THEN
+        RAISE EXCEPTION 'Seed inconsistente: status, servicos e receitas nao conferem';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM public.agendamentos a
+        JOIN public.agendamento_servicos ags ON ags.agendamento_id = a.id
+        WHERE a.id::text LIKE '30000000-0000-4000-8000-%'
+          AND a.status = 'realizado'
+          AND NOT EXISTS (
+              SELECT 1 FROM public.historico_procedimentos h
+              WHERE h.agendamento_id = a.id AND h.servico_id = ags.servico_id
+          )
+    ) THEN
+        RAISE EXCEPTION 'Seed inconsistente: procedimento realizado sem historico';
+    END IF;
+END $$;
+
 COMMIT;
 
 -- Resumo exibido ao final da execucao. As contagens consideram apenas os UUIDs
@@ -264,3 +401,16 @@ FROM public.retornos WHERE id::text LIKE '60000000-0000-4000-8000-%'
 UNION ALL
 SELECT 'historico_procedimentos', COUNT(*)
 FROM public.historico_procedimentos WHERE id::text LIKE '70000000-0000-4000-8000-%';
+
+SELECT a.status, COUNT(*) AS atendimentos,
+       COALESCE(SUM(caixa.valor), 0) AS receita_no_caixa
+FROM public.agendamentos a
+LEFT JOIN (
+    SELECT agendamento_id, SUM(valor) AS valor
+    FROM public.movimentacoes_financeiras
+    WHERE tipo = 'receita'
+    GROUP BY agendamento_id
+) caixa ON caixa.agendamento_id = a.id
+WHERE a.id::text LIKE '30000000-0000-4000-8000-%'
+GROUP BY a.status
+ORDER BY a.status;

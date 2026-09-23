@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import styles from "./Financeiro.module.css";
 import { formatarDataCurta } from "@/lib/formatters";
+import DatePickerField from "@/app/components/DatePickerField";
+import { CATEGORIA_RECEITA_AUTOMATICA } from "@/lib/receita-atendimento";
 
 // Calcula o primeiro e o último dia do mês/ano selecionados,
 // pois a API espera "inicio" e "fim", e não "mes"/"ano".
@@ -44,6 +46,7 @@ export default function PageFinanceiro() {
     descricao: "",
     valor: "",
     tipo: "receita",
+    categoria: "",
     data: "",
   });
 
@@ -100,7 +103,8 @@ export default function PageFinanceiro() {
       descricao: "",
       valor: "",
       tipo: "receita",
-      data: "",
+      categoria: "",
+      data: new Date().toLocaleDateString("en-CA"),
     });
 
     setModalAberto(true);
@@ -130,6 +134,7 @@ export default function PageFinanceiro() {
           descricao: form.descricao,
           valor: parseFloat(form.valor.replace(",", ".")),
           tipo: form.tipo,
+          categoria: form.tipo === "despesa" ? form.categoria || null : null,
           // A API espera "data_movimentacao", não "data".
           data_movimentacao: form.data,
         }),
@@ -313,6 +318,9 @@ export default function PageFinanceiro() {
 
                     <td className={`p-3 ${styles.tdData}`}>
                       {m.descricao}
+                      {m.categoria === CATEGORIA_RECEITA_AUTOMATICA && (
+                        <span className="d-block small text-muted">Lançamento automático</span>
+                      )}
                     </td>
 
                     <td className="p-3">
@@ -340,12 +348,14 @@ export default function PageFinanceiro() {
 
                     <td className="p-3 text-end">
                       <div className="d-flex gap-2 justify-content-end">
-                        <button
-                          className={styles.btnIconePerigo}
-                          onClick={() => excluirMovimentacao(m.id)}
-                        >
-                          🗑
-                        </button>
+                        {m.categoria !== CATEGORIA_RECEITA_AUTOMATICA && (
+                          <button
+                            className={styles.btnIconePerigo}
+                            onClick={() => excluirMovimentacao(m.id)}
+                          >
+                            🗑
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -360,6 +370,10 @@ export default function PageFinanceiro() {
               <div key={m.id} className={styles.cardMobile}>
                 <div className={styles.cardCentro}>
                   <p className={styles.cardCliente}>{m.descricao}</p>
+
+                  {m.categoria === CATEGORIA_RECEITA_AUTOMATICA && (
+                    <p className={styles.cardServico}>Lançamento automático</p>
+                  )}
 
                   <p className={styles.cardServico}>
                     {formatarDataCurta(m.data_movimentacao)}
@@ -378,12 +392,14 @@ export default function PageFinanceiro() {
                   </strong>
 
                   <div className={styles.cardAcoes}>
-                    <button
-                      className={styles.btnIconePerigo}
-                      onClick={() => excluirMovimentacao(m.id)}
-                    >
-                      🗑
-                    </button>
+                    {m.categoria !== CATEGORIA_RECEITA_AUTOMATICA && (
+                      <button
+                        className={styles.btnIconePerigo}
+                        onClick={() => excluirMovimentacao(m.id)}
+                      >
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -438,6 +454,7 @@ export default function PageFinanceiro() {
                       setForm({
                         ...form,
                         tipo: e.target.value,
+                        categoria: "",
                       })
                     }
                   >
@@ -445,6 +462,26 @@ export default function PageFinanceiro() {
                     <option value="despesa">Despesa (Saída)</option>
                   </select>
                 </div>
+
+                {form.tipo === "despesa" && (
+                  <div>
+                    <label className={styles.labelFiltro} htmlFor="categoria-despesa">Categoria (opcional)</label>
+                    <select
+                      id="categoria-despesa"
+                      className={`form-control ${styles.inputFiltro}`}
+                      value={form.categoria}
+                      onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                    >
+                      <option value="">Sem categoria</option>
+                      <option value="produtos">Produtos</option>
+                      <option value="materiais">Materiais</option>
+                      <option value="estrutura">Estrutura</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="equipe">Equipe</option>
+                      <option value="outros">Outros</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className={styles.labelFiltro}>Descrição</label>
@@ -485,11 +522,11 @@ export default function PageFinanceiro() {
                 <div>
                   <label className={styles.labelFiltro}>Data</label>
 
-                  <input
-                    type="date"
-                    className={`form-control ${styles.inputFiltro}`}
-                    value={form.data}
-                    onChange={(e) =>
+                    <DatePickerField
+                      type="date"
+                      className={`form-control ${styles.inputFiltro}`}
+                      value={form.data}
+                      onChange={(e) =>
                       setForm({
                         ...form,
                         data: e.target.value,

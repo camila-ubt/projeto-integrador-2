@@ -46,11 +46,20 @@ export async function GET(request) {
               json_build_object(
                 'servico_id', s.id,
                 'nome', s.nome,
-                'valor', ags.valor
+                'valor', ags.valor,
+                'duracao_minutos', s.duracao_minutos,
+                'retorno_dias', s.retorno_dias
               )
             ) FILTER (WHERE s.id IS NOT NULL),
             '[]'
-          ) AS servicos
+          ) AS servicos,
+          COALESCE((
+            SELECT json_agg(json_build_object(
+              'servico_id', r.servico_id,
+              'data_recomendada', r.data_recomendada
+            ) ORDER BY r.data_recomendada)
+            FROM retornos r WHERE r.agendamento_origem_id = a.id
+          ), '[]') AS retornos
         FROM agendamentos a
         JOIN clientes c ON c.id = a.cliente_id
         LEFT JOIN agendamento_servicos ags ON ags.agendamento_id = a.id

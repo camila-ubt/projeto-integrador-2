@@ -81,6 +81,19 @@
   cursor: not-allowed;
 }
 
+.btnHojeAtivo,
+.btnHojeAtivo:hover:not(:disabled) {
+  background-color: var(--primaria);
+  border-color: var(--primaria);
+  color: white;
+}
+
+.resumoPeriodo {
+  margin: 0.75rem 0 0;
+  color: var(--texto-secundario);
+  font: 0.78rem "Jost", sans-serif;
+}
+
 /* ── Estados: loading e vazio ────────── */
 
 .loadingState {
@@ -324,6 +337,113 @@
   line-height: 1.6;
 }
 
+.linkCliente {
+  color: inherit;
+  text-decoration: none;
+}
+
+.linkCliente:hover {
+  color: var(--primaria);
+  text-decoration: underline;
+}
+
+.linkCliente:focus-visible {
+  outline: 2px solid var(--primaria);
+  outline-offset: 3px;
+}
+
+.retornoPlanejado { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--borda); border-radius: var(--radius-medium); background: var(--fundo); font-family: "Jost", sans-serif; font-size: 0.88rem; }
+.retornoPlanejado p { margin: 0; color: var(--texto-secundario); font-size: 0.78rem; }
+
+.edicaoServicos {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+}
+
+.tituloEdicaoServicos {
+  margin: 0 0 0.2rem;
+  color: var(--texto-principal);
+  font: 500 0.95rem "Jost", sans-serif;
+}
+
+.ajudaEdicaoServicos,
+.semServicosEdicao,
+.alertaSemServico,
+.erroServicos {
+  margin: 0;
+  font: 0.78rem/1.45 "Jost", sans-serif;
+}
+
+.ajudaEdicaoServicos,
+.semServicosEdicao { color: var(--texto-secundario); }
+.alertaSemServico { color: var(--alerta-texto); }
+.erroServicos { color: var(--erro-texto); }
+
+.listaServicosEdicao {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.opcaoServicoEdicao {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  font-family: "Jost", sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcaoServicoEdicao:hover,
+.opcaoServicoSelecionada {
+  border-color: var(--primaria);
+  background: var(--primaria-clara);
+}
+
+.checkboxServicoEdicao {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--borda-escura);
+  border-radius: 50%;
+  color: var(--primaria);
+  font-size: 0.85rem;
+}
+
+.dadosServicoEdicao {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.dadosServicoEdicao strong,
+.dadosServicoEdicao small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dadosServicoEdicao strong { font-size: 0.82rem; font-weight: 500; }
+.dadosServicoEdicao small { color: var(--texto-secundario); font-size: 0.72rem; }
+
+@media (max-width: 575.98px) {
+  .listaServicosEdicao { grid-template-columns: 1fr; }
+}
+
 
 /* ── Busca de cliente — dropdown ─────────────────────────────── */
 
@@ -555,4 +675,69 @@
 .resumoLinha strong {
   color: var(--texto-principal);
   text-align: right;
+}
+
+.detalheAgendamento {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium);
+  background: var(--fundo);
+  color: var(--texto-secundario);
+  font-family: "Jost", sans-serif;
+  font-size: 0.9rem;
+}
+
+.detalheAgendamento > strong {
+  color: var(--texto-principal);
+  font-size: 1rem;
+}
+
+.detalheAgendamento small {
+  white-space: pre-wrap;
+}
+
+.acoesStatusRapido {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.botaoStatusRapido {
+  min-height: 42px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--borda-escura);
+  border-radius: var(--radius-medium);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  font: 0.88rem "Jost", sans-serif;
+  cursor: pointer;
+}
+
+.botaoStatusRapido:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.statusRapidoAtivo {
+  background: var(--primaria-clara);
+  border-color: var(--primaria);
+  color: var(--primaria);
+}
+
+.feedbackStatusRapido,
+.erroStatusRapido,
+.dicaStatusRapido {
+  margin: 0.5rem 0 0;
+  font: 0.8rem "Jost", sans-serif;
+}
+
+.feedbackStatusRapido { color: var(--sucesso-texto); }
+.erroStatusRapido { color: var(--erro-texto); }
+.dicaStatusRapido { color: var(--texto-secundario); }
+
+@media (max-width: 575.98px) {
+  .acoesStatusRapido { gap: 0.4rem; }
+  .botaoStatusRapido { min-height: 40px; font-size: 0.82rem; }
 }

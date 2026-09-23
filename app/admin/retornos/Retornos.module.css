@@ -8,6 +8,11 @@
   line-height: 1.2;
 }
 
+.pagina { padding: 1rem; }
+.cabecalhoPagina { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 1.5rem; }
+.cabecalhoPagina p { margin: 4px 0 0; color: var(--texto-secundario); font: 0.85rem "Jost", sans-serif; }
+.linkSimples { color: var(--primaria); font: 0.85rem "Jost", sans-serif; }
+
 @media (min-width: 768px) {
   .tituloPagina {
     font-size: 2rem;
@@ -49,6 +54,7 @@
   font-family: "Jost", sans-serif;
   cursor: pointer;
 }
+.btnHojeAtivo { background: var(--primaria); border-color: var(--primaria); color: white; }
 
 /* ── Estados ── */
 .loadingState {
@@ -82,6 +88,22 @@
   align-items: center;
   gap: 0.75rem;
 }
+
+.listaRetornos { display: grid; gap: 10px; }
+.abrirRetorno { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.abrirRetorno:hover .cardCliente { color: var(--primaria); text-decoration: underline; }
+.abrirRetorno:focus-visible, .linksRetorno a:focus-visible { outline: 2px solid var(--primaria); outline-offset: 3px; }
+.cardCentro { display: grid; gap: 2px; }
+.modalContent { max-height: 90dvh; overflow: hidden; border: 0; border-radius: var(--radius-large); font-family: "Jost", sans-serif; }
+.modalContent .modal-body { overflow-y: auto; }
+.modalTitulo { margin: 0; color: var(--texto-principal); font-family: "Cormorant Garamond", serif; font-size: 1.45rem; }
+.modalResumo { margin: 0; color: var(--texto-secundario); font-size: 0.88rem; }
+.modalResumo strong { color: var(--texto-principal); }
+.linksRetorno { display: flex; flex-wrap: wrap; gap: 8px 15px; font-size: 0.82rem; }
+.linksRetorno a { color: var(--primaria); }
+.orientacao { margin: 0; color: var(--texto-secundario); font-size: 0.78rem; }
+.erro { color: var(--erro-texto); font-size: 0.85rem; }
+.btnSalvar { border: 0; border-radius: var(--radius-medium); padding: 0.45rem 0.75rem; background: var(--primaria); color: white; font: 0.85rem "Jost", sans-serif; }
 
 .cardHoraDestaque {
   font-family: "Jost", sans-serif;
@@ -164,6 +186,8 @@
   background-color: var(--sucesso-fundo);
   color: var(--sucesso-texto);
 }
+
+.statusPendente { background-color: var(--alerta-fundo); color: var(--alerta-texto); }
 
 .statusRealizado {
   background-color: var(--info-fundo);

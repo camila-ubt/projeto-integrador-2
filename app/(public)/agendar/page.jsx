@@ -9,6 +9,8 @@ import {
   dataMinimaAgendamento,
   formatarTelefone,
 } from "@/lib/formatters";
+import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
+import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoCalendario,
   IcoCheck,
@@ -634,7 +636,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
         >
           <IcoCalendario size={13} /> Data
         </label>
-        <input
+        <DatePickerField
           id="data-agendamento"
           type="date"
           value={data}
@@ -799,6 +801,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
 function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
   const [nome, setNome] = useState(dadosSalvos?.nome || "");
   const [telefone, setTelefone] = useState(dadosSalvos?.telefone || "");
+  const [aniversario, setAniversario] = useState(dadosSalvos?.aniversario_dia_mes || "");
   const [observacoes, setObservacoes] = useState(dadosSalvos?.observacoes || "");
   const [erros, setErros] = useState({});
 
@@ -812,6 +815,9 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       novosErros.telefone =
         "Telefone incompleto. Digite o DDD e o número (ex: 11987654321).";
     }
+    if (!aniversarioValido(aniversario)) {
+      novosErros.aniversario = "Informe um dia e mês de aniversário válidos.";
+    }
     return novosErros;
   }
 
@@ -824,6 +830,7 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
     aoAvancar({
       nome: nome.trim(),
       telefone: telefone.trim(),
+      aniversario_dia_mes: aniversario,
       observacoes: observacoes.trim(),
     });
   }
@@ -920,6 +927,26 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
           autoComplete="tel"
         />
         {erros.telefone && <p style={estiloErro}>{erros.telefone}</p>}
+      </div>
+
+      <div style={{ marginBottom: "24px" }}>
+        <label htmlFor="aniversario" style={estiloLabel}>
+          Aniversário: dia e mês <span style={{ fontWeight: 400 }}>(opcional)</span>
+        </label>
+        <input
+          id="aniversario"
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          placeholder="DD/MM"
+          value={aniversario}
+          onChange={(e) => {
+            setAniversario(formatarDiaMesDigitado(e.target.value));
+            setErros((p) => ({ ...p, aniversario: "" }));
+          }}
+          style={estiloInput(erros.aniversario)}
+        />
+        {erros.aniversario && <p style={estiloErro}>{erros.aniversario}</p>}
       </div>
 
       <div style={{ marginBottom: "24px" }}>
@@ -1309,6 +1336,7 @@ export default function PaginaAgendamento() {
           cliente: {
             nome: dados.nome,
             telefone: dados.telefone,
+            aniversario_dia_mes: dados.aniversario_dia_mes || null,
           },
           servicos: [servico.id],
           inicio: inicio.toISOString(),

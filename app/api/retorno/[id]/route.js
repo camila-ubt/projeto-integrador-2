@@ -27,9 +27,16 @@ export async function PUT(request, { params }) {
   if (parseError) return parseError;
 
   const { status, data_recomendada, observacoes } = body ?? {};
-  const statusValidos = ["pendente", "agendado", "realizado", "cancelado", "faltou"];
+  const statusValidos = ["pendente", "agendado", "realizado", "cancelado"];
   if (status && !statusValidos.includes(status)) {
     return jsonError(`status inválido. Use um de: ${statusValidos.join(", ")}.`, 400);
+  }
+  if (data_recomendada !== undefined) {
+    const data = /^\d{4}-\d{2}-\d{2}$/.test(data_recomendada ?? "")
+      ? new Date(`${data_recomendada}T12:00:00Z`) : null;
+    if (!data || Number.isNaN(data.getTime()) || data.toISOString().slice(0, 10) !== data_recomendada) {
+      return jsonError("Informe uma data recomendada válida.", 400);
+    }
   }
 
   try {

@@ -1,0 +1,46 @@
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-medium, 9px);
+  background: var(--superficie);
+  color: var(--texto-principal);
+  font: inherit;
+  cursor: pointer;
+}
+
+.field:focus-within {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(183, 110, 121, .15);
+}
+
+.display {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.empty { color: var(--texto-secundario); }
+.icon { width: 16px; height: 16px; flex: none; }
+
+input.nativeInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.field:has(input:disabled) { opacity: .55; cursor: not-allowed; }

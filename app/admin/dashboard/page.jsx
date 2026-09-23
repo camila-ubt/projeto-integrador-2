@@ -237,6 +237,9 @@ export default function PaginaDashboard() {
   const maiorDia = Math.max(...diasSemana.map((item) => item.quantidade), 0);
   const maiorHorario = Math.max(...(dados?.horarios.map((item) => item.quantidade) || [0]));
   const totalClientesSegmentados = (dados?.clientes.novos || 0) + (dados?.clientes.recorrentes || 0);
+  const retorno = dados.clientes.retorno;
+  const taxaRetorno = retorno.totalClientes ? retorno.clientes / retorno.totalClientes * 100 : null;
+  const taxaRetornoAnterior = retorno.totalClientesAnterior ? retorno.clientesAnterior / retorno.totalClientesAnterior * 100 : null;
 
   return (
     <div className={styles.pagina}>
@@ -280,6 +283,32 @@ export default function PaginaDashboard() {
           </div>
         </Secao>
       </div>
+
+      <Secao titulo="Retorno de clientes" subtitulo="Novas visitas em dias diferentes, considerando atendimentos realizados." abertaInicialmente>
+        {retorno.totalClientes ? (
+          <div className={styles.analiseRetorno}>
+            <div className={styles.indicadoresRetorno}>
+              <div>
+                <span>Clientes que voltaram</span>
+                <strong>{formatarPercentual(taxaRetorno)}</strong>
+                <small>{retorno.clientes} de {retorno.totalClientes} clientes atendidas</small>
+                <Comparacao valor={taxaRetornoAnterior === null ? null : taxaRetorno - taxaRetornoAnterior} pontos />
+                {retorno.totalClientesAnterior > 0 && <small>Período anterior: {retorno.clientesAnterior} de {retorno.totalClientesAnterior}</small>}
+              </div>
+              <div>
+                <span>Intervalo típico de retorno</span>
+                <strong>{retorno.medianaDias === null ? "—" : `${Number(retorno.medianaDias).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} dias`}</strong>
+                <small>Mediana de {retorno.visitas} visitas de retorno</small>
+              </div>
+            </div>
+            <div className={styles.faixasRetorno}>
+              <h3>Tempo até a nova visita</h3>
+              {retorno.visitas ? retorno.faixas.map((faixa) => <BarraRanking key={faixa.rotulo} rotulo={faixa.rotulo} valor={faixa.quantidade} maximo={retorno.visitas} detalhe={`${faixa.quantidade} · ${formatarPercentual(faixa.quantidade / retorno.visitas * 100)}`} />) : <EstadoVazio texto="Ainda não houve visitas de retorno no período." />}
+            </div>
+            <p className={styles.notaRetorno}>Clientes únicas com uma nova visita em outro dia, entre as atendidas no período. É um percentual observado, não uma previsão. O filtro de serviço considera a visita atual; a anterior pode ter sido de outro serviço.</p>
+          </div>
+        ) : <EstadoVazio texto="Nenhuma cliente atendida no período para analisar retornos." />}
+      </Secao>
 
       <div className={styles.gradeDuasColunas}>
         <Secao titulo="Horários mais procurados" subtitulo="Horário de início dos agendamentos.">

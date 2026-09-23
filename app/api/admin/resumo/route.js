@@ -81,6 +81,44 @@ export async function GET(request) {
       SELECT 1 FROM agendamento_servicos filtro_ags
       WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
     ))`;
+  const consultaRecorrencia = `WITH realizados AS (
+      SELECT a.id, a.cliente_id,
+        (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date AS data,
+        LAG((a.inicio AT TIME ZONE 'America/Sao_Paulo')::date)
+          OVER (PARTITION BY a.cliente_id ORDER BY a.inicio, a.id) AS anterior
+      FROM agendamentos a
+      WHERE a.status = 'realizado'
+        AND (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
+    ), periodo AS (
+      SELECT r.* FROM realizados r
+      JOIN agendamentos a ON a.id = r.id
+      WHERE r.data BETWEEN $1::date AND $2::date
+        AND ($3::text IS NULL OR $3 = 'realizado')
+        AND ($4::uuid IS NULL OR a.cliente_id = $4)
+        AND ($5::uuid IS NULL OR EXISTS (
+          SELECT 1 FROM agendamento_servicos filtro_ags
+          WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
+        ))
+    ), clientes_periodo AS (
+      SELECT cliente_id,
+        COALESCE(BOOL_OR(anterior < $1::date), false) AS tinha_atendimento_anterior
+      FROM periodo GROUP BY cliente_id
+    ), visitas_retorno AS (
+      SELECT cliente_id, data - anterior AS intervalo
+      FROM periodo WHERE anterior < data
+    )
+    SELECT
+      COUNT(*) FILTER (WHERE NOT tinha_atendimento_anterior)::int AS novos,
+      COUNT(*) FILTER (WHERE tinha_atendimento_anterior)::int AS recorrentes,
+      (SELECT AVG(intervalo)::numeric(10,1) FROM visitas_retorno) AS intervalo_medio,
+      (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY intervalo)
+        FROM visitas_retorno)::numeric(10,1) AS intervalo_mediano,
+      (SELECT COUNT(DISTINCT cliente_id)::int FROM visitas_retorno) AS clientes_que_voltaram,
+      (SELECT COUNT(*)::int FROM visitas_retorno) AS visitas_retorno,
+      (SELECT COUNT(*)::int FROM visitas_retorno WHERE intervalo BETWEEN 1 AND 30) AS ate_30_dias,
+      (SELECT COUNT(*)::int FROM visitas_retorno WHERE intervalo BETWEEN 31 AND 60) AS de_31_a_60_dias,
+      (SELECT COUNT(*)::int FROM visitas_retorno WHERE intervalo > 60) AS mais_de_60_dias
+    FROM clientes_periodo`;
 
   try {
     const consultas = await Promise.all([
@@ -149,46 +187,19 @@ export async function GET(request) {
           COUNT(*)::int AS quantidade
         FROM agendamentos a WHERE ${filtroAgenda}
         GROUP BY 1 ORDER BY 1`, valores),
+      query(consultaRecorrencia, valores),
       query(`WITH realizados AS (
           SELECT a.id, a.cliente_id,
             (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date AS data,
             LAG((a.inicio AT TIME ZONE 'America/Sao_Paulo')::date)
-              OVER (PARTITION BY a.cliente_id ORDER BY a.inicio) AS anterior
-          FROM agendamentos a
-          WHERE a.status = 'realizado'
-            AND (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
-        ), periodo AS (
-          SELECT r.* FROM realizados r
-          JOIN agendamentos a ON a.id = r.id
-          WHERE r.data BETWEEN $1::date AND $2::date
-            AND ($3::text IS NULL OR $3 = 'realizado')
-            AND ($4::uuid IS NULL OR a.cliente_id = $4)
-            AND ($5::uuid IS NULL OR EXISTS (
-              SELECT 1 FROM agendamento_servicos filtro_ags
-              WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
-            ))
-        ), clientes_periodo AS (
-          SELECT cliente_id,
-            COALESCE(BOOL_OR(anterior < $1::date), false) AS tinha_atendimento_anterior
-          FROM periodo GROUP BY cliente_id
-        )
-        SELECT
-          COUNT(*) FILTER (WHERE NOT tinha_atendimento_anterior)::int AS novos,
-          COUNT(*) FILTER (WHERE tinha_atendimento_anterior)::int AS recorrentes,
-          (SELECT (AVG(data - anterior) FILTER (WHERE anterior IS NOT NULL))::numeric(10,1)
-             FROM periodo) AS intervalo_medio
-        FROM clientes_periodo`, valores),
-      query(`WITH realizados AS (
-          SELECT a.id, a.cliente_id,
-            (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date AS data,
-            LAG(a.id) OVER (PARTITION BY a.cliente_id ORDER BY a.inicio) AS atendimento_anterior
+              OVER (PARTITION BY a.cliente_id ORDER BY a.inicio, a.id) AS data_anterior
           FROM agendamentos a
           WHERE a.status = 'realizado'
             AND (a.inicio AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
         )
         SELECT c.id, c.nome,
           COUNT(*)::int AS atendimentos,
-          COUNT(*) FILTER (WHERE r.atendimento_anterior IS NOT NULL)::int AS retornos
+          COUNT(*) FILTER (WHERE r.data_anterior < r.data)::int AS retornos
         FROM realizados r
         JOIN agendamentos a ON a.id = r.id
         JOIN clientes c ON c.id = r.cliente_id
@@ -200,7 +211,7 @@ export async function GET(request) {
             WHERE filtro_ags.agendamento_id = a.id AND filtro_ags.servico_id = $5
           ))
         GROUP BY c.id, c.nome
-        HAVING COUNT(*) FILTER (WHERE r.atendimento_anterior IS NOT NULL) > 0
+        HAVING COUNT(*) FILTER (WHERE r.data_anterior < r.data) > 0
         ORDER BY retornos DESC, atendimentos DESC, c.nome LIMIT 5`, valores),
       query(`SELECT a.id, a.inicio, a.fim, c.nome AS cliente_nome,
           COALESCE(string_agg(s.nome, ', ' ORDER BY s.nome), '') AS servicos
@@ -231,6 +242,7 @@ export async function GET(request) {
         FROM datas
         WHERE substring(dia_mes from 4 for 2)::int = $1::int
         ORDER BY dia, nome`, [Number(hoje.slice(5, 7))]),
+      query(consultaRecorrencia, valoresComparacao),
     ]);
 
     const atual = consultas[0].rows[0];
@@ -292,6 +304,20 @@ export async function GET(request) {
         recorrentes: numero(consultas[8].rows[0].recorrentes),
         intervaloMedio: consultas[8].rows[0].intervalo_medio === null
           ? null : numero(consultas[8].rows[0].intervalo_medio),
+        retorno: {
+          clientes: numero(consultas[8].rows[0].clientes_que_voltaram),
+          visitas: numero(consultas[8].rows[0].visitas_retorno),
+          totalClientes: numero(atual.clientes),
+          totalClientesAnterior: numero(anterior.clientes),
+          clientesAnterior: numero(consultas[14].rows[0].clientes_que_voltaram),
+          medianaDias: consultas[8].rows[0].intervalo_mediano === null
+            ? null : numero(consultas[8].rows[0].intervalo_mediano),
+          faixas: [
+            { rotulo: "Até 30 dias", quantidade: numero(consultas[8].rows[0].ate_30_dias) },
+            { rotulo: "31 a 60 dias", quantidade: numero(consultas[8].rows[0].de_31_a_60_dias) },
+            { rotulo: "Mais de 60 dias", quantidade: numero(consultas[8].rows[0].mais_de_60_dias) },
+          ],
+        },
         ranking: consultas[9].rows.map((item) => ({
           ...item, atendimentos: numero(item.atendimentos), retornos: numero(item.retornos),
         })),

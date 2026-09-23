@@ -14,6 +14,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const clienteId = searchParams.get("cliente_id");
+    const agendamentoId = searchParams.get("agendamento_id");
 
     const condicoes = [];
     const valores = [];
@@ -24,6 +25,10 @@ export async function GET(request) {
     if (clienteId) {
       valores.push(clienteId);
       condicoes.push(`r.cliente_id = $${valores.length}`);
+    }
+    if (agendamentoId) {
+      valores.push(agendamentoId);
+      condicoes.push(`r.agendamento_origem_id = $${valores.length}`);
     }
     const where = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
 

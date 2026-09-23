@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { formatarDataCurta, formatarHora } from "@/lib/formatters";
 import {
   IcoAgendamentos,
@@ -29,6 +30,7 @@ export default function Agendamentos() {
   const [modalNovo, setModalNovo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState("");
@@ -51,6 +53,9 @@ export default function Agendamentos() {
     agenda: null,
   });
   const [editando, setEditando] = useState(false);
+  const [retornoPlanejado, setRetornoPlanejado] = useState(false);
+  const [dadosRetorno, setDadosRetorno] = useState({ servico_id: "", data_recomendada: "", observacoes: "" });
+  const [erroRetorno, setErroRetorno] = useState("");
   const [camposEdicao, setCamposEdicao] = useState({
     status: "",
     observacoes: "",
@@ -68,7 +73,11 @@ export default function Agendamentos() {
         if (idDoLink) {
           const agenda = lista.find((item) => item.id === idDoLink);
           if (agenda) {
+            setFeedback(null);
             setCamposEdicao(camposDoAgendamento(agenda));
+            setRetornoPlanejado(false);
+            setErroRetorno("");
+            setDadosRetorno({ servico_id: agenda.servicos?.[0]?.servico_id || "", data_recomendada: "", observacoes: "" });
             setModalEditar({ aberto: true, agenda });
           } else {
             setErro("O agendamento selecionado não foi encontrado.");
@@ -183,7 +192,6 @@ export default function Agendamentos() {
   };
 
   const [deletando, setDeletando] = useState(false);
-  const [feedback, setFeedback] = useState(null);
 
   const handleDeletar = (agenda) => {
     setModalDeletar({ aberto: true, agenda });
@@ -220,11 +228,20 @@ export default function Agendamentos() {
   };
 
   const handleEditar = (agenda) => {
+    setFeedback(null);
     setCamposEdicao(camposDoAgendamento(agenda));
+    setRetornoPlanejado(false);
+    setErroRetorno("");
+    setDadosRetorno({ servico_id: agenda.servicos?.[0]?.servico_id || "", data_recomendada: "", observacoes: "" });
     setModalEditar({ aberto: true, agenda });
   };
 
   const confirmarEdicao = async () => {
+    if (retornoPlanejado && (!dadosRetorno.servico_id || !dadosRetorno.data_recomendada)) {
+      setErroRetorno("Escolha o serviço e a data do retorno.");
+      return;
+    }
+    setErroRetorno("");
     setEditando(true);
     const [ano, mes, dia] = camposEdicao.data.split("-").map(Number);
     const [hH, hM] = camposEdicao.hora.split(":").map(Number);
@@ -238,6 +255,7 @@ export default function Agendamentos() {
           inicio: inicioDate.toISOString(),
           status: camposEdicao.status || undefined,
           observacoes: camposEdicao.observacoes || undefined,
+          retorno: retornoPlanejado ? dadosRetorno : undefined,
         }),
       });
 
@@ -246,7 +264,7 @@ export default function Agendamentos() {
         throw new Error(data.error ?? "Erro ao atualizar agendamento.");
       }
 
-      await res.json();
+      const atualizado = await res.json();
 
       try {
         const res = await fetch("/api/agendamentos");
@@ -258,14 +276,19 @@ export default function Agendamentos() {
 
       setFeedback({
         tipo: "sucesso",
-        msg: "Agendamento atualizado com sucesso.",
+        msg: camposEdicao.status === "realizado"
+          ? atualizado.retornos?.length
+            ? `Atendimento realizado. ${atualizado.retornos.length} retorno(s) para acompanhar.`
+            : "Atendimento realizado. Nenhum retorno automático foi criado; você pode planejar um ao editar o atendimento."
+          : "Agendamento atualizado com sucesso.",
+        agendamentoId: camposEdicao.status === "realizado" ? modalEditar.agenda.id : null,
       });
+      setModalEditar({ aberto: false, agenda: null });
     } catch (err) {
       setFeedback({ tipo: "erro", msg: err.message });
     } finally {
       setEditando(false);
-      setModalEditar({ aberto: false, agenda: null });
-      setTimeout(() => setFeedback(null), 4000);
+      setTimeout(() => setFeedback(null), camposEdicao.status === "realizado" ? 12000 : 4000);
     }
   };
 
@@ -428,6 +451,7 @@ export default function Agendamentos() {
           }}
         >
           {feedback.msg}
+          {feedback.agendamentoId && <Link className="ms-2" href={`/admin/retornos?agendamento_id=${feedback.agendamentoId}`}>Ver retornos</Link>}
         </div>
       )}
       {/* ── Loading ───────── */}
@@ -782,6 +806,7 @@ export default function Agendamentos() {
               </div>
 
               <div className="modal-body d-flex flex-column gap-3" style={{ overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
+                {feedback?.tipo === "erro" && <p role="alert" style={{ color: "var(--erro-texto)", margin: 0 }}>{feedback.msg}</p>}
                 {/* Identificação do agendamento — somente leitura */}
                 <p className={styles.modalTexto} style={{ margin: 0 }}>
                   <strong>{modalEditar.agenda?.cliente_nome}</strong> —{" "}
@@ -930,6 +955,28 @@ export default function Agendamentos() {
                 </div>
 
                 {/* Observações */}
+                {camposEdicao.status === "realizado" && modalEditar.agenda?.servicos?.length > 0 && (
+                  <div className={styles.retornoPlanejado}>
+                    <label className="d-flex align-items-center gap-2" htmlFor="planejarRetorno">
+                      <input id="planejarRetorno" type="checkbox" checked={retornoPlanejado} onChange={(e) => setRetornoPlanejado(e.target.checked)} />
+                      Definir retorno para este atendimento
+                    </label>
+                    <p>Serviços com prazo configurado já geram um retorno ao concluir. Aqui você pode definir uma data ou incluir um retorno para outro serviço.</p>
+                    {retornoPlanejado && (
+                      <div className="d-flex flex-column gap-2">
+                        {erroRetorno && <p role="alert" style={{ color: "var(--erro-texto)" }}>{erroRetorno}</p>}
+                        <label className={styles.labelFiltro} htmlFor="servicoRetorno">Serviço</label>
+                        <select id="servicoRetorno" className={`form-select ${styles.inputFiltro}`} value={dadosRetorno.servico_id} onChange={(e) => setDadosRetorno((atual) => ({ ...atual, servico_id: e.target.value }))}>
+                          {modalEditar.agenda.servicos.map((servico) => <option key={servico.servico_id} value={servico.servico_id}>{servico.nome}</option>)}
+                        </select>
+                        <label className={styles.labelFiltro} htmlFor="dataRetorno">Data recomendada</label>
+                        <input id="dataRetorno" type="date" className={`form-control ${styles.inputFiltro}`} value={dadosRetorno.data_recomendada} onChange={(e) => setDadosRetorno((atual) => ({ ...atual, data_recomendada: e.target.value }))} />
+                        <label className={styles.labelFiltro} htmlFor="observacoesRetorno">Observações do retorno (opcional)</label>
+                        <textarea id="observacoesRetorno" className={`form-control ${styles.inputFiltro}`} rows={2} value={dadosRetorno.observacoes} onChange={(e) => setDadosRetorno((atual) => ({ ...atual, observacoes: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label
                     className={styles.labelFiltro}

@@ -45,11 +45,20 @@ export async function PUT(request, { params }) {
   const { data: body, error: parseError } = await readJson(request);
   if (parseError) return parseError;
 
-  const { inicio, fim, status, observacoes, servicos } = body ?? {};
+  const { inicio, fim, status, observacoes, servicos, retorno } = body ?? {};
 
   const statusValidos = ["agendado", "realizado", "cancelado", "faltou"];
   if (status && !statusValidos.includes(status)) {
     return jsonError(`status inválido. Use um de: ${statusValidos.join(", ")}.`, 400);
+  }
+  if (retorno) {
+    const data = retorno.data_recomendada;
+    const servicoValido = typeof retorno.servico_id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(retorno.servico_id);
+    const dataConvertida = /^\d{4}-\d{2}-\d{2}$/.test(data ?? "")
+      ? new Date(`${data}T12:00:00Z`) : null;
+    if (!servicoValido || !dataConvertida || Number.isNaN(dataConvertida.getTime()) || dataConvertida.toISOString().slice(0, 10) !== data) {
+      return jsonError("Informe o serviço e uma data válida para o retorno.", 400);
+    }
   }
 
   try {
@@ -100,8 +109,37 @@ export async function PUT(request, { params }) {
          RETURNING *`,
         [inicio ?? null, fim ?? null, status ?? null, observacoes ?? null, id]
       );
+      if (retorno) {
+        if (rows[0].status !== "realizado") {
+          throw Object.assign(new Error("Conclua o atendimento antes de planejar um retorno."), { code: "APP_VALIDATION" });
+        }
+        const { rowCount } = await client.query(
+          `SELECT 1 FROM agendamento_servicos WHERE agendamento_id = $1 AND servico_id = $2`,
+          [id, retorno.servico_id]
+        );
+        if (!rowCount) {
+          throw Object.assign(new Error("O serviço do retorno precisa fazer parte deste atendimento."), { code: "APP_VALIDATION" });
+        }
+        const { rowCount: atualizados } = await client.query(
+          `UPDATE retornos SET data_recomendada = $3,
+             observacoes = COALESCE($4, observacoes)
+           WHERE agendamento_origem_id = $1 AND servico_id = $2`,
+          [id, retorno.servico_id, retorno.data_recomendada, typeof retorno.observacoes === "string" ? retorno.observacoes.trim() || null : null]
+        );
+        if (!atualizados) {
+          await client.query(
+            `INSERT INTO retornos (cliente_id, servico_id, agendamento_origem_id, data_recomendada, observacoes)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [rows[0].cliente_id, retorno.servico_id, id, retorno.data_recomendada, typeof retorno.observacoes === "string" ? retorno.observacoes.trim() || null : null]
+          );
+        }
+      }
       await sincronizarReceitaAtendimento(client, rows[0]);
-      return rows[0];
+      const { rows: retornos } = await client.query(
+        `SELECT id FROM retornos WHERE agendamento_origem_id = $1 ORDER BY data_recomendada`,
+        [id]
+      );
+      return { ...rows[0], retornos };
     });
 
     return jsonOk(agendamentoAtualizado);

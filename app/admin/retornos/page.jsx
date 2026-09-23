@@ -1,138 +1,183 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import styles from "./Retornos.module.css";
-import { formatarDataCurta } from "@/lib/formatters";
+
+const STATUS = {
+  pendente: "Pendente",
+  agendado: "Agendado",
+  realizado: "Realizado",
+  cancelado: "Cancelado",
+};
+
+function dataInput(valor) {
+  return valor ? String(valor).slice(0, 10) : "";
+}
+
+function dataExibida(valor) {
+  return dataInput(valor).split("-").reverse().join("/");
+}
 
 export default function PageRetornos() {
   const [retornos, setRetornos] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [erroLista, setErroLista] = useState("");
   const [filtroData, setFiltroData] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
+  const [origemId, setOrigemId] = useState(null);
+  const [selecionado, setSelecionado] = useState(null);
+  const [form, setForm] = useState({ status: "pendente", data_recomendada: "", observacoes: "" });
+  const [salvando, setSalvando] = useState(false);
+  const [erroForm, setErroForm] = useState("");
 
-  // ── Busca de Retornos ──
   useEffect(() => {
+    let ativo = true;
     async function buscarRetornos() {
-      setCarregando(true);
-      try {
-        // A API só aceita "status" e "cliente_id" como filtro.
-        // O filtro de data é aplicado no navegador (ver abaixo).
-        let url = `/api/retorno?`;
-        if (filtroStatus) url += `status=${filtroStatus}`;
+      const agendamentoId = new URLSearchParams(window.location.search).get("agendamento_id");
+      const params = new URLSearchParams();
+      if (filtroStatus) params.set("status", filtroStatus);
+      if (agendamentoId) params.set("agendamento_id", agendamentoId);
 
-        const res = await fetch(url);
-        const data = await res.json();
-        setRetornos(Array.isArray(data) ? data : []);
-      } catch {
-        setRetornos([]);
+      try {
+        const resposta = await fetch(`/api/retorno?${params.toString()}`);
+        if (!resposta.ok) throw new Error("Não foi possível carregar os retornos.");
+        const dados = await resposta.json();
+        if (ativo) {
+          setRetornos(Array.isArray(dados) ? dados : []);
+          setOrigemId(agendamentoId);
+          setErroLista("");
+        }
+      } catch (error) {
+        if (ativo) setErroLista(error.message);
       } finally {
-        setCarregando(false);
+        if (ativo) setCarregando(false);
       }
     }
     buscarRetornos();
+    return () => { ativo = false; };
   }, [filtroStatus]);
 
-  async function alterarStatus(id, novoStatus) {
+  function abrirRetorno(retorno) {
+    setSelecionado(retorno);
+    setForm({
+      status: retorno.status,
+      data_recomendada: dataInput(retorno.data_recomendada),
+      observacoes: retorno.observacoes || "",
+    });
+    setErroForm("");
+  }
+
+  async function salvarRetorno() {
+    if (!form.data_recomendada) {
+      setErroForm("Informe a data recomendada para o retorno.");
+      return;
+    }
+    setSalvando(true);
+    setErroForm("");
     try {
-      // A API expõe PUT, não PATCH, para atualizar o status.
-      const res = await fetch(`/api/retorno/${id}`, {
+      const resposta = await fetch(`/api/retorno/${selecionado.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: novoStatus })
+        body: JSON.stringify(form),
       });
-      if (!res.ok) {
-        alert("Não foi possível atualizar o status do retorno.");
-        return;
-      }
-      setRetornos(prev => prev.map(r => r.id === id ? { ...r, status: novoStatus } : r));
-    } catch {
-      alert("Erro ao atualizar o status do retorno.");
+      const atualizado = await resposta.json();
+      if (!resposta.ok) throw new Error(atualizado.error || "Não foi possível salvar o retorno.");
+      setRetornos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item));
+      setSelecionado(null);
+    } catch (error) {
+      setErroForm(error.message);
+    } finally {
+      setSalvando(false);
     }
   }
 
-  // ── Função auxiliar para as cores do Badge ──
-  const getBadgeClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "agendado": return styles.statusAgendado;
-      case "realizado": return styles.statusRealizado;
-      case "cancelado": return styles.statusCancelado;
-      case "faltou": return styles.statusFaltou;
-      default: return "";
-    }
-  };
-
-  // Filtro de data aplicado no navegador, já que a API não suporta esse parâmetro.
   const retornosFiltrados = filtroData
-    ? retornos.filter((r) => r.data_recomendada?.slice(0, 10) === filtroData)
+    ? retornos.filter((item) => dataInput(item.data_recomendada) === filtroData)
     : retornos;
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <header className="mb-4">
-        <h1 className={styles.tituloPagina}>Retornos Agendados</h1>
+    <div className={styles.pagina}>
+      <header className={styles.cabecalhoPagina}>
+        <div>
+          <h1 className={styles.tituloPagina}>Retornos</h1>
+          <p>Acompanhe quando entrar em contato e quando a cliente voltar ao studio.</p>
+        </div>
+        {origemId && <Link href="/admin/retornos" className={styles.linkSimples}>Ver todos os retornos</Link>}
       </header>
 
-      {/* ── Filtros ── */}
       <section className={`${styles.cardFiltros} mb-4 row g-3`}>
         <div className="col-12 col-sm-5">
-          <label className={styles.labelFiltro}>Data</label>
-          <input
-            type="date"
-            className={`form-control ${styles.inputFiltro}`}
-            value={filtroData}
-            onChange={(e) => setFiltroData(e.target.value)}
-          />
+          <label className={styles.labelFiltro} htmlFor="filtroDataRetorno">Data recomendada</label>
+          <input id="filtroDataRetorno" type="date" className={`form-control ${styles.inputFiltro}`} value={filtroData} onChange={(evento) => setFiltroData(evento.target.value)} />
         </div>
         <div className="col-12 col-sm-5">
-          <label className={styles.labelFiltro}>Status</label>
-          <select
-            className={`form-control ${styles.inputFiltro}`}
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-          >
+          <label className={styles.labelFiltro} htmlFor="filtroStatusRetorno">Status</label>
+          <select id="filtroStatusRetorno" className={`form-select ${styles.inputFiltro}`} value={filtroStatus} onChange={(evento) => setFiltroStatus(evento.target.value)}>
             <option value="">Todos</option>
-            <option value="agendado">Agendado</option>
-            <option value="realizado">Realizado</option>
-            <option value="faltou">Faltou</option>
+            {Object.entries(STATUS).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
           </select>
         </div>
         <div className="col-12 col-sm-2 d-flex align-items-end">
-          <button className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); }}>
-            Limpar
-          </button>
+          <button type="button" className={`${styles.btnLimpar} w-100`} onClick={() => { setFiltroData(""); setFiltroStatus(""); }}>Limpar</button>
         </div>
       </section>
 
-      {/* ── Lista de Retornos ── */}
-      {carregando ? (
-        <div className={styles.loadingState}>Carregando retornos...</div>
-      ) : retornosFiltrados.length === 0 ? (
+      {erroLista && <p className={styles.erro} role="alert">{erroLista}</p>}
+      {carregando ? <div className={styles.loadingState}>Carregando retornos...</div> : retornosFiltrados.length === 0 ? (
         <div className={styles.estadoVazio}>
-          <p>Nenhum retorno encontrado com os filtros atuais.</p>
+          <p>{origemId ? "Nenhum retorno encontrado para este atendimento. Você pode definir um ao editar o agendamento realizado." : "Nenhum retorno encontrado com os filtros atuais."}</p>
+          {origemId && <Link href={`/admin/agendamentos?agendamento_id=${origemId}`}>Abrir atendimento</Link>}
         </div>
       ) : (
-        <div className="d-flex flex-column gap-2">
+        <div className={styles.listaRetornos}>
           {retornosFiltrados.map((retorno) => (
-            <div key={retorno.id} className={styles.cardMobile}>
-              <div className={styles.cardCentro}>
-                <p className={styles.cardCliente}>{retorno.cliente_nome}</p>
-                <p className={styles.cardServico}>{retorno.servico_nome}</p>
-                <p className={styles.cardData}>{formatarDataCurta(retorno.data_recomendada)}</p>
-              </div>
-              <div className={styles.cardDireita}>
-                <span className={`${styles.badgeStatus} ${getBadgeClass(retorno.status)}`}>
-                  {retorno.status || "Agendado"}
+            <article key={retorno.id} className={styles.cardMobile}>
+              <button type="button" className={styles.abrirRetorno} onClick={() => abrirRetorno(retorno)} aria-label={`Ver retorno de ${retorno.cliente_nome} em ${dataExibida(retorno.data_recomendada)}`}>
+                <span className={styles.cardCentro}>
+                  <strong className={styles.cardCliente}>{retorno.cliente_nome}</strong>
+                  <span className={styles.cardServico}>{retorno.servico_nome || "Serviço não informado"}</span>
+                  <span className={styles.cardData}>{dataExibida(retorno.data_recomendada)}</span>
                 </span>
+                <span className={`${styles.badgeStatus} ${styles[`status${retorno.status?.[0]?.toUpperCase()}${retorno.status?.slice(1)}`] || ""}`}>{STATUS[retorno.status] || retorno.status}</span>
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
 
-                {retorno.status === "agendado" && (
-                  <div className={styles.cardAcoes}>
-                    <button className={styles.btnIcone} title="Marcar como Realizado" onClick={() => alterarStatus(retorno.id, "realizado")}>✓</button>
-                    <button className={styles.btnIconePerigo} title="Marcar Falta" onClick={() => alterarStatus(retorno.id, "faltou")}>✕</button>
-                  </div>
-                )}
+      {selecionado && (
+        <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby="tituloRetorno" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-content ${styles.modalContent}`}>
+              <div className="modal-header border-0 pb-0">
+                <h2 id="tituloRetorno" className={styles.modalTitulo}>Retorno de {selecionado.cliente_nome}</h2>
+                <button type="button" className="btn-close" aria-label="Fechar retorno" onClick={() => setSelecionado(null)} disabled={salvando} />
+              </div>
+              <div className="modal-body d-flex flex-column gap-3">
+                <p className={styles.modalResumo}>Serviço: <strong>{selecionado.servico_nome || "Não informado"}</strong></p>
+                <div className={styles.linksRetorno}>
+                  <Link href={`/admin/clientes?cliente_id=${selecionado.cliente_id}`}>Ver cliente</Link>
+                  {selecionado.agendamento_origem_id && <Link href={`/admin/agendamentos?agendamento_id=${selecionado.agendamento_origem_id}`}>Ver atendimento original</Link>}
+                  <Link href="/admin/agendamentos">Abrir agenda</Link>
+                </div>
+                <p className={styles.orientacao}>Ao marcar uma visita na agenda, atualize este acompanhamento para “Agendado”.</p>
+                <label className={styles.labelFiltro} htmlFor="dataRecomendada">Data recomendada</label>
+                <input id="dataRecomendada" type="date" className={`form-control ${styles.inputFiltro}`} value={form.data_recomendada} onChange={(evento) => setForm((atual) => ({ ...atual, data_recomendada: evento.target.value }))} />
+                <label className={styles.labelFiltro} htmlFor="statusRetorno">Status do acompanhamento</label>
+                <select id="statusRetorno" className={`form-select ${styles.inputFiltro}`} value={form.status} onChange={(evento) => setForm((atual) => ({ ...atual, status: evento.target.value }))}>
+                  {Object.entries(STATUS).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
+                </select>
+                <label className={styles.labelFiltro} htmlFor="observacoesRetorno">Observações</label>
+                <textarea id="observacoesRetorno" rows={3} className={`form-control ${styles.inputFiltro}`} value={form.observacoes} onChange={(evento) => setForm((atual) => ({ ...atual, observacoes: evento.target.value }))} />
+                {erroForm && <p className={styles.erro} role="alert">{erroForm}</p>}
+              </div>
+              <div className="modal-footer border-0">
+                <button type="button" className={styles.btnLimpar} onClick={() => setSelecionado(null)} disabled={salvando}>Cancelar</button>
+                <button type="button" className={styles.btnSalvar} onClick={salvarRetorno} disabled={salvando}>{salvando ? "Salvando..." : "Salvar retorno"}</button>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>

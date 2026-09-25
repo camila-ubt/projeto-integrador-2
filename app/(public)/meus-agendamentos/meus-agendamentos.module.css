@@ -1,0 +1,254 @@
+.pagina {
+  min-height: calc(100vh - 90px);
+  padding: 88px 20px 80px;
+  background: linear-gradient(180deg, #f9f1eb 0%, #fffaf7 100%);
+  color: #493b37;
+}
+
+.container {
+  width: min(100%, 860px);
+  margin: 0 auto;
+}
+
+.voltar {
+  display: inline-block;
+  margin-bottom: 36px;
+  color: #8c6a5a;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.voltar:hover,
+.linkContato:hover {
+  text-decoration: underline;
+}
+
+.cabecalho {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.sobretitulo {
+  color: #b76e79;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cabecalho h1 {
+  margin: 12px 0;
+  color: #6b4750;
+  font-family: var(--fonte-titulo, Georgia, serif);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 600;
+}
+
+.cabecalho p {
+  margin: 0;
+  color: #6f615d;
+  line-height: 1.6;
+}
+
+.painel {
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid #ead9d4;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(107, 71, 80, 0.08);
+}
+
+.painelCabecalho h2,
+.ajuda h2 {
+  margin: 0 0 8px;
+  color: #6b4750;
+  font-family: var(--fonte-titulo, Georgia, serif);
+  font-size: 1.8rem;
+}
+
+.painelCabecalho p,
+.ajuda p {
+  margin: 0;
+  color: #6f615d;
+  line-height: 1.6;
+}
+
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campo label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.campo input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid #d8c7c2;
+  border-radius: 10px;
+  background: #f8f5f3;
+  color: #6f615d;
+}
+
+.campo input:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.botao {
+  grid-column: 1 / -1;
+  min-height: 48px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: #b76e79;
+  color: #fff;
+  font-weight: 600;
+}
+
+.botao:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.aviso {
+  margin: 24px 0 0;
+  padding: 16px 18px;
+  border-left: 4px solid #b76e79;
+  border-radius: 8px;
+  background: #f9f1eb;
+  color: #5c4a45;
+  line-height: 1.6;
+}
+
+.ajuda {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.linkContato {
+  display: inline-block;
+  margin-top: 14px;
+  color: #9d5867;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: 72px 16px 60px;
+  }
+
+  .voltar {
+    margin-bottom: 28px;
+  }
+
+  .formulario {
+    grid-template-columns: 1fr;
+  }
+}
+.previa {
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px dashed #cba8ae;
+  border-radius: 16px;
+  background: #fffaf7;
+}
+
+.previa h2 {
+  margin: 0 0 6px;
+  color: #6b4750;
+  font-family: var(--fonte-titulo, Georgia, serif);
+  font-size: 1.7rem;
+}
+
+.previa > p {
+  margin: 0 0 18px;
+  color: #6f615d;
+}
+
+.opcoesPrevia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.opcoesPrevia button {
+  padding: 7px 12px;
+  border: 1px solid #cba8ae;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b4750;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+
+.opcoesPrevia button[aria-pressed="true"] {
+  background: #b76e79;
+  color: #fff;
+}
+
+.lista {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  padding: 20px;
+  border: 1px solid #ead9d4;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cardTopo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.card h3 {
+  margin: 0;
+  color: #6b4750;
+  font-size: 1.15rem;
+}
+
+.card p {
+  margin: 5px 0;
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #edf4ed;
+  color: #35633b;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.resultado,
+.resultadoErro {
+  padding: 20px;
+  border-radius: 12px;
+  background: #fff;
+  color: #5c4a45;
+}
+
+.resultadoErro {
+  border-left: 4px solid #b76e79;
+  background: #fff3f3;
+}

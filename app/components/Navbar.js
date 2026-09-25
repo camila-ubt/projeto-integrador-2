@@ -86,8 +86,8 @@ export default function Navbar() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link href="/login" className={styles.navLinkAdmin}>
-                  Admin
+                <Link href="/meus-agendamentos" className={styles.navLink}>
+                  Meus Agendamentos
                 </Link>
               </li>
               <li className="nav-item">
@@ -163,13 +163,13 @@ export default function Navbar() {
               Contato
             </Link>
           </li>
-          <li className={styles.drawerItemAdmin}>
+          <li className={styles.drawerItem}>
             <Link
-              href="/login"
-              className={styles.drawerLinkAdmin}
+              href="/meus-agendamentos"
+              className={styles.drawerLink}
               onClick={fecharMenu}
             >
-              Admin
+              Meus Agendamentos
             </Link>
           </li>
           <li className="mt-4">

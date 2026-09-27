@@ -7,10 +7,11 @@ import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoAgendamentos,
   IcoEditar,
-  
+  IcoCalendario,
   IcoLixeira
 } from "@/app/components/icons";
 import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
+import { gerarLinkGoogleCalendar } from "@/lib/google-calendar";
 import styles from "./Agendamentos.module.css";
 import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
@@ -361,6 +362,13 @@ export default function Agendamentos() {
     });
   };
 
+  const abrirDetalhe = (agenda) => {
+    setFeedback(null);
+    setErroStatusRapido("");
+    setSucessoStatusRapido("");
+    setModalDetalhe({ aberto: true, agenda });
+  };
+
   const fecharDetalhe = () => {
     setModalDetalhe({ aberto: false, agenda: null });
     const params = new URLSearchParams(window.location.search);
@@ -484,11 +492,11 @@ export default function Agendamentos() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────
+  // ─── Render ───
 
   return (
     <div className="container-fluid py-4 px-3 px-md-4">
-      {/* ── Cabeçalho ──────────────────────────────────────────────── */}
+      {/* ── Cabeçalho ── */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className={styles.tituloPagina}>Agendamentos</h1>
 
@@ -513,7 +521,7 @@ export default function Agendamentos() {
           Novo Agendamento
         </button>
       </div>
-      {/* ── Filtros ─────── */}
+      {/* ── Filtros ── */}
       <div className={`${styles.cardFiltros} mb-4`}>
         <div className="row g-2 align-items-end">
           <div className="col-12 col-md-5">
@@ -636,7 +644,7 @@ export default function Agendamentos() {
         </div>
       </div>
 
-      {/* ── Erro de carregamento ─────── */}
+      {/* ── Erro de carregamento ── */}
       {erro && (
         <div
           className="rounded-3 py-2 px-3 mb-4 small"
@@ -672,7 +680,7 @@ export default function Agendamentos() {
           {feedback.agendamentoId && <Link className="ms-2" href={`/admin/retornos?agendamento_id=${feedback.agendamentoId}`}>Ver retornos</Link>}
         </div>
       )}
-      {/* ── Loading ───────── */}
+      {/* ── Loading ── */}
       {loading ? (
         <div className={styles.loadingState}>
           <div
@@ -682,7 +690,7 @@ export default function Agendamentos() {
           Carregando agendamentos...
         </div>
       ) : agendamentosFiltrados.length === 0 ? (
-        /* ── Estado vazio ───────── */
+        /* ── Estado vazio ─── */
         <div className={styles.estadoVazio}>
           <IcoAgendamentos size={40} />
           <p className="mb-1 fw-medium">Nenhum agendamento encontrado</p>
@@ -696,14 +704,27 @@ export default function Agendamentos() {
         <>
           <div className="d-md-none">
             {itensAtuais.map((agenda) => (
-              <div key={agenda.id} className={styles.cardMobile}>
+              <div
+                key={agenda.id}
+                className={styles.cardMobile}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: "pointer" }}
+                onClick={() => abrirDetalhe(agenda)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    abrirDetalhe(agenda);
+                  }
+                }}
+              >
                 <span className={styles.cardHoraDestaque}>
                   {formatarHora(agenda.inicio)}
                 </span>
 
                 <div className={styles.cardCentro}>
                   <p className={styles.cardCliente}>
-                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                    <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`} onClick={(e) => e.stopPropagation()}>
                       {agenda.cliente_nome}
                     </Link>
                   </p>
@@ -722,14 +743,14 @@ export default function Agendamentos() {
                       className={styles.btnIcone}
                       title="Editar agendamento"
                       aria-label="Editar agendamento"
-                      onClick={() => handleEditar(agenda)}
+                      onClick={(e) => { e.stopPropagation(); handleEditar(agenda); }}
                     >
                       <IcoEditar />
                     </button>
                     {agenda.status !== "cancelado" && (
                       <button
                         className={styles.btnIconePerigo}
-                        onClick={() => handleDeletar(agenda)}
+                        onClick={(e) => { e.stopPropagation(); handleDeletar(agenda); }}
                         title="Deletar agendamento"
                         aria-label="Deletar agendamento"
                       >
@@ -756,7 +777,11 @@ export default function Agendamentos() {
                 </thead>
                 <tbody>
                   {itensAtuais.map((agenda) => (
-                    <tr key={agenda.id}>
+                    <tr
+                      key={agenda.id}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => abrirDetalhe(agenda)}
+                    >
                       <td className="px-4">
                         <strong className={styles.tdData}>
                           {formatarDataCurta(agenda.inicio)}
@@ -767,7 +792,7 @@ export default function Agendamentos() {
                         </span>
                       </td>
                       <td style={{ fontFamily: "var(--fonte-corpo)" }}>
-                        <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`}>
+                        <Link className={styles.linkCliente} href={`/admin/clientes?cliente_id=${agenda.cliente_id}`} aria-label={`Ver dados de ${agenda.cliente_nome}`} onClick={(e) => e.stopPropagation()}>
                           {agenda.cliente_nome}
                         </Link>
                       </td>
@@ -780,7 +805,7 @@ export default function Agendamentos() {
                         </span>
                       </td>
                       {/* Ações: botões ícone na tabela também */}
-                      <td className="text-end px-4">
+                      <td className="text-end px-4" onClick={(e) => e.stopPropagation()}>
                         <div className="d-flex justify-content-end gap-2">
                           <button
                             className={styles.btnIcone}
@@ -970,6 +995,21 @@ export default function Agendamentos() {
                 </div>
               </div>
               <div className="modal-footer border-0 pt-0 gap-2">
+                <a
+                  className={styles.btnLimpar}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none" }}
+                  href={gerarLinkGoogleCalendar({
+                    titulo: `${exibirServicos(modalDetalhe.agenda)} — ${modalDetalhe.agenda.cliente_nome}`,
+                    inicio: new Date(modalDetalhe.agenda.inicio),
+                    fim: new Date(modalDetalhe.agenda.fim),
+                    detalhes: modalDetalhe.agenda.observacoes || "",
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <IcoCalendario size={16} />
+                  Google Calendar
+                </a>
                 <button type="button" className={styles.btnLimpar} onClick={fecharDetalhe}>Fechar</button>
                 <button type="button" className="btn-primario" onClick={editarDoDetalhe}>Editar agendamento</button>
               </div>
@@ -977,7 +1017,7 @@ export default function Agendamentos() {
           </div>
         </div>
       )}
-      {/* ── Modal de confirmação de cancelamento ─────────────────── */}
+      {/* ── Modal de confirmação de cancelamento ── */}
       {modalDeletar.aberto && (
         <div
           className="modal fade show d-block"
@@ -1037,7 +1077,7 @@ export default function Agendamentos() {
           </div>
         </div>
       )}
-      {/* ── Modal de edição ─────────────────── */}
+      {/* ── Modal de edição ─── */}
       {modalEditar.aberto && (
         <div
           className="modal fade show d-block"

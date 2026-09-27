@@ -7,10 +7,11 @@ import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoAgendamentos,
   IcoEditar,
-  
+  IcoCalendario,
   IcoLixeira
 } from "@/app/components/icons";
 import { HORARIOS_ATENDIMENTO } from "@/lib/constantes";
+import { gerarLinkGoogleCalendar } from "@/lib/google-calendar";
 import styles from "./Agendamentos.module.css";
 import ModalNovoAgendamento from "./ModalNovoAgendamento";
 
@@ -970,6 +971,21 @@ export default function Agendamentos() {
                 </div>
               </div>
               <div className="modal-footer border-0 pt-0 gap-2">
+                <a
+                  className={styles.btnLimpar}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none" }}
+                  href={gerarLinkGoogleCalendar({
+                    titulo: `${exibirServicos(modalDetalhe.agenda)} — ${modalDetalhe.agenda.cliente_nome}`,
+                    inicio: new Date(modalDetalhe.agenda.inicio),
+                    fim: new Date(modalDetalhe.agenda.fim),
+                    detalhes: modalDetalhe.agenda.observacoes || "",
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <IcoCalendario size={16} />
+                  Google Calendar
+                </a>
                 <button type="button" className={styles.btnLimpar} onClick={fecharDetalhe}>Fechar</button>
                 <button type="button" className="btn-primario" onClick={editarDoDetalhe}>Editar agendamento</button>
               </div>

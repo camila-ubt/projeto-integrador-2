@@ -1,4 +1,5 @@
 import Navbar from "../components/Navbar";
+import Acessibilidade from "../components/Acessibilidade";
 
 // Título padrão para todas as páginas públicas
 export const metadata = {
@@ -12,6 +13,7 @@ export default function PublicLayout({ children }) {
     <>
       {/* Navbar aparece em todas as páginas públicas */}
       <Navbar />
+      <Acessibilidade />
       {/* Conteúdo da página (rota) atual */}
       {children}
     </>

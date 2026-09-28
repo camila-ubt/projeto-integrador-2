@@ -96,3 +96,58 @@ html[data-acessibilidade-contraste="true"] {
 html[data-acessibilidade-contraste="true"] a {
   text-decoration: underline;
 }
+/* Ajuste do painel de acessibilidade para celular e tablet */
+.acessibilidade-icone {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .acessibilidade {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    flex-shrink: 0;
+    margin: 0 0.75rem 0 auto;
+  }
+
+  .acessibilidade summary {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    background: var(--fundo);
+    color: var(--texto-principal);
+    list-style: none;
+  }
+
+  .acessibilidade summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .acessibilidade-icone {
+    display: block;
+  }
+
+  .acessibilidade-texto {
+    display: none;
+  }
+
+  .acessibilidade-painel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0.75rem;
+    bottom: auto;
+    z-index: 160;
+    box-sizing: border-box;
+    width: min(20rem, calc(100% - 1.5rem));
+    max-height: calc(100dvh - 8rem);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    margin: 0;
+  }
+}

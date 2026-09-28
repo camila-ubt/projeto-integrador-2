@@ -33,7 +33,25 @@ export default function Acessibilidade() {
 
   return (
     <details className="acessibilidade" onKeyDown={fecharComEscape}>
-      <summary>Acessibilidade</summary>
+     <summary aria-label="Acessibilidade" title="Acessibilidade">
+  <svg
+    className="acessibilidade-icone"
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="12" cy="4" r="2" />
+    <path d="M4 8l8 2 8-2M12 10v5M12 15l-4 6M12 15l4 6" />
+  </svg>
+  <span className="acessibilidade-texto">Acessibilidade</span>
+</summary>
 
       <div className="acessibilidade-painel">
         <strong>Opções de acessibilidade</strong>

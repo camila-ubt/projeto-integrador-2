@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./Navbar.module.css";
+import Acessibilidade from "./Acessibilidade";
 
 /*Navbar principal da área pública. */
 export default function Navbar() {
@@ -49,9 +50,28 @@ export default function Navbar() {
   // ── Renderização ────────────────────────────────
   return (
     <>
+    <a
+  href="#conteudo-principal"
+  className={styles.pularConteudo}
+  onClick={(evento) => {
+    const conteudo = document.getElementById("conteudo-principal");
+
+    if (conteudo) {
+      evento.preventDefault();
+      conteudo.focus({ preventScroll: true });
+      conteudo.scrollIntoView({
+        behavior: "instant",
+        block: "start",
+      });
+    }
+  }}
+    >
+      Pular para o conteúdo
+    </a>
+
       <header className={`${styles.header} ${scrolled ? styles.scrolled : ""}`}>
         <nav className="navbar" aria-label="Navegação principal">
-          <div className="container">
+          <div className="container position-relative">
             {/* Logo */}
             <Link
               href="/"
@@ -97,6 +117,8 @@ export default function Navbar() {
               </li>
             </ul>
 
+          <Acessibilidade />
+
             {/* Botão hambúrguer — visível só no mobile (d-lg-none) */}
             <button
               className={`${styles.toggler} d-lg-none`}
@@ -134,6 +156,7 @@ export default function Navbar() {
         id="nav-drawer"
         className={`${styles.drawer} ${menuAberto ? styles.drawerAberto : ""}`}
         aria-hidden={!menuAberto}
+        inert={!menuAberto}
       >
         <ul className="list-unstyled d-flex flex-column mb-0">
           <li className={styles.drawerItem}>

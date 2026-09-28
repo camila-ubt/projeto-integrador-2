@@ -171,3 +171,24 @@
 .drawerBtnAgendar:hover {
   background-color: var(--primaria-escura);
 }
+.pularConteudo {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1200;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.75rem 1rem;
+  border: 2px solid #ffffff;
+  border-radius: 6px;
+  background: #2d1a14;
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: underline;
+  transform: translateY(calc(-100% - 2rem));
+}
+
+.pularConteudo:focus {
+  transform: translateY(0);
+  outline: 3px solid #0066cc;
+  outline-offset: 3px;
+}

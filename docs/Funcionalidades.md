@@ -12,7 +12,7 @@ Para serviços que exigem avaliação prévia, o sistema oferece a continuidade 
 
 | Área | Recursos disponíveis |
 | --- | --- |
-| Dashboard | Agendamentos do dia, retornos pendentes e faturamento diário calculado pelas receitas registradas no caixa. |
+| Dashboard | Indicadores por período, filtros, comparação com o período anterior e análises de atendimentos, serviços, clientes, retornos e caixa, além de aniversariantes e próximos atendimentos. Consulte [Dashboard e Análise de Dados](Dashboard-e-Analise-de-Dados). |
 | Agendamentos | Cadastro, consulta, edição de data, horário e status, exclusão e filtros por cliente, status e período. |
 | Clientes | Cadastro, pesquisa por nome ou telefone, edição e exclusão quando os vínculos permitem. |
 | Histórico | Consulta dos agendamentos, com cliente, serviços, valores, status, filtros e paginação. |

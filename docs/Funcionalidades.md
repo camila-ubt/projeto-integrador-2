@@ -28,4 +28,6 @@ A tela de Histórico apresenta os dados dos agendamentos. Os registros detalhado
 
 O painel utiliza login com e-mail e senha, sessão autenticada e opção de sair. A interface adapta menus e a apresentação dos registros para computador e celular, incluindo tabelas e cartões conforme a tela.
 
+Na área pública, o controle Acessibilidade oferece alto contraste, ajuste do tamanho base do texto e restauração do padrão. Os recursos de teclado e as marcações de apoio a leitores de tela estão descritos em [Acessibilidade](Acessibilidade).
+
 Os pontos que ainda precisam de ajustes na Beta estão no [Roadmap](Roadmap).

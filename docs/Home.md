@@ -11,6 +11,7 @@ A área pública apresenta o estúdio, os serviços e o agendamento online, com 
 - [Arquitetura do Sistema](Arquitetura-do-Sistema): organização da aplicação e tecnologias.
 - [Banco de Dados](Banco-de-Dados): tabelas, relacionamentos e regras do schema.
 - [Funcionalidades](Funcionalidades): recursos disponíveis nas telas.
+- [Dashboard e Análise de Dados](Dashboard-e-Analise-de-Dados): indicadores, filtros e análise dos atendimentos, clientes e caixa.
 - [API](API): rotas públicas e protegidas.
 - [Desenvolvimento e Git](Desenvolvimento-e-Git): colaboração, revisão e verificações.
 - [Versionamento e Releases](Versionamento-e-Releases): identificação e publicação das versões Beta.

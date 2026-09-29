@@ -10,7 +10,6 @@ import {
   formatarTelefone,
 } from "@/lib/formatters";
 import { aniversarioValido, formatarDiaMesDigitado } from "@/lib/aniversario";
-import DatePickerField from "@/app/components/DatePickerField";
 import {
   IcoCalendario,
   IcoCheck,
@@ -672,11 +671,12 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
             letterSpacing: "0.04em",
           }}
         >
-          <IcoCalendario size={13} /> Data
+        <IcoCalendario size={13} /> Data (obrigatória)
         </label>
-        <DatePickerField
+        <input
           id="data-agendamento"
           type="date"
+          required
           value={data}
           min={dataMinimaAgendamento()}
           onChange={(e) => setData(e.target.value)}
@@ -689,8 +689,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
             fontFamily: "var(--fonte-corpo)",
             fontSize: "14px",
             color: "var(--texto-principal)",
-            outline: "none",
-          }}
+         }}
         />
       </div>
 

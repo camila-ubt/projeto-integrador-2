@@ -1,8 +1,8 @@
 .pagina {
   min-height: calc(100vh - 90px);
   padding: 88px 20px 80px;
-  background: linear-gradient(180deg, #f9f1eb 0%, #fffaf7 100%);
-  color: #493b37;
+  background: linear-gradient(180deg, var(--primaria-clara) 0%, var(--superficie) 100%);
+  color: var(--texto-principal);
 }
 
 .container {
@@ -13,7 +13,7 @@
 .voltar {
   display: inline-block;
   margin-bottom: 36px;
-  color: #7a584a;
+  color: var(--primaria-escura);
   font-size: 0.95rem;
   text-decoration: none;
 }
@@ -36,7 +36,7 @@
 }
 
 .sobretitulo {
-  color: #9d5867;
+  color: var(--destaque);
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -45,7 +45,7 @@
 
 .cabecalho h1 {
   margin: 12px 0;
-  color: #6b4750;
+  color: var(--texto-principal);
   font-family: var(--fonte-titulo, Georgia, serif);
   font-size: clamp(2.4rem, 6vw, 3.6rem);
   font-weight: 600;
@@ -53,22 +53,22 @@
 
 .cabecalho p {
   margin: 0;
-  color: #6f615d;
+  color: var(--texto-claro);
   line-height: 1.6;
 }
 
 .painel {
   padding: clamp(24px, 5vw, 44px);
-  border: 1px solid #ead9d4;
+  border: 1px solid var(--borda-escura);
   border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 12px 36px rgba(107, 71, 80, 0.08);
+  background: var(--superficie);
+  box-shadow: 0 12px 36px rgba(45, 26, 20, 0.08);
 }
 
 .painelCabecalho h2,
 .ajuda h2 {
   margin: 0 0 8px;
-  color: #6b4750;
+  color: var(--texto-principal);
   font-family: var(--fonte-titulo, Georgia, serif);
   font-size: 1.8rem;
 }
@@ -76,7 +76,7 @@
 .painelCabecalho p,
 .ajuda p {
   margin: 0;
-  color: #6f615d;
+  color: var(--texto-claro);
   line-height: 1.6;
 }
 
@@ -94,6 +94,7 @@
 }
 
 .campo label {
+  color: var(--texto-principal);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -102,10 +103,15 @@
   width: 100%;
   min-height: 46px;
   padding: 10px 14px;
-  border: 1px solid #b9aaa5;
+  border: 1px solid var(--borda-escura);
   border-radius: 10px;
-  background: #f8f5f3;
-  color: #5c4a45;
+  background: var(--superficie);
+  color: var(--texto-principal);
+}
+
+.campo input::placeholder {
+  color: var(--texto-secundario);
+  opacity: 1;
 }
 
 .campo input:disabled {
@@ -117,10 +123,10 @@
   grid-column: 1 / -1;
   min-height: 48px;
   margin-top: 4px;
-  border: 0;
+  border: 2px solid var(--primaria);
   border-radius: 10px;
-  background: #9d5867;
-  color: #fff;
+  background: var(--primaria);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -132,10 +138,10 @@
 .aviso {
   margin: 24px 0 0;
   padding: 16px 18px;
-  border-left: 4px solid #9d5867;
+  border-left: 4px solid var(--destaque);
   border-radius: 8px;
-  background: #f9f1eb;
-  color: #5c4a45;
+  background: var(--primaria-clara);
+  color: var(--texto-principal);
   line-height: 1.6;
 }
 
@@ -147,7 +153,7 @@
 .linkContato {
   display: inline-block;
   margin-top: 14px;
-  color: #9d5867;
+  color: var(--primaria-escura);
   font-weight: 600;
   text-decoration: none;
 }
@@ -169,21 +175,21 @@
 .previa {
   margin-top: 32px;
   padding: 24px;
-  border: 1px dashed #cba8ae;
+  border: 1px dashed var(--borda-escura);
   border-radius: 16px;
-  background: #fffaf7;
+  background: var(--superficie);
 }
 
 .previa h2 {
   margin: 0 0 6px;
-  color: #6b4750;
+  color: var(--texto-principal);
   font-family: var(--fonte-titulo, Georgia, serif);
   font-size: 1.7rem;
 }
 
 .previa > p {
   margin: 0 0 18px;
-  color: #6f615d;
+  color: var(--texto-claro);
 }
 
 .opcoesPrevia {
@@ -195,17 +201,17 @@
 
 .opcoesPrevia button {
   padding: 7px 12px;
-  border: 1px solid #cba8ae;
+  border: 1px solid var(--borda-escura);
   border-radius: 8px;
-  background: #fff;
-  color: #6b4750;
+  background: var(--superficie);
+  color: var(--texto-principal);
   cursor: pointer;
   text-transform: capitalize;
 }
 
 .opcoesPrevia button[aria-pressed="true"] {
-  background: #9d5867;
-  color: #fff;
+  background: var(--primaria);
+  color: #ffffff;
 }
 
 .lista {
@@ -215,9 +221,9 @@
 
 .card {
   padding: 20px;
-  border: 1px solid #ead9d4;
+  border: 1px solid var(--borda-escura);
   border-radius: 12px;
-  background: #fff;
+  background: var(--superficie);
 }
 
 .cardTopo {
@@ -231,19 +237,20 @@
 
 .card h3 {
   margin: 0;
-  color: #6b4750;
+  color: var(--texto-principal);
   font-size: 1.15rem;
 }
 
 .card p {
   margin: 5px 0;
+  color: var(--texto-principal);
 }
 
 .status {
   padding: 5px 10px;
   border-radius: 999px;
-  background: #edf4ed;
-  color: #35633b;
+  background: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -252,11 +259,24 @@
 .resultadoErro {
   padding: 20px;
   border-radius: 12px;
-  background: #fff;
-  color: #5c4a45;
+  background: var(--superficie);
+  color: var(--texto-principal);
 }
 
 .resultadoErro {
-  border-left: 4px solid #9d5867;
-  background: #fff3f3;
+  border-left: 4px solid var(--destaque);
+  background: var(--erro-fundo);
+  color: var(--erro-texto);
+}
+
+:global(html[data-acessibilidade-contraste="true"]) .pagina {
+  box-shadow: inset 0 0 0 2px var(--borda-escura);
+}
+
+:global(html[data-acessibilidade-contraste="true"]) .botao:disabled {
+  opacity: 1;
+}
+
+:global(html[data-acessibilidade-contraste="true"]) .painel {
+  box-shadow: none;
 }

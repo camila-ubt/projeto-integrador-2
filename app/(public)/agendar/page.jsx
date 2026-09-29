@@ -1379,11 +1379,28 @@ export default function PaginaAgendamento() {
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState("");
   const [concluido, setConcluido] = useState(false);
+  const conteudoAgendamentoRef = useRef(null);
+  const etapaAnteriorRef = useRef({ etapa, concluido });
 
-  // Scroll ao topo em cada troca de etapa
+    // Direciona o foco ao título quando a etapa muda.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [etapa]);
+    const anterior = etapaAnteriorRef.current;
+    const mudou =
+      anterior.etapa !== etapa || anterior.concluido !== concluido;
+
+    etapaAnteriorRef.current = { etapa, concluido };
+
+    if (!mudou) return;
+
+    const titulo = conteudoAgendamentoRef.current?.querySelector("h2");
+
+    if (titulo) {
+      titulo.tabIndex = -1;
+      titulo.focus({ preventScroll: true });
+    }
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [etapa, concluido]);
 
   async function confirmar() {
     setEnviando(true);
@@ -1439,6 +1456,7 @@ export default function PaginaAgendamento() {
       }}
     >
       <main
+        ref={conteudoAgendamentoRef}
         style={{
           maxWidth: "480px",
           margin: "0 auto",

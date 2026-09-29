@@ -1,0 +1,5 @@
+.focoVisivel:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px #ffffff;
+}

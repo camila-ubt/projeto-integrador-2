@@ -24,13 +24,17 @@ export default function MeusAgendamentosPage() {
         <section className={styles.painel} aria-labelledby="consulta-titulo">
           <div className={styles.painelCabecalho}>
             <h2 id="consulta-titulo">Consultar horários</h2>
-            <p>
+            <p id="consulta-descricao">
               A consulta ficará disponível quando a verificação de acesso
               estiver pronta.
             </p>
           </div>
 
-          <form className={styles.formulario}>
+          <form
+            className={styles.formulario}
+            aria-label="Consulta de agendamentos"
+            aria-describedby="consulta-descricao consulta-aviso"
+          >
             <div className={styles.campo}>
               <label htmlFor="nome-cliente">Nome usado no agendamento</label>
               <input
@@ -40,6 +44,7 @@ export default function MeusAgendamentosPage() {
                 autoComplete="name"
                 placeholder="Seu nome"
                 disabled
+                aria-disabled="true"
               />
             </div>
 
@@ -54,25 +59,31 @@ export default function MeusAgendamentosPage() {
                 autoComplete="tel"
                 placeholder="(00) 00000-0000"
                 disabled
+                aria-disabled="true"
               />
             </div>
 
-            <button type="button" className={styles.botao} disabled>
+            <button
+              type="button"
+              className={styles.botao}
+              disabled
+              aria-disabled="true"
+            >
               Consultar meus agendamentos
             </button>
           </form>
 
-          <p className={styles.aviso} role="status">
+          <p id="consulta-aviso" className={styles.aviso} role="status">
             A consulta ainda não está disponível. Nome e telefone, sozinhos,
             não confirmam a identidade da cliente. Estamos preparando uma
             forma segura de mostrar seus horários.
           </p>
         </section>
 
-    {process.env.NODE_ENV === "development" && <PreviaResultados />}
+        {process.env.NODE_ENV === "development" && <PreviaResultados />}
 
         <section className={styles.ajuda} aria-labelledby="ajuda-titulo">
-                <h2 id="ajuda-titulo">Precisa confirmar um horário agora?</h2>
+          <h2 id="ajuda-titulo">Precisa confirmar um horário agora?</h2>
           <p>Entre em contato diretamente com o estúdio.</p>
           <Link href="/#contato" className={styles.linkContato}>
             Ver opções de contato

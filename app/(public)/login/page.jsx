@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import styles from "./login.module.css";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function AdminLogin() {
   // Renderização do componente
   return (
     <div
-      className="d-flex align-items-center justify-content-center vh-100"
+      className="d-flex align-items-center justify-content-center min-vh-100 py-4"
       style={{ backgroundColor: "var(--fundo)" }}
     >
       <div className="col-11 col-sm-8 col-md-5 col-lg-4 col-xl-3">
@@ -80,7 +81,7 @@ export default function AdminLogin() {
 
           {/* Formulário */}
 
-          <form onSubmit={aoEnviar} noValidate>
+          <form onSubmit={aoEnviar}>
             {/* Campo Email */}
             <div className="mb-3">
               <label
@@ -92,16 +93,18 @@ export default function AdminLogin() {
                   letterSpacing: "0.04em",
                 }}
               >
-                Email
+                Email (Obrigatório)
               </label>
               <input
                 type="email"
                 id="email"
+                required
+                aria-describedby={erro ? "erro-login" : undefined}
                 className="form-control"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(evento) => setEmail(evento.target.value)}
-                autoComplete="email"
+                autoComplete="username"
                 style={{
                   backgroundColor: "var(--fundo)",
                   border: "1px solid var(--borda-escura)",
@@ -124,11 +127,13 @@ export default function AdminLogin() {
                   letterSpacing: "0.04em",
                 }}
               >
-                Senha
+                Senha (Obrigatória)
               </label>
               <input
                 type="password"
                 id="senha"
+                required
+                aria-describedby={erro ? "erro-login" : undefined}
                 className="form-control"
                 placeholder="*********"
                 value={senha}
@@ -145,12 +150,14 @@ export default function AdminLogin() {
               />
             </div>
 
-            {/* Mensagem de erro - renderização condicional */}
-            {erro && (
-              <div
-                className="rouded-3 py-2 px-3 mb-3 small"
-                role="alert"
-                style={{
+          {/* Mensagem de erro - renderização condicional */}
+          {erro && (
+            <div
+              id="erro-login"
+              className="rounded-3 py-2 px-3 mb-3 small"
+              role="alert"
+              style={{
+
                   backgroundColor: "var(--erro-fundo)",
                   color: "var(--erro-texto)",
                   border: "1px solid var(--erro-borda)",
@@ -164,7 +171,7 @@ export default function AdminLogin() {
             {/* Botão enviar*/}
             <button
               type="submit"
-              className="btn w-100 fw-medium text-uppercase"
+              className={`btn w-100 fw-medium text-uppercase ${styles.focoVisivel}`}
               disabled={carregando}
               style={{
                 backgroundColor: carregando
@@ -187,7 +194,7 @@ export default function AdminLogin() {
             {/* Botão voltar */}
             <Link
               href="/"
-              className="btn w-100 fw-medium text-uppercase mt-2"
+              className={`btn w-100 fw-medium text-uppercase mt-2 ${styles.focoVisivel}`}
               style={{
                 display: "block",
                 backgroundColor: "transparent",

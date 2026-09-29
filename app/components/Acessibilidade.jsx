@@ -1,56 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import "./Acessibilidade.css";
 
 const CHAVE_CONTRASTE = "acessibilidade-contraste";
 const CHAVE_TAMANHO = "acessibilidade-texto";
+const EVENTO_PREFERENCIAS = "preferencias-acessibilidade-alteradas";
+
+function assinarPreferencias(callback) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(EVENTO_PREFERENCIAS, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(EVENTO_PREFERENCIAS, callback);
+  };
+}
+
+function lerContraste() {
+  return localStorage.getItem(CHAVE_CONTRASTE) === "true";
+}
+
+function lerTamanho() {
+  const valor = Number(localStorage.getItem(CHAVE_TAMANHO));
+  return [100, 120, 140].includes(valor) ? valor : 100;
+}
+
+function salvarPreferencia(chave, valor) {
+  localStorage.setItem(chave, String(valor));
+  window.dispatchEvent(new Event(EVENTO_PREFERENCIAS));
+}
 
 export default function Acessibilidade() {
-  const [contraste, setContraste] = useState(false);
-  const [tamanho, setTamanho] = useState(100);
-  const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
+  const contraste = useSyncExternalStore(
+    assinarPreferencias,
+    lerContraste,
+    () => false
+  );
+
+  const tamanho = useSyncExternalStore(
+    assinarPreferencias,
+    lerTamanho,
+    () => 100
+  );
 
   useEffect(() => {
-    const contrasteSalvo = localStorage.getItem(CHAVE_CONTRASTE);
-    const tamanhoSalvo = Number(localStorage.getItem(CHAVE_TAMANHO));
-
-    const contrasteInicial = contrasteSalvo === "true";
-    const tamanhoInicial = [100, 120, 140].includes(tamanhoSalvo)
-      ? tamanhoSalvo
-      : 100;
-
-    setContraste(contrasteInicial);
-    setTamanho(tamanhoInicial);
-
-    const pagina = document.documentElement;
-    pagina.setAttribute(
-      "data-acessibilidade-contraste",
-      String(contrasteInicial)
-    );
-    pagina.setAttribute(
-      "data-acessibilidade-texto",
-      String(tamanhoInicial)
-    );
-
-    setPreferenciasCarregadas(true);
-  }, []);
-
-  useEffect(() => {
-    if (!preferenciasCarregadas) return;
-
     const pagina = document.documentElement;
 
     pagina.setAttribute("data-acessibilidade-texto", String(tamanho));
     pagina.setAttribute("data-acessibilidade-contraste", String(contraste));
-
-    localStorage.setItem(CHAVE_TAMANHO, String(tamanho));
-    localStorage.setItem(CHAVE_CONTRASTE, String(contraste));
-  }, [contraste, tamanho, preferenciasCarregadas]);
+  }, [contraste, tamanho]);
 
   function restaurarPadrao() {
-    setContraste(false);
-    setTamanho(100);
+    localStorage.setItem(CHAVE_CONTRASTE, "false");
+    localStorage.setItem(CHAVE_TAMANHO, "100");
+    window.dispatchEvent(new Event(EVENTO_PREFERENCIAS));
   }
 
   function fecharComEscape(evento) {
@@ -88,7 +92,7 @@ export default function Acessibilidade() {
         <button
           type="button"
           aria-pressed={contraste}
-          onClick={() => setContraste((valorAtual) => !valorAtual)}
+          onClick={() => salvarPreferencia(CHAVE_CONTRASTE, !contraste)}
         >
           Alto contraste: {contraste ? "ativado" : "desativado"}
         </button>
@@ -100,7 +104,7 @@ export default function Acessibilidade() {
             type="button"
             aria-label="Diminuir tamanho do texto"
             disabled={tamanho === 100}
-            onClick={() => setTamanho((valorAtual) => valorAtual - 20)}
+            onClick={() => salvarPreferencia(CHAVE_TAMANHO, tamanho - 20)}
           >
             A−
           </button>
@@ -109,7 +113,7 @@ export default function Acessibilidade() {
             type="button"
             aria-label="Aumentar tamanho do texto"
             disabled={tamanho === 140}
-            onClick={() => setTamanho((valorAtual) => valorAtual + 20)}
+            onClick={() => salvarPreferencia(CHAVE_TAMANHO, tamanho + 20)}
           >
             A+
           </button>

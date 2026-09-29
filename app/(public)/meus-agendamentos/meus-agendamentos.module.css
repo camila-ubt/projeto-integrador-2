@@ -13,7 +13,7 @@
 .voltar {
   display: inline-block;
   margin-bottom: 36px;
-  color: #8c6a5a;
+  color: #7a584a;
   font-size: 0.95rem;
   text-decoration: none;
 }
@@ -23,13 +23,20 @@
   text-decoration: underline;
 }
 
+.voltar:focus-visible,
+.linkContato:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .cabecalho {
   margin-bottom: 32px;
   text-align: center;
 }
 
 .sobretitulo {
-  color: #b76e79;
+  color: #9d5867;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -95,23 +102,15 @@
   width: 100%;
   min-height: 46px;
   padding: 10px 14px;
-  border: 1px solid #d8c7c2;
+  border: 1px solid #b9aaa5;
   border-radius: 10px;
   background: #f8f5f3;
-  color: #493b37;
-}
-
-.campo input:focus-visible,
-.botao:focus-visible,
-.voltar:focus-visible,
-.linkContato:focus-visible {
-  outline: 3px solid #0066cc;
-  outline-offset: 3px;
+  color: #5c4a45;
 }
 
 .campo input:disabled {
-  cursor: wait;
-  opacity: 0.7;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .botao {
@@ -120,29 +119,20 @@
   margin-top: 4px;
   border: 0;
   border-radius: 10px;
-  background: #b76e79;
+  background: #9d5867;
   color: #fff;
   font-weight: 600;
-  cursor: pointer;
-}
-
-.botao:hover:not(:disabled) {
-  background: #9d5867;
 }
 
 .botao:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-.consultaResultado {
-  margin-top: 24px;
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .aviso {
   margin: 24px 0 0;
   padding: 16px 18px;
-  border-left: 4px solid #b76e79;
+  border-left: 4px solid #9d5867;
   border-radius: 8px;
   background: #f9f1eb;
   color: #5c4a45;
@@ -160,6 +150,20 @@
   color: #9d5867;
   font-weight: 600;
   text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: 72px 16px 60px;
+  }
+
+  .voltar {
+    margin-bottom: 28px;
+  }
+
+  .formulario {
+    grid-template-columns: 1fr;
+  }
 }
 
 .previa {
@@ -200,7 +204,7 @@
 }
 
 .opcoesPrevia button[aria-pressed="true"] {
-  background: #b76e79;
+  background: #9d5867;
   color: #fff;
 }
 
@@ -248,25 +252,11 @@
 .resultadoErro {
   padding: 20px;
   border-radius: 12px;
-  background: #f8f5f3;
+  background: #fff;
   color: #5c4a45;
 }
 
 .resultadoErro {
-  border-left: 4px solid #b76e79;
+  border-left: 4px solid #9d5867;
   background: #fff3f3;
-}
-
-@media (max-width: 640px) {
-  .pagina {
-    padding: 72px 16px 60px;
-  }
-
-  .voltar {
-    margin-bottom: 28px;
-  }
-
-  .formulario {
-    grid-template-columns: 1fr;
-  }
 }

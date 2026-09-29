@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { HORARIOS_ATENDIMENTO, ETAPAS, WHATSAPP_ESTUDIO} from "@/lib/constantes";
 import {
@@ -22,7 +22,26 @@ import {
 
 // ─── Modal: serviço requer avaliação prévia ───────────────────────────────────
 function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
-  
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    if (!servico) return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const overflowAnterior = document.body.style.overflow;
+
+    modal.showModal();
+    document.body.style.overflow = "hidden";
+    modal.querySelector("#modal-avaliacao-titulo")?.focus();
+
+    return () => {
+      modal.close();
+      document.body.style.overflow = overflowAnterior;
+    };
+  }, [servico]);
+
   if (!servico) return null;
 
   function abrirWhatsApp() {
@@ -39,14 +58,23 @@ function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
 
   return (
     // Backdrop — clique fora fecha o modal
-    <div
-      role="dialog"
-      aria-modal="true"
+        <dialog
+      ref={modalRef}
       aria-labelledby="modal-avaliacao-titulo"
+      onCancel={(evento) => {
+        evento.preventDefault();
+        aoFechar();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) aoFechar();
       }}
       style={{
+        margin: 0,
+        border: "none",
+        width: "100%",
+        height: "100dvh",
+        maxWidth: "none",
+        maxHeight: "none",
         position: "fixed",
         inset: 0,
         zIndex: 1050,
@@ -65,6 +93,8 @@ function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
           padding: "28px 24px 24px",
           maxWidth: "380px",
           width: "100%",
+          maxHeight: "calc(100dvh - 32px)",
+          overflowY: "auto",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
         }}
       >
@@ -91,6 +121,7 @@ function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
         {/* Título */}
         <h2
           id="modal-avaliacao-titulo"
+          tabIndex={-1}
           style={{
             fontFamily: "var(--fonte-titulo)",
             fontSize: "20px",
@@ -183,7 +214,7 @@ function ModalAvaliacaoWhatsApp({ servico, aoFechar }) {
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
@@ -230,6 +261,7 @@ function BarraProgresso({ etapaAtual }) {
           return (
             <div
               key={nome}
+              aria-current={ativa ? "step" : undefined}
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -300,6 +332,10 @@ function CardServico({ servico, selecionado, aoSelecionar, aoAbrirAvaliacao }) {
   return (
     <button
       type="button"
+        aria-pressed={
+        servico.necessita_avaliacao ? undefined : Boolean(selecionado)
+      }
+      aria-haspopup={servico.necessita_avaliacao ? "dialog" : undefined}
       onClick={() => {
         if (servico.necessita_avaliacao) {
           aoAbrirAvaliacao(servico); // abre modal — não avança no fluxo
@@ -418,7 +454,9 @@ function CardServico({ servico, selecionado, aoSelecionar, aoAbrirAvaliacao }) {
           }}
         >
           {selecionado && (
-            <span style={{ color: "white", fontSize: "10px", fontWeight: 700 }}>
+            <span 
+            aria-hidden="true"
+            style={{ color: "white", fontSize: "10px", fontWeight: 700 }}>
               ✓
             </span>
           )}
@@ -714,6 +752,7 @@ function EtapaData({ servico, dataHoraSelecionada, aoAvancar, aoVoltar }) {
                   <button
                     key={h}
                     type="button"
+                    aria-pressed={selecionado}
                     disabled={ocupado}
                     onClick={() => setHora(h)}
                     style={{
@@ -823,8 +862,17 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
 
   function aoSubmeter() {
     const novosErros = validar();
-    if (Object.keys(novosErros).length > 0) {
+        if (Object.keys(novosErros).length > 0) {
       setErros(novosErros);
+
+      const primeiroCampo = ["nome", "telefone", "aniversario"].find(
+        (campo) => novosErros[campo]
+      );
+
+      requestAnimationFrame(() => {
+        document.getElementById(primeiroCampo)?.focus();
+      });
+
       return;
     }
     aoAvancar({
@@ -854,7 +902,6 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
     fontFamily: "var(--fonte-corpo)",
     fontSize: "14px",
     color: "var(--texto-principal)",
-    outline: "none",
   });
 
   const estiloErro = {
@@ -890,11 +937,14 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
       </p>
 
       <div style={{ marginBottom: "16px" }}>
-        <label htmlFor="nome" style={estiloLabel}>
-          Nome completo
+       <label htmlFor="nome" style={estiloLabel}>
+          Nome completo (obrigatório)
         </label>
         <input
           id="nome"
+          required
+          aria-invalid={Boolean(erros.nome)}
+          aria-describedby={erros.nome ? "erro-nome" : undefined}
           type="text"
           placeholder="Maria Silva"
           value={nome}
@@ -905,14 +955,21 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
           style={estiloInput(erros.nome)}
           autoComplete="name"
         />
-        {erros.nome && <p style={estiloErro}>{erros.nome}</p>}
+                {erros.nome && (
+          <p id="erro-nome" role="alert" style={estiloErro}>
+            {erros.nome}
+          </p>
+        )}
       </div>
 
       <div style={{ marginBottom: "16px" }}>
-        <label htmlFor="telefone" style={estiloLabel}>
-          Telefone / WhatsApp
+         <label htmlFor="telefone" style={estiloLabel}>
+          Telefone / WhatsApp (obrigatório)
         </label>
         <input
+          required
+          aria-invalid={Boolean(erros.telefone)}
+          aria-describedby={erros.telefone ? "erro-telefone" : undefined}
           id="telefone"
           type="tel"
           placeholder="(11) 99999-0000"
@@ -926,7 +983,11 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
           style={estiloInput(erros.telefone)}
           autoComplete="tel"
         />
-        {erros.telefone && <p style={estiloErro}>{erros.telefone}</p>}
+               {erros.telefone && (
+          <p id="erro-telefone" role="alert" style={estiloErro}>
+            {erros.telefone}
+          </p>
+        )}
       </div>
 
       <div style={{ marginBottom: "24px" }}>
@@ -935,6 +996,8 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
         </label>
         <input
           id="aniversario"
+          aria-invalid={Boolean(erros.aniversario)}
+          aria-describedby={erros.aniversario ? "erro-aniversario" : undefined}
           type="text"
           inputMode="numeric"
           maxLength={5}
@@ -946,7 +1009,11 @@ function EtapaDados({ dadosSalvos, aoAvancar, aoVoltar }) {
           }}
           style={estiloInput(erros.aniversario)}
         />
-        {erros.aniversario && <p style={estiloErro}>{erros.aniversario}</p>}
+            {erros.aniversario && (
+          <p id="erro-aniversario" role="alert" style={estiloErro}>
+            {erros.aniversario}
+          </p>
+        )}
       </div>
 
       <div style={{ marginBottom: "24px" }}>

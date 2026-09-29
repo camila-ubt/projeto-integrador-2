@@ -192,3 +192,54 @@
   outline: 3px solid #0066cc;
   outline-offset: 3px;
 }
+/* Menu móvel como janela modal */
+.drawer {
+  box-sizing: border-box;
+  inset: 0 0 auto auto;
+  margin: 0;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  color: var(--texto-principal);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.drawer:not([open]) {
+  display: none;
+}
+
+.drawer[open] {
+  display: block;
+  transform: translateX(0);
+}
+
+.drawer::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.fecharMenu {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: var(--fundo);
+  color: var(--texto-principal);
+  font: inherit;
+  cursor: pointer;
+}
+
+.fecharMenu:focus-visible,
+.drawer a:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 3px;
+}

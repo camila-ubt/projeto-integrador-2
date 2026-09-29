@@ -1,7 +1,7 @@
 // 'use client' necessário pois usa useState e eventos do navegador
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./Navbar.module.css";
@@ -11,6 +11,18 @@ import Acessibilidade from "./Acessibilidade";
 export default function Navbar() {
   const [menuAberto, setMenuAberto] = useState(false); // Controla se o drawer está aberto ou fechado
   const [scrolled, setScrolled] = useState(false); // Controla sombra no header após scroll
+    const menuRef = useRef(null);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    if (menuAberto && !menu.open) {
+      menu.showModal();
+    } else if (!menuAberto && menu.open) {
+      menu.close();
+    }
+  }, [menuAberto]);
 
   // ── Efeito de scroll ────────────────────────────
   useEffect(() => {
@@ -120,11 +132,16 @@ export default function Navbar() {
           <Acessibilidade />
 
             {/* Botão hambúrguer — visível só no mobile (d-lg-none) */}
-            <button
+                       <button
+              type="button"
               className={`${styles.toggler} d-lg-none`}
-              onClick={() => setMenuAberto(!menuAberto)}
+              onClick={(evento) => {
+                evento.currentTarget.focus();
+                setMenuAberto(true);
+              }}
               aria-controls="nav-drawer"
               aria-expanded={menuAberto}
+              aria-haspopup="dialog"
               aria-label="Abrir menu de navegação"
             >
               {/* Três linhas do hambúrguer */}
@@ -142,22 +159,37 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* Overlay escurecido atrás do drawer — clica para fechar */}
-      {menuAberto && (
-        <div
-          className={styles.overlay}
-          onClick={fecharMenu}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Drawer lateral direito */}
-      <div
+           {/* Menu lateral para celular */}
+      <dialog
+        ref={menuRef}
         id="nav-drawer"
         className={`${styles.drawer} ${menuAberto ? styles.drawerAberto : ""}`}
-        aria-hidden={!menuAberto}
-        inert={!menuAberto}
+        aria-label="Menu de navegação"
+        onCancel={(evento) => {
+          evento.preventDefault();
+          fecharMenu();
+        }}
+        onClick={(evento) => {
+          if (evento.target !== evento.currentTarget) return;
+
+          const limites = evento.currentTarget.getBoundingClientRect();
+          const foraDoMenu =
+            evento.clientX < limites.left ||
+            evento.clientX > limites.right ||
+            evento.clientY < limites.top ||
+            evento.clientY > limites.bottom;
+
+          if (foraDoMenu) fecharMenu();
+        }}
       >
+        <button
+          type="button"
+          className={styles.fecharMenu}
+          onClick={fecharMenu}
+        >
+          Fechar <span aria-hidden="true">×</span>
+        </button>
+
         <ul className="list-unstyled d-flex flex-column mb-0">
           <li className={styles.drawerItem}>
             <Link
@@ -205,7 +237,7 @@ export default function Navbar() {
             </Link>
           </li>
         </ul>
-      </div>
+      </dialog>
     </>
   );
 }
